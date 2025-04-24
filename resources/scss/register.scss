@@ -1,0 +1,103 @@
+body {
+    background-image: linear-gradient(to bottom, #ffffff, #19f5c5);
+    margin: 0;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .main-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+
+  .register-container {
+    background: white;
+    display: flex;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    width: 100%;
+    max-width: 700px;
+
+    .image-section {
+      flex: 1;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      img {
+        max-width: 100%;
+        height: auto;
+        object-fit: cover;
+      }
+    }
+
+    .form-section {
+      flex: 1;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+
+      .register-form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+
+        label {
+          margin-top: 1rem;
+          margin-bottom: 0.25rem;
+        }
+
+        input {
+          padding: 0.75rem;
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          font-size: 1rem;
+        }
+
+        .button-group {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 1.5rem;
+
+          button {
+            flex: 1;
+            padding: 0.75rem;
+            margin-right: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            background-color: #222;
+            color: white;
+            cursor: pointer;
+
+            &.login {
+              background-color: #555;
+              margin-right: 0;
+              margin-left: 0.5rem;
+            }
+          }
+        }
+
+        select{
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+
+      }
+      .register-title{
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+    }
+  }

@@ -1,0 +1,109 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+  }
+
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #adadad;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    &__left {
+      display: flex;
+      align-items: center;
+    }
+
+    &__logo {
+      width: 40px;
+      height: 40px;
+      margin-right: 20px;
+      border-radius: 50%;
+    }
+
+    &__menu {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+
+      li a {
+        text-decoration: none;
+        color: #ffffff;
+        font-size: 14px;
+
+        &:hover {
+          color: #007bff;
+        }
+      }
+    }
+
+    &__right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .icon-label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 9999px;
+            background-color: rgb(69, 245, 236);
+            border: 1px solid #ddd;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color:#ffffff;
+
+            &:hover {
+              background-color: #ff0000;
+            }
+
+            .icon {
+              width: 1.25rem;
+              height: 1.25rem;
+              stroke: rgb(255, 254, 254);
+            }
+
+            span {
+              white-space: nowrap;
+            }
+          }
+      .btn-login {
+        padding: 12px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #f00202;
+        }
+      }
+
+      .btn-register {
+        padding: 12px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #f00202;
+        }
+      }
+    }
+
+
+  }
+
