@@ -2,6 +2,6 @@
 
 @section('main')
 
-<h1>Trang Quản Trị</h1>
+<h1>Trang Chủ</h1>
 
 @endsection
