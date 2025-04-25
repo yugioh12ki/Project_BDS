@@ -1,0 +1,67 @@
+.sidebar {
+    width: 250px;
+    background-color: #2e9bfa;
+    border-right: 5px solid rgba(221, 221, 221, 0)d;
+    height: 100vh;
+    padding: 1rem;
+    transition: width 0.3s ease;
+
+    &.expanded {
+      width: 350px;
+    }
+
+    .menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      ul {
+        list-style: none;
+        padding-left: 1rem;
+      }
+
+      li {
+        margin-bottom: 0.75rem;
+        position: relative;
+
+        a {
+          text-decoration: none;
+          color: #ffffff;
+          font-weight: 600;
+          display: block;
+          transition: all 0.2s ease;
+
+          &:hover {
+            color: #007bff;
+          }
+        }
+
+        &.dropdown > a::after {
+          content: " ▾";
+          float: right;
+          font-size: 0.8em;
+        }
+
+        .submenu {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s ease-in-out;
+          margin-top: 0.5rem;
+
+          li {
+            margin: 0.25rem 0;
+            font-weight: normal;
+
+            a {
+              font-weight: 500;
+              font-size: 0.9rem;
+            }
+          }
+        }
+
+        &.open .submenu {
+          max-height: 500px;
+        }
+      }
+    }
+  }
