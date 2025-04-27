@@ -36,7 +36,7 @@
 
           <label for="district">Quận</label>
           <select id="district" required>
-            <option value="">Chọn Quận/Huyện</option>
+            <option value=""></option>
           </select>
 
           <label for="ward">Phường/Xã</label>
