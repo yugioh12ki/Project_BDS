@@ -1,0 +1,19 @@
+.dashboard-container {
+    width: 100vw;
+    height: 100vh;
+    text-align: center;
+    padding-top: 2rem; // Add padding to create space at the top
+}
+
+.dashboard-container h1 {
+    color: blue;
+}
+
+.dashboard-container .highlight {
+    color: red;
+}
+
+.dashboard-container .version-text {
+    font-size: 18px;
+    color: blue;
+}

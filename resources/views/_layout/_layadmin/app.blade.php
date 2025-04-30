@@ -6,13 +6,21 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     @vite([
         'resources/scss/scss_admin/header.scss',
-        'resources/scss/scss_admin/menu.scss',])
+        'resources/scss/scss_admin/menu.scss',
+        'resources/scss/scss_admin/main.scss',
+    ])
     <title>Document</title>
     <script src="resources/js/auth.js"></script>
 </head>
-<body>
+<header>
     @include('_layout._layadmin.header')
-    @include('_layout._layadmin.menu')
-    @yield('main')
+</header>
+<body>
+    <div class="layout-container">
+        @include('_layout._layadmin.menu')
+        <div class="content">
+            @yield('dashboard')
+        </div>
+    </div>
 </body>
 </html>
