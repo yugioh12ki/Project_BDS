@@ -2,7 +2,7 @@
 <aside class="sidebar">
     <nav class="menu">
       <ul>
-        <li><a href=""><i class="fas fa-users"></i> Quản lý danh sách người dùng</a></li>
+        <li><a href="{{ route('users') }}"><i class="fas fa-users"></i> Quản lý danh sách người dùng</a></li>
         <li><a href=""><i class="fas fa-list"></i> Quản lý danh mục BĐS</a></li>
         <li><a href=""><i class="fas fa-check-circle"></i> Kiểm duyệt đánh giá khách hàng</a></li>
         <li><a href=""><i class="fas fa-calendar-alt"></i> Quản lý cuộc hẹn</a></li>
