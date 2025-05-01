@@ -1,0 +1,68 @@
+.footer {
+  background-color: #8a3a3a;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+.footer__container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.footer__brand {
+  max-width: 250px;
+}
+.footer__brand .footer__logo {
+  width: 60px;
+  margin-bottom: 0.5rem;
+}
+.footer__brand .footer__title {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.footer__brand .footer__address,
+.footer__brand .footer__phone {
+  font-size: 0.9rem;
+  margin: 0.3rem 0;
+}
+.footer__links {
+  display: flex;
+  gap: 3rem;
+}
+.footer__links .footer__section h4 {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.footer__links .footer__section ul {
+  list-style: none;
+  padding: 0;
+}
+.footer__links .footer__section ul li {
+  margin-bottom: 0.3rem;
+}
+.footer__links .footer__section ul li a {
+  color: #333;
+  text-decoration: none;
+}
+.footer__links .footer__section ul li a:hover {
+  text-decoration: underline;
+}
+.footer__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #ddd;
+  padding-top: 1rem;
+  font-size: 0.8rem;
+}
+.footer__bottom .footer__socials a {
+  margin-left: 0.5rem;
+  color: #333;
+}
+.footer__bottom .footer__socials a i {
+  font-size: 1rem;
+}
+.footer__bottom .footer__socials a:hover {
+  color: #555;
+}/*# sourceMappingURL=footer.css.map */

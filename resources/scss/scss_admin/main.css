@@ -1,0 +1,55 @@
+@charset "UTF-8";
+.dashboard-container {
+  width: 100vw;
+  height: 100vh;
+  text-align: center;
+  padding-top: 2rem;
+}
+
+.dashboard-container h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-container .highlight {
+  color: red;
+}
+
+.dashboard-container .version-text {
+  font-size: 18px;
+  color: blue;
+}
+
+table {
+  border-collapse: collapse; /* Loại bỏ khoảng cách giữa các ô */
+  width: 100%; /* Đảm bảo bảng chiếm toàn bộ chiều rộng */
+  background-color: #ffffff; /* Màu nền trắng cho bảng */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Hiệu ứng đổ bóng */
+  border-radius: 8px; /* Bo tròn các góc */
+  overflow: hidden; /* Đảm bảo bo tròn không bị ảnh hưởng */
+  margin: 20px 0; /* Khoảng cách giữa bảng và các phần tử khác */
+}
+
+table th {
+  background-color: #007bff; /* Màu nền cho tiêu đề bảng */
+  color: #ffffff; /* Màu chữ trắng */
+  padding: 12px; /* Khoảng cách bên trong ô */
+  text-align: left; /* Canh trái nội dung */
+  font-weight: bold; /* Chữ đậm */
+}
+
+table td {
+  padding: 12px; /* Khoảng cách bên trong ô */
+  text-align: left; /* Canh trái nội dung */
+  border-bottom: 1px solid #ddd; /* Đường viền dưới cho các ô */
+}
+
+table tr:nth-child(even) {
+  background-color: #f9f9f9; /* Màu nền xen kẽ cho các hàng */
+}
+
+table tr:hover {
+  background-color: #f1f1f1; /* Màu nền khi hover */
+}/*# sourceMappingURL=main.css.map */
