@@ -30,7 +30,8 @@ Route::get('/register',[RegisterController::class,"register"])->name('register')
 Route::prefix('admin')->group(
     function () {
         Route::get('/dashboard',[SystemController::class,"admin"])->name('dashboard');
-        Route::get('/getuser',[SystemController::class,"getUser"])->name('getuser');
+        Route::get('/property', [SystemController::class, "getProperty"])->name('property');
         Route::get('/users', [SystemController::class, "getUser"])->name('users');
+        Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
     }
 );

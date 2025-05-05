@@ -22,8 +22,9 @@
         <div class="content">
             @yield('dashboard')
             @yield('user')
+            @yield('property')
+            @yield('appointment')
         </div>
-
     </div>
 </body>
 </html>

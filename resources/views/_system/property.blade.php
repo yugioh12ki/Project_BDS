@@ -1,17 +1,14 @@
 @extends('_layout._layadmin.app')
 
-@section('user')
-
+@section('property')
 @if(isset($error))
     <div class="fa fa-danger">
         {{ $error }}
     </div>
 @else
-
-<h1>Danh sách User</h1>
+<h1>Danh sách Property</h1>
 <div class="action-buttons">
     <a href="{{-- route('users.create') --}}" class="btn btn-primary"><i class="fa fa-plus"></i> Thêm mới</a>
-
 </div>
 <div class="table-container">
     <table>
@@ -24,10 +21,10 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($users as $user)
+            @foreach ($properties as $property)
                 <tr>
                     @foreach ($columns as $column)
-                            <td>{{ $user->$column }}</td>
+                            <td>{{ $property->$column }}</td>
                     @endforeach
                     <td>
                         <a href="{{--  route('users.edit', $user->UserID) --}}" class="action-icon"><i class="fas fa-edit"></i></a>
