@@ -25,13 +25,18 @@ use App\Http\Controllers\SystemController;
 
 Route::get('/',[HomeController::class,"index"])->name('home');
 Route::get('/login',[LoginController::class,"login"])->name('login');
+Route::post('/login', [LoginController::class, "authenticate"])->name('login.authenticate');
 Route::get('/register',[RegisterController::class,"register"])->name('register');
 
 Route::prefix('admin')->group(
     function () {
         Route::get('/dashboard',[SystemController::class,"admin"])->name('dashboard');
         Route::get('/property', [SystemController::class, "getProperty"])->name('property');
-        Route::get('/users', [SystemController::class, "getUser"])->name('users');
+        Route::get('/user', [SystemController::class, "getUser"])->name('users');
+        Route::get('/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('users.byRole');
         Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
+        Route::get('/transaction', [SystemController::class, "getTransaction"])->name('transaction');
+        Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');
+        Route::get('/commission', [SystemController::class, "getCommission"])->name('commission');
     }
 );

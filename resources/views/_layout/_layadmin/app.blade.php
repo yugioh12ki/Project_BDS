@@ -24,6 +24,9 @@
             @yield('user')
             @yield('property')
             @yield('appointment')
+            @yield('transaction')
+            @yield('feedback')
+            @yield('commission')
         </div>
     </div>
 </body>

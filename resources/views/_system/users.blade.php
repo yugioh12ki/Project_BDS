@@ -2,41 +2,46 @@
 
 @section('user')
 
-@if(isset($error))
-    <div class="fa fa-danger">
-        {{ $error }}
-    </div>
-@else
-
 <h1>Danh sách User</h1>
-<div class="action-buttons">
-    <a href="{{-- route('users.create') --}}" class="btn btn-primary"><i class="fa fa-plus"></i> Thêm mới</a>
 
+{{-- Combobox để chọn role --}}
+<div class="action-buttons">
+    <label for="role-select">Chọn Role:</label>
+    <select id="role-select" class="form-control">
+        <option value="all">Tất cả</option> {{-- Thêm tùy chọn "Tất cả" --}}
+        <option value="Admin">Admin</option>
+        <option value="Agent">Agent</option>
+        <option value="Owner">Owner</option>
+        <option value="Customer">Customer</option>
+    </select>
 </div>
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                @foreach ($columns as $column )
-                    <th>{{ $column }}</th>
-                @endforeach
-                <th>Chức năng</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($users as $user)
-                <tr>
-                    @foreach ($columns as $column)
-                            <td>{{ $user->$column }}</td>
-                    @endforeach
-                    <td>
-                        <a href="{{--  route('users.edit', $user->UserID) --}}" class="action-icon"><i class="fas fa-edit"></i></a>
-                        <a href="{{-- route('users.delete', $user->UserID) --}}" class="action-icon" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"><i class="fas fa-trash"></i></a>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+
+{{-- Khu vực hiển thị danh sách user --}}
+<div id="user-list">
+    @include('_system.partialview.user_table', ['users' => $users, 'columns' => $columns])
 </div>
-@endif
+
+<script>
+    document.getElementById('role-select').addEventListener('change', function () {
+        const role = this.value;
+
+        // Gửi yêu cầu AJAX để lấy danh sách user theo role
+        fetch(`/admin/user/role/${role}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Không tìm thấy dữ liệu.');
+            }
+            return response.text();
+        })
+        .then(html => {
+            document.getElementById('user-list').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('user-list').innerHTML = `
+                <div class="alert alert-danger">Không tìm thấy user nào.</div>
+            `;
+        });
+    });
+</script>
 @endsection

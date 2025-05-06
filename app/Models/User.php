@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Model
+class User extends Authenticatable
 {
     use HasFactory;
 
@@ -13,4 +14,8 @@ class User extends Model
     //protected $primaryKey = 'UserID'; // Chỉ định khóa chính là 'id'
 
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
+
+    protected $fillable = [
+        'Email','PasswordHash','Role','Status'
+    ];
 }
