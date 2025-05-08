@@ -11,5 +11,8 @@ class feedback extends Model
 
     protected $table = 'feedbacks'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
 
+    protected $primaryKey = 'FeedbackID'; // Chỉ định khóa chính là 'id'
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
+
+
 }

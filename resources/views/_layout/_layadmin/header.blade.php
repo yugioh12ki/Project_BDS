@@ -12,7 +12,6 @@
         <div class="dropdown">
           <button class="dropdown-toggle">Admin ▼</button>
           <div class="dropdown-menu">
-            <a href="">Đổi ngôn ngữ</a>
             <a href="#" onclick="logout()">Đăng xuất</a>
           </div>
         </div>

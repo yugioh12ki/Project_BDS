@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Models\feedback;
 use App\Models\Commission;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SystemController extends Controller
@@ -18,7 +19,11 @@ class SystemController extends Controller
     //
     public function admin()
     {
-        return view( '_system.index');
+        if (Auth::check()) {
+            return view('_system.index');
+        } else {
+            abort(403, 'Bạn không có quyền truy cập vào trang này.');
+        }
     }
 
     public function getUser()
@@ -55,11 +60,11 @@ class SystemController extends Controller
     // {
     //     if($role == 'all')
     //     {
-    //         $users = DB::statement('CALL batdongsan.select_all_from_table_varchar(?)',['user']);
+    //         $users = DB::select('CALL batdongsan.select_all_from_table_varchar(?)',['user']);
     //     }
     //     else
     //     {
-    //         $users = DB::statement('CALL batdongsan.select_all_from_table_role(?)',$role);
+    //         $users = DB::select('CALL batdongsan.select_all_from_table_role(?)',$role);
     //     }
     //     $columns = Schema::getColumnListing('user');
     //     if ($columns === null || Empty($users)) {

@@ -4,25 +4,32 @@
 <main class="main-content">
     <div class="login-container split-box">
       <div class="image-section">
-        <img src="your-image.jpg" alt="Login illustration">
+        {{-- <img src="your-image.jpg" alt="Login illustration"> --}}
       </div>
       <div class="form-section">
         <form class="login-form" method="POST" action="{{ route('login.authenticate') }}">
             @csrf
             <h1 class="login-title">Đăng nhập</h1>
 
-            @if($errors->any())
-                <div class="error-message">
-                    @foreach ($errors->all() as $error)
-                        <p class="error">{{ $error }}</p>
-                    @endforeach
-                </div>
-            @endif
+
           <label for="username">Email</label>
           <input type="email" id="email" name="email" placeholder="Nhập email" required>
 
           <label for="password">Password</label>
           <input type="password" id="password" name="password" placeholder="Nhập Password" required>
+
+            @if($errors->any())
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li style="color: red">{{ $error }}</li>
+                    @endforeach
+                </ul>
+            @endif
+            @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
 
           <div class="button-group">
             <button type="submit">Đăng nhập</button>

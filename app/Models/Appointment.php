@@ -13,4 +13,5 @@ class Appointment extends Model
     protected $primaryKey = 'AppointmentID'; // Chỉ định khóa chính là 'id'
 
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
+
 }
