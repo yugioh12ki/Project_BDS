@@ -20,12 +20,17 @@ class User extends Authenticatable
     protected $keyType = 'string'; // Nếu khóa chính là chuỗi
 
     protected $fillable = [
-        'Email','PasswordHash','Role','StatusUser','Name'
+        'Name','Email','PasswordHash','Role','StatusUser',
     ];
 
     public function getAuthPassword()
     {
         return $this->PasswordHash;
+    }
+
+    public function setPasswordAttribute($password)
+    {
+        $this->attributes['PasswordHash'] = bcrypt($password);
     }
 
     public function isActive()

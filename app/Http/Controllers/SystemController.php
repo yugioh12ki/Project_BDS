@@ -37,8 +37,14 @@ class SystemController extends Controller
         return view('_system.users', compact('columns','users')); // Đảm bảo biến truyền vào view là $users
     }
 
-    public function getUserByRole($role)  // Hàm tìm kiếm user theo role (Không Produruce)
+    public function getUserByRole(Request $request,$role)  // Hàm tìm kiếm user theo role (Không Produruce)
     {
+
+
+        if (empty($columnsToShow)) {
+            $columnsToShow = Schema::getColumnListing('user');
+        }
+
         if($role == 'all')
         {
             $users = User::all();
@@ -55,6 +61,55 @@ class SystemController extends Controller
             return view('_system.partialview.user_table', compact('columns','users')); // Đảm bảo biến truyền vào view là $users
         }
     }
+
+    public function createUserForm()
+    {
+        return view('_system.partialview.create_user');
+    }
+
+    public function createUser(Request $request)
+    {
+        dd($request->all());
+        $validated=$request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:user,Email',
+            'birth' => 'required|date',
+            'sex' => 'required|string',
+            'identity_card' => 'required|string|max:12|regex:/^(\d{9}|\d{12})$/',
+            'phone' => 'required|string|max:10|regex:/^(\d{10})$/',
+            'address' => 'required|string|max:255',
+            'ward' => 'required|string|max:255',
+            'district' => 'required|string|max:255',
+            'province' => 'required|string|max:255',
+            'role' => 'required|string',
+            'password' => 'required|string|min:6|max:30',
+        ]);
+
+        $userExists = User::where('Email', $validated['email'])->first();
+        if ($userExists) {
+            return redirect()->back()->withErrors('error','Email đã tồn tại.');
+        }
+
+        User::create([
+            'Name' => $validated['name'],
+            'Email' => $validated['email'],
+            'Birth' => $validated['birth'],
+            'Sex' => $validated['sex'],
+            'IdentityCard' => $validated['identity_card'],
+            'Phone' => $validated['phone'],
+            'Address' => $validated['address'],
+            'Ward' => $validated['ward'],
+            'District' => $validated['district'],
+            'Province' => $validated['province'],
+            'Role' => $validated['role'],
+            'StatusUser' => 'active',
+            'PasswordHash' => $validated['password'],
+        ]);
+
+        return redirect()->route('admin.users.create')->with('success', 'Người dùng đã được tạo thành công.');
+    }
+
+
 
     // public function getUserByRole($role)
     // {

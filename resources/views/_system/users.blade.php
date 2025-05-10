@@ -2,24 +2,76 @@
 
 @section('user')
 
+
+
+
 <h1>Danh sách User</h1>
 
-{{-- Combobox để chọn role --}}
-<div class="action-buttons">
-    <label for="role-select">Chọn Role:</label>
-    <select id="role-select" class="form-control">
-        <option value="all">Tất cả</option> {{-- Thêm tùy chọn "Tất cả" --}}
-        <option value="Admin">Admin</option>
-        <option value="Agent">Agent</option>
-        <option value="Owner">Owner</option>
-        <option value="Customer">Customer</option>
-    </select>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    {{-- Combobox chọn role --}}
+    <div class="d-flex align-items-center">
+        <label for="role-select" class="me-2">Chọn Role:</label>
+        <select id="role-select" class="form-control" style="width: 200px;">
+            <option value="all">Tất cả</option>
+            <option value="Admin">Admin</option>
+            <option value="Agent">Agent</option>
+            <option value="Owner">Owner</option>
+            <option value="Customer">Customer</option>
+        </select>
+    </div>
+
+    {{-- Ô input và button tìm kiếm --}}
+    <div class="d-flex align-items-center">
+        <input type="text" id="search-input" class="form-control " placeholder="Nhập từ khóa tìm kiếm" style="width: 300px;">
+        <button type="button" class="btn btn-secondary ms-2" id="search-button">
+            <i class="fa fa-search"></i> Tìm kiếm
+        </button>
+    </div>
+</div>
+
+{{-- Button thêm mới --}}
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    <i class="fa fa-plus"></i> Thêm mới
+</button>
+
+
+
+
+
+{{-- Modal thêm user --}}
+<div class="modal fade"
+    id="addUserModal"
+    aria-hidden="true"
+    aria-labelledby="addUserModalLabel"
+    tabindex="-1" style="{{ session('showModal') ? 'display: block;' : '' }}">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">Thêm User Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                @include('_system.partialview.create_user', ['user' => null])
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Khu vực hiển thị danh sách user --}}
 <div id="user-list">
+
     @include('_system.partialview.user_table', ['users' => $users, 'columns' => $columns])
 </div>
+
+@if(session('showModal'))
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const myModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        myModal.show();
+    });
+</script>
+@endif
 
 <script>
     document.getElementById('role-select').addEventListener('change', function () {
@@ -43,5 +95,45 @@
             `;
         });
     });
+
+    document.querySelectorAll('.column-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function () {
+        const selectedColumns = Array.from(document.querySelectorAll('.column-checkbox:checked'))
+            .map(cb => cb.value);
+
+        const role = document.getElementById('role-select').value || 'all'; // Lấy role hiện tại
+
+        // Gửi yêu cầu AJAX để cập nhật danh sách user
+        fetch(`/admin/user/role/${role}?columns=${selectedColumns.join(',')}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không tìm thấy dữ liệu.');
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById('user-list').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('user-list').innerHTML = `
+                    <div class="alert alert-danger">Không tìm thấy user nào.</div>
+                `;
+            });
+    });
+});
+
 </script>
+@if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
+
 @endsection

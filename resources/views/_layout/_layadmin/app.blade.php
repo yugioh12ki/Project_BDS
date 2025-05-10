@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
     @vite([
-        'resources/scss/scss_admin/header.scss',
-        'resources/scss/scss_admin/menu.scss',
-        'resources/scss/scss_admin/main.scss',
+        'resources/js/app.js',
+        'resources/sass/app.scss',
+        'resources/js/dscactinh.js',
     ])
     <title>Document</title>
-    <script src="resources/js/auth.js"></script>
+
+
 </head>
 <header>
     @include('_layout._layadmin.header')
@@ -29,5 +31,6 @@
             @yield('commission')
         </div>
     </div>
+
 </body>
 </html>

@@ -53,6 +53,8 @@ Route::middleware(['auth'])->group(function()
     Route::get('/admin', [SystemController::class, 'admin'])->name('admin.dashboard');
     Route::get('/admin/property', [SystemController::class, "getProperty"])->name('admin.property');
     Route::get('/admin/user', [SystemController::class, "getUser"])->name('admin.users');
+    Route::get('/admin/user/create', [SystemController::class, "createUserForm"])->name('admin.users.create');
+    Route::post('/admin/user/create', [SystemController::class, 'createUser'])->name('admin.users.store');
     Route::get('/admin/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('admin.users.byRole');
     Route::get('/admin/appointment', [SystemController::class, "getAppointment"])->name('admin.appointment');
     Route::get('/admin/transaction', [SystemController::class, "getTransaction"])->name('admin.transaction');
@@ -62,6 +64,6 @@ Route::middleware(['auth'])->group(function()
     // Route đăng xuất
     Route::post('/logout', function () {
         Auth::logout(); // Đăng xuất người dùng
-        return redirect()->route('home'); // Chuyển hướng về trang chủ
+        return redirect()->route('login'); // Chuyển hướng về trang chủ
     })->name('logout');
 });

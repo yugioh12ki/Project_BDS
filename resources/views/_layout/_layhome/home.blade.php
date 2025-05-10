@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trang Bất Động Sản</title>
     @vite([
-        'resources/scss/header.scss',
-        'resources/scss/footer.scss',
-        'resources/scss/home.scss',
+        'resources/sass/header.scss',
+        'resources/sass/footer.scss',
+        'resources/sass/home.scss',
         'resources/js/home.js'
         ])
     {{-- Từ bản laravel 12x trở lên sử dụng @vite để điều hướng scss --}}

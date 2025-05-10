@@ -8,7 +8,7 @@ async function fetchProvinces() {
   const provinces = await res.json();
   provinces.forEach(p => {
     const option = document.createElement('option');
-    option.value = p.code;
+    option.value = p.name;
     option.textContent = p.name;
     provinceSelect.appendChild(option);
   });
@@ -21,7 +21,7 @@ async function fetchDistricts(provinceCode) {
   wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
   data.districts.forEach(d => {
     const option = document.createElement('option');
-    option.value = d.code;
+    option.value = d.name;
     option.textContent = d.name;
     districtSelect.appendChild(option);
   });
@@ -33,7 +33,7 @@ async function fetchWards(districtCode) {
   wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
   data.wards.forEach(w => {
     const option = document.createElement('option');
-    option.value = w.code;
+    option.value = w.name;
     option.textContent = w.name;
     wardSelect.appendChild(option);
   });

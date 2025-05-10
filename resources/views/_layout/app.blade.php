@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auth Tài Khoản</title>
     @vite([
-        'resources/scss/header.scss',
-        'resources/scss/footer.scss',
-        'resources/scss/login.scss',
-        'resources/scss/register.scss',
+        'resources/sass/header.scss',
+        'resources/sass/footer.scss',
+        'resources/sass/login.scss',
+        'resources/sass/register.scss',
         'resources/js/dscactinh.js'
         ])
     {{-- Từ bản laravel 12x trở lên sử dụng @vite để điều hướng scss --}}
