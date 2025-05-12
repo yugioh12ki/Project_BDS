@@ -10,6 +10,8 @@
 <div class="action-buttons">
     <a href="{{-- route('users.create') --}}" class="btn btn-primary"><i class="fa fa-plus"></i> Thêm mới</a>
 </div>
+
+
 <div class="table-container">
     <table>
         <thead>

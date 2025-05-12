@@ -49,9 +49,9 @@
     <div class="mb-3">
         <label for="userSex" class="form-label">Giới tính</label>
         <select class="form-control" id="sex" name="sex" required>
-            <option value="Male">Nam</option>
-            <option value="Female">Nữ</option>
-            <option value="Other">Khác</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+            <option value="Khác">Khác</option>
         </select>
     </div>
 

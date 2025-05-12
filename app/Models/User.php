@@ -20,8 +20,35 @@ class User extends Authenticatable
     protected $keyType = 'string'; // Nếu khóa chính là chuỗi
 
     protected $fillable = [
-        'Name','Email','PasswordHash','Role','StatusUser',
+        'Name',
+        'Email',
+        'Birth',
+        'Sex',
+        'IdentityCard',
+        'Phone',
+        'Address',
+        'Ward',
+        'District',
+        'Province',
+        'Role',
+        'StatusUser',
+        'PasswordHash',
     ];
+
+    protected function chusohuu()
+    {
+        return $this->hasMany(Property::class, 'OwnerID', 'UserID');
+    }
+
+    protected function moigioi()
+    {
+        return $this->hasMany(Property::class, 'AgentID', 'UserID');
+    }
+
+    protected function quantri()
+    {
+        return $this->hasMany(Property::class, 'ApprovedBy', 'UserID');
+    }
 
     public function getAuthPassword()
     {

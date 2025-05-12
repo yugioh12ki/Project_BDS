@@ -51,11 +51,31 @@ Route::middleware(['auth'])->group(function()
 {
 
     Route::get('/admin', [SystemController::class, 'admin'])->name('admin.dashboard');
+
+    // Route điều hướng đến trang quản lý bất động sản
+
     Route::get('/admin/property', [SystemController::class, "getProperty"])->name('admin.property');
+    Route::get('/admin/property/type/{type}', [SystemController::class, "getPropertyByType"])->name('admin.property.type');
+    Route::get('/admin/property/create', [SystemController::class, "createPropertyForm"])->name('admin.property.create');
+    Route::post('/admin/property/create', [SystemController::class, 'createProperty'])->name('admin.property.store');
+    Route::delete('/admin/property/{id}',[SystemController::class, 'deleteProperty'])->name('admin.property.delete');
+    Route::get('/admin/property/{id}/edit', [SystemController::class, 'EditProperty'])->name('admin.property.edit');
+    Route::put('/admin/property/{id}', [SystemController::class, 'EditProperty'])->name('admin.property.update');
+    Route::get('/admin/property/search', [SystemController::class, 'SearchProperty'])->name('admin.property.search');
+
+    // Route điều hướng đến trang quản lý người dùng
+
     Route::get('/admin/user', [SystemController::class, "getUser"])->name('admin.users');
     Route::get('/admin/user/create', [SystemController::class, "createUserForm"])->name('admin.users.create');
     Route::post('/admin/user/create', [SystemController::class, 'createUser'])->name('admin.users.store');
+    Route::delete('/admin/user/{id}',[SystemController::class, 'deleteUser'])->name('admin.users.delete');
+    Route::get('/admin/user/{id}/edit', [SystemController::class, 'EditUser'])->name('admin.users.edit');
+    Route::put('/admin/user/{id}', [SystemController::class, 'EditUser'])->name('admin.users.update');
     Route::get('/admin/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('admin.users.byRole');
+    Route::get('/admin/user/search', [SystemController::class, 'SearchUser'])->name('admin.users.search');
+
+    // Route điều hướng đến trang quản lý lịch hẹn
+
     Route::get('/admin/appointment', [SystemController::class, "getAppointment"])->name('admin.appointment');
     Route::get('/admin/transaction', [SystemController::class, "getTransaction"])->name('admin.transaction');
     Route::get('/admin/feedback', [SystemController::class, "getFeedback"])->name('admin.feedback');
