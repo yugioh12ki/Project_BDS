@@ -265,35 +265,52 @@ class SystemController extends Controller
     }
 
 
-
-
-
     public function createPropertyForm()
     {
         $provinces = $this->fetchProvinces();
         return view('_system.partialview.create_property', compact('provinces'));
     }
 
+    // Phần này của appoinment
+
+
     public function getAppointment()
     {
-        $columns = Schema::getColumnListing('appointment');
-        $appointment = Appointment::all();
-        if ($columns === null || $appointment->isEmpty()) {
+        $columns = Schema::getColumnListing('appointments');
+        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->get();
+        if ($columns === null || $appointments->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.appointment', compact('error')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.appointment', compact('columns','appointment')); // Đảm bảo biến truyền vào view là $users
+        return view('_system.appointment', compact('columns','appointments')); // Đảm bảo biến truyền vào view là $users
     }
 
     public function getTransaction()
     {
         $columns = Schema::getColumnListing('transactions');
-        $transaction = Transaction::all();
-        if ($columns === null || $transaction->isEmpty()) {
+        $transactions = Transaction::all();
+        if ($columns === null || $transactions->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.transaction', compact('error')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.transaction', compact('columns','transaction')); // Đảm bảo biến truyền vào view là $users
+        return view('_system.transaction', compact('columns','transactions')); // Đảm bảo biến truyền vào view là $users
+    }
+
+    public function getTransactionByType(Request $request, $type)
+    {
+        $columns = Schema::getColumnListing('transactions');
+
+        if ($type == 'all') {
+            $transactions = Transaction::all();
+        } else {
+            $transactions = Transaction::where('TypeTrans', $type)->get();
+        }
+
+        if ($columns === null || $transactions->isEmpty()) {
+            return response()->json(['error' => 'Không tìm thấy giao dịch nào.'], 404); // Truyền thông báo lỗi sang view
+        } else {
+            return view('_system.partialview.transaction_table', compact('columns', 'transactions')); // Đảm bảo biến truyền vào view là $users
+        }
     }
 
     public function getFeedback()

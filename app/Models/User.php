@@ -35,19 +35,36 @@ class User extends Authenticatable
         'PasswordHash',
     ];
 
-    protected function chusohuu()
+    // Mối quan hệ với bảng 'Property'
+
+    public function chusohuu()
     {
         return $this->hasMany(Property::class, 'OwnerID', 'UserID');
     }
 
-    protected function moigioi()
+    public function moigioi()
     {
         return $this->hasMany(Property::class, 'AgentID', 'UserID');
     }
 
-    protected function quantri()
+    public function quantri()
     {
         return $this->hasMany(Property::class, 'ApprovedBy', 'UserID');
+    }
+
+    // Mối quan hệ với bảng 'appointment'
+
+    public function appoint_agent()
+    {
+        return $this->hasMany(Appointment::class, 'AgentID', 'UserID');
+    }
+    public function appoint_owner()
+    {
+        return $this->hasMany(Appointment::class, 'OwnerID', 'UserID');
+    }
+    public function appoint_customer()
+    {
+        return $this->hasMany(Appointment::class, 'CusID', 'UserID');
     }
 
     public function getAuthPassword()
