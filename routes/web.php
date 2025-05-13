@@ -4,6 +4,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\OwnerController;
 use App\Http\Controllers\RegisterController;
 use PHPUnit\Event\Telemetry\System;
 use App\Http\Controllers\SystemController;
@@ -61,6 +62,7 @@ Route::middleware(['auth'])->group(function()
     Route::get('/admin/feedback', [SystemController::class, "getFeedback"])->name('admin.feedback');
     Route::get('/admin/commission', [SystemController::class, "getCommission"])->name('admin.commission');
 
+    Route::get('/owner', [OwnerController::class, 'owner'])->name('owner.dashboard');
     // Route đăng xuất
     Route::post('/logout', function () {
         Auth::logout(); // Đăng xuất người dùng
