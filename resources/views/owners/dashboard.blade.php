@@ -1,5 +1,5 @@
-<link href="{{ asset('css/owner.css') }}" rel="stylesheet">
-@extends('layouts.app') {{-- nếu bạn có layout chung --}}
+@extends('_layout._layowner.app')
+
 @section('title', 'Bảng điều khiển chủ sở hữu')
 
 @section('content')
