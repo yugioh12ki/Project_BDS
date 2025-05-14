@@ -1,6 +1,7 @@
 <!-- Sidebar -->
 <nav id="sidebarMenu" class="collapse d-lg-block sidebar bg-light">
     <div class="position-sticky">
+
         <div class="list-group list-group-flush">
 
             <a href="{{ route('owner.dashboard') }}" class="list-group-item list-group-item-action py-3">
