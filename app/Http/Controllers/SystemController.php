@@ -288,7 +288,9 @@ class SystemController extends Controller
     public function getTransaction()
     {
         $columns = Schema::getColumnListing('transactions');
-        $transactions = Transaction::all();
+        $transactions = Transaction::with([
+            'trans_owner', 'trans_agent', 'trans_cus', 'detailTransaction'
+            ])->get();
         if ($columns === null || $transactions->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.transaction', compact('error')); // Truyền thông báo lỗi sang view
@@ -315,13 +317,13 @@ class SystemController extends Controller
 
     public function getFeedback()
     {
-        $columns = Schema::getColumnListing('feedback');
-        $feedback = feedback::all();
-        if ($columns === null || $feedback->isEmpty()) {
+        $columns = Schema::getColumnListing('feedbacks');
+        $feedbacks = feedback::all();
+        if ($columns === null || $feedbacks->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.feedback', compact('error')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.feedback', compact('columns','feedback')); // Đảm bảo biến truyền vào view là $users
+        return view('_system.feedback', compact('columns','feedbacks')); // Đảm bảo biến truyền vào view là $users
     }
 
     public function getCommission()

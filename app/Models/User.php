@@ -67,6 +67,36 @@ class User extends Authenticatable
         return $this->hasMany(Appointment::class, 'CusID', 'UserID');
     }
 
+    // Mối quan hệ với bảng 'commission'
+
+    // Mối quan hệ với bảng transaction
+    public function trans_owner()
+    {
+        return $this->hasMany(Transaction::class, 'OwnerID', 'UserID');
+    }
+    public function trans_agent()
+    {
+        return $this->hasMany(Transaction::class, 'AgentID', 'UserID');
+    }
+
+    public function trans_customer()
+    {
+        return $this->hasMany(Transaction::class, 'CusID', 'UserID');
+    }
+
+    // Mối quan hệ với bảng 'feedback'
+    public function feedback_agent()
+    {
+        return $this->hasMany(Feedback::class, 'AgentID', 'UserID');
+    }
+
+    public function feedback_customer()
+    {
+        return $this->hasMany(Feedback::class, 'OwnerID', 'UserID');
+    }
+
+
+
     public function getAuthPassword()
     {
         return $this->PasswordHash;
@@ -81,4 +111,5 @@ class User extends Authenticatable
     {
         return strtolower($this->StatusUser) === 'active'; // So sánh không phân biệt chữ hoa/thường
     }
+
 }

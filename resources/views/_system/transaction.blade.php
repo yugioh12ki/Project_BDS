@@ -8,35 +8,31 @@
 @else
 <h1>Danh sách Giao dịch</h1>
 <div class="action-buttons">
-    <a href="{{-- route('users.create') --}}" class="btn btn-primary"><i class="fa fa-plus"></i> Thêm mới</a>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+        <i class="fa fa-plus"></i> Thêm mới
+    </button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
+        <div class="modal-dialog" style="max-width: 90%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTransactionModalLabel">Thêm mới Giao dịch</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form content for adding a new transaction -->
+                    @include('_system.partialview.edit_trans', [
+                        'transactions' => $transactions,
+                    ])
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                @foreach ($columns as $column )
-                    <th>{{ $column }}</th>
-                @endforeach
-                <th>Chức năng</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($transactions as $transaction)
-                <tr>
-                    @foreach ($columns as $column)
-                            <td>{{ $transaction->$column }}</td>
-                    @endforeach
-                    <td>
-                        <a href="{{--  route('users.edit', $user->UserID) --}}" class="action-icon"><i class="fas fa-edit"></i></a>
-                        <a href="{{-- route('users.delete', $user->UserID) --}}" class="action-icon" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"><i class="fas fa-trash"></i></a>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
+@include('_system.partialview.trans_table', ['transactions' => $transactions, 'columns' => $columns])
 @endif
 
 @endsection

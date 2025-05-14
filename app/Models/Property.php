@@ -24,7 +24,7 @@ class Property extends Model
 
     public function chiTiet()
     {
-        return $this->hasMany(DetailProperty::class, 'IdDetail', 'IdDetail');
+        return $this->belongsTo(DetailProperty::class, 'IdDetail', 'IdDetail');
     }
 
     public function chusohuu()

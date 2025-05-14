@@ -8,11 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class feedback extends Model
 {
     use HasFactory;
+    protected $table = 'feedbacks';
+    protected $primaryKey = 'FeedbackID';
+    public $incrementing = true;
+    public $timestamps = false;
 
-    protected $table = 'feedbacks'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
+    public function user_Cus()
+    {
+        return $this->belongsTo(User::class, 'CustomerID', 'UserID');
+    }
 
-    protected $primaryKey = 'FeedbackID'; // Chỉ định khóa chính là 'id'
-    public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
-
-
+    public function user_Agent()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
 }
