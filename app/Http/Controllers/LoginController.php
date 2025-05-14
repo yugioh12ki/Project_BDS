@@ -80,6 +80,8 @@ class LoginController extends Controller
             Auth::login($user);
             //dd(Auth::user());
 
+            session(['name' => $user->Name]);
+
             // Điều hướng theo vai trò
             return match ($user->Role) {
                 'Admin' => redirect()->route('admin.dashboard'),

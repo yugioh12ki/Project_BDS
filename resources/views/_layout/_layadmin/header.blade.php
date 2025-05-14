@@ -8,13 +8,18 @@
         <li><a href="/">Trang chủ</a></li>
       </ul>
 
-      <div class="navbar__right" id="adminMenu" style="display: none;">
-        <div class="dropdown">
-          <button class="dropdown-toggle">Admin ▼</button>
-          <div class="dropdown-menu">
-            <a href="#" onclick="logout()">Đăng xuất</a>
+      <div class="navbar__right">
+        @if(Auth::check())
+          <div class="dropdown">
+            <button class="dropdown-toggle">Xin chào, {{ Auth::user()->Name }} ▼</button>
+            <div class="dropdown-menu">
+              <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="dropdown-item">Đăng xuất</button>
+              </form>
+            </div>
           </div>
-        </div>
+        @endif
       </div>
     </nav>
 </header>

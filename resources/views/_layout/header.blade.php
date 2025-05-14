@@ -3,7 +3,7 @@
         <div class="navbar__left">
           <img src="#" alt="" class="navbar__logo">
           <ul class="navbar__menu">
-            <li><a href="#">Trang chủ</a></li>
+            <li><a href="{{ route('home') }}">Trang chủ</a></li>
             <li></li>
             <li><a href="#">Cho Thuê</a></li>
             <li></li>

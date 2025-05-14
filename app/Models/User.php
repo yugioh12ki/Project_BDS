@@ -20,12 +20,61 @@ class User extends Authenticatable
     protected $keyType = 'string'; // Nếu khóa chính là chuỗi
 
     protected $fillable = [
-        'Email','PasswordHash','Role','StatusUser','Name'
+        'Name',
+        'Email',
+        'Birth',
+        'Sex',
+        'IdentityCard',
+        'Phone',
+        'Address',
+        'Ward',
+        'District',
+        'Province',
+        'Role',
+        'StatusUser',
+        'PasswordHash',
     ];
+
+    // Mối quan hệ với bảng 'Property'
+
+    public function chusohuu()
+    {
+        return $this->hasMany(Property::class, 'OwnerID', 'UserID');
+    }
+
+    public function moigioi()
+    {
+        return $this->hasMany(Property::class, 'AgentID', 'UserID');
+    }
+
+    public function quantri()
+    {
+        return $this->hasMany(Property::class, 'ApprovedBy', 'UserID');
+    }
+
+    // Mối quan hệ với bảng 'appointment'
+
+    public function appoint_agent()
+    {
+        return $this->hasMany(Appointment::class, 'AgentID', 'UserID');
+    }
+    public function appoint_owner()
+    {
+        return $this->hasMany(Appointment::class, 'OwnerID', 'UserID');
+    }
+    public function appoint_customer()
+    {
+        return $this->hasMany(Appointment::class, 'CusID', 'UserID');
+    }
 
     public function getAuthPassword()
     {
         return $this->PasswordHash;
+    }
+
+    public function setPasswordAttribute($password)
+    {
+        $this->attributes['PasswordHash'] = bcrypt($password);
     }
 
     public function isActive()
