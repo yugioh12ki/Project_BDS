@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Image extends Model
 {
     use HasFactory;
+
+    protected $table = 'propertyimage';
+
+    protected $primaryKey = 'ImageID';
+    public $timestamps = false;
 }

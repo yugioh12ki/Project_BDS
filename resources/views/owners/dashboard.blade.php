@@ -1,10 +1,7 @@
 @extends('_layout._layowner.app')
-
-@section('title', 'Bảng điều khiển chủ sở hữu')
+@section('title', 'Bảng điều khiển')
 
 @section('content')
-<div class="owner-dashboard">
-    <h1>Chào mừng Chủ sở hữu!</h1>
-    <p>Đây là trang bảng điều khiển dành riêng cho bạn.</p>
-</div>
+<h2>Xin chào Chủ sở hữu!</h2>
+<p>Quản lý bất động sản, lịch hẹn, và giao dịch tại đây.</p>
 @endsection

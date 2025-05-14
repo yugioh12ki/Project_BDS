@@ -62,7 +62,13 @@ Route::middleware(['auth'])->group(function()
     Route::get('/admin/feedback', [SystemController::class, "getFeedback"])->name('admin.feedback');
     Route::get('/admin/commission', [SystemController::class, "getCommission"])->name('admin.commission');
 
-    Route::get('/owner', [OwnerController::class, 'owner'])->name('owner.dashboard');
+    Route::get('/owner', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
+    Route::get('/owner/property', [OwnerController::class, 'listProperty'])->name('owner.property.index');
+    Route::get('/owner/property/create', [OwnerController::class, 'createProperty'])->name('owner.property.create');
+    Route::post('/owner/property', [OwnerController::class, 'storeProperty'])->name('owner.property.store');
+    Route::get('/owner/appointments', [OwnerController::class, 'appointments'])->name('owner.appointments.index');
+    Route::get('/owner/transactions', [OwnerController::class, 'transactions'])->name('owner.transactions.index');
+
     // Route đăng xuất
     Route::post('/logout', function () {
         Auth::logout(); // Đăng xuất người dùng

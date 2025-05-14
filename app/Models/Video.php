@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Video extends Model
 {
     use HasFactory;
+
+    protected $table = 'propertyvideos';
+
+    protected $primaryKey = 'VideoID';
+    public $timestamps = false;
 }
