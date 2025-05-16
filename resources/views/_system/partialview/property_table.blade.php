@@ -17,8 +17,19 @@
             <tr>
                 @foreach ($columns as $column )
 
-                        <th>{{ $column }}</th>
-
+                    @if($column === 'PostedDate')
+                        <th>Ngày đăng</th>
+                    @elseif($column === 'PropertyType')
+                        <th>Loại hình</th>
+                    @elseif($column === 'PropertyID')
+                        <th>ID</th>
+                    @elseif($column === 'OwnerID')
+                        <th>Chủ sở hữu</th>
+                    @else
+                        @if($column !== 'IdDetail' && $column !== 'Description' && $column !== 'AgentID' && $column !== 'ApprovedBy' && $column !== 'ApprovedDate')
+                            <th>{{ $column }}</th>
+                        @endif
+                    @endif
                 @endforeach
 
                 <th>Chức năng</th>
@@ -32,20 +43,22 @@
                             <td>{{ optional($property->danhMuc)->ten_pro ?? 'No data'}}</td>
                             @elseif ($column === 'OwnerID')
                             <td>{{ optional($property->chusohuu)->Name ?? 'No data'}}</td>
-                            @elseif ($column === 'AgentID')
-                            <td>{{ optional($property->moigioi)->Name ?? ' '}}</td>
-                            @elseif ($column === 'ApprovedBy')
-                            <td>{{ optional($property->quantri)->Name ?? ' '}}</td>
-                            @elseif ($column === 'PostedDate' || $column === 'ApprovedDate' )
+
+                            @elseif ( $column === 'PostedDate' )
                             <td>{{ $property->$column === '0000-00-00' ? '': $property->$column }}</td>
                             @else
-                            <td>{{ $property->$column }}</td>
+                                @if($column !=='IdDetail' && $column !=='Description' && $column !=='AgentID' && $column !=='ApprovedBy' && $column !=='ApprovedDate')
+                                    <td>{{ $property->$column }}</td>
+                                @endif
                         @endif
                     @endforeach
                     <td>
                         <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal{{ $property->PropertyID }}">
+                                <i class="fas fa-eye"></i> Xem
+                            </button>
                             <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal{{ $property->PropertyID }}">
-                                <i class="fas fa-edit"></i> Sửa
+                                <i class="fas fa-edit"></i> Cập nhật kiểm duyệt
                             </button>
 
                             <!-- Nút mở modal -->
@@ -58,11 +71,11 @@
                 </tr>
                 <!-- Modal riêng cho từng Bat dong san -->
                 <!-- Modal xóa -->
-                <div class="modal fade" id="deleteModal{{ $property->PropertyID }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $property->Property_ID }}" aria-hidden="true">
+                <div class="modal fade" id="deleteModal{{ $property->PropertyID }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $property->PropertyID }}" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="deleteModalLabel{ $property->Property_ID }}">Xác nhận xóa</h5>
+                                <h5 class="modal-title" id="deleteModalLabel{{ $property->PropertyID }}">Xác nhận xóa</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
@@ -71,7 +84,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                <form action="" method="POST" style="display: inline;">
+                                <form action="{{ route('admin.property.delete', $property->PropertyID) }}" method="POST" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger">Xóa</button>
@@ -81,11 +94,36 @@
                     </div>
                 </div>
 
-                <!-- Modal chỉnh sửa -->
+
+                <!-- Modal xem chi tiết -->
+                <div class="modal fade" id="viewModal{{ $property->PropertyID }}" tabindex="-1" aria-labelledby="viewModalLabel{{ $property->PropertyID }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="viewModalLabel{{ $property->PropertyID }}">Chi tiết Bất Động Sản</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                @include('_system.partialview.info_property', [
+                                    'property' => $property,
+                                    'owners' => $owners,
+                                    'agents' => $agents,
+                                    'admins' => $admins,
+                                    'categories' => $categories,
+                                    'modalId' => $property->PropertyID // truyền id để dùng cho tab-pane
+                                ])
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal kiểm duyệt bài đăng của chủ sở hữu -->
                 <div class="modal fade" id="editModal{{ $property->PropertyID }}" tabindex="-1" aria-labelledby="editModalLabel{{ $property->PropertyID }}" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
-                            <form action="" method="POST">
+                            <form action="{{ route('admin.property.update', $property->PropertyID) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <div class="modal-header">
@@ -93,22 +131,9 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <ul class="nav nav-tabs" id="propertyTab{{ $property->PropertyID }}" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="info-tab{{ $property->PropertyID }}" data-bs-toggle="tab" data-bs-target="#info{{ $property->PropertyID }}" type="button" role="tab">Thông tin bất động sản</button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="detail-tab{{ $property->PropertyID }}" data-bs-toggle="tab" data-bs-target="#detail{{ $property->PropertyID }}" type="button" role="tab">Chi tiết bất động sản</button>
-                                        </li>
-                                    </ul>
                                     <div class="tab-content mt-3">
                                         @include('_system.partialview.edit_property', [
                                             'property' => $property,
-                                            'owners' => $owners,
-                                            'agents' => $agents,
-                                            'admins' => $admins,
-                                            'categories' => $categories,
-                                            'modalId' => $property->PropertyID // truyền id để dùng cho tab-pane
                                         ])
                                     </div>
                                 </div>

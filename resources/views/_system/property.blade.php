@@ -6,88 +6,93 @@
         {{ $error }}
     </div>
 @else
-<h1>Danh sách Property</h1>
+<h1>Danh sách Thuộc Bất Động Sản</h1>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    {{-- Combobox chọn type --}}
-    <div class="d-flex align-items-center">
-        <label for="type-select" class="me-2">Loại hình:</label>
-        <select id="type-select" class="form-control" style="width: 200px;">
-            <option value="all">Sale/Rent</option>
-            <option value="Sale">Sale</option>
-            <option value="Rent">Rent</option>
-        </select>
-    </div>
-
-    <div style="margin: 20px"></div>
-
-    {{-- Ô input và button tìm kiếm --}}
-    <div class="d-flex align-items-center">
-        <form action="#" class="d-flex align-items-center">
-            <input type="text" name="keyword" id="search-input" class="form-control" placeholder="Nhập từ khóa tìm kiếm" style="width: 300px;">
-            <button type="submit" class="btn btn-secondary ms-2">
-                <i class="fa fa-search"></i> Tìm kiếm
-            </button>
-        </form>
-    </div>
+{{-- Thực hiện tab danh sách danh mục | Kiểm duyệt BĐS và Phân công môi giới --}}
+<div style="margin: 20px">
+    <ul class="nav nav-tabs" id="propertyTabs">
+        <li class="nav-item">
+            <a class="nav-link active" id="property-list-tab" data-bs-toggle="tab" href="#property-list-content">Kiểm Duyệt Bất Động Sản</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="property-assign-tab" data-bs-toggle="tab" href="#property-assign-content">Phân công môi giới</a>
+        </li>
+    </ul>
 </div>
 
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#propertyModal">
-    <i class="fa fa-plus"></i> Thêm mới
-</button>
-
-
-
-<div id="property-list">
-    @if(isset($error))
-    <div class="alert alert-danger">{{ $error }}</div>
-    @else
-    @include('_system.partialview.property_table', ['property' => $properties, 'columns' => $columns])
-    @endif
-</div>
-
-
-{{-- Modal thêm property --}}
-<div class="modal fade" id="propertyModal" tabindex="-1" aria-labelledby="propertyModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <form>
-          <div class="modal-header">
-            <h5 class="modal-title" id="propertyModalLabel">Thêm Bất Động Sản</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-          </div>
-          <div class="modal-body">
-            <ul class="nav nav-tabs" id="propertyTab" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">Thông tin bất động sản</button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail" type="button" role="tab">Chi tiết bất động sản</button>
-              </li>
-            </ul>
-            <div class="tab-content mt-3">
-                @include('_system.partialview.create_property', ['owners' => $owners, 'agents' => $agents, 'categories' => $categories])
+<div class="tab-content">
+    <!-- Tab Kiểm duyệt bất động sản -->
+    <div class="tab-pane fade show active" id="property-list-content">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            {{-- Combobox chọn type --}}
+            <div class="d-flex align-items-center">
+                <label for="type-select" class="me-2">Lọc danh sách:</label>
+                <select id="type-select" class="form-control" style="width: 200px;">
+                    <option value="all">Tất cả</option>
+                    <option value="Sale">Sale</option>
+                    <option value="Rent">Rent</option>
+                    <option value="inactive">Ngừng hoạt động</option>
+                    <option value="active">Đã Duyệt</option>
+                    <option value="pending">Chờ duyệt</option>
+                </select>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-            <button type="submit" class="btn btn-primary">Lưu</button>
-          </div>
-        </form>
-      </div>
+
+            <div style="margin: 20px"></div>
+
+            {{-- Ô input và button tìm kiếm --}}
+            <div class="d-flex align-items-center">
+                <form action="{{ route('admin.property.search') }}" class="d-flex align-items-center">
+                    <input type="text" name="keyword" id="search-input" class="form-control" placeholder="Nhập từ khóa tìm kiếm" style="width: 300px;">
+                    <button type="submit" class="btn btn-secondary ms-2">
+                        <i class="fa fa-search"></i> Tìm kiếm
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="property-list">
+            @if(isset($error))
+            <div class="alert alert-danger">{{ $error }}</div>
+            @else
+            @include('_system.partialview.property_table', ['properties' => $properties, 'columns' => $columns])
+            @endif
+        </div>
+    </div>
+
+    <!-- Tab Phân công môi giới -->
+    <div class="tab-pane fade" id="property-assign-content">
+        <div class="mt-3">
+            <!-- Thêm bảng phân công môi giới ở đây -->
+            @if(isset($error))
+                <div class="alert alert-info">Không có bất động sản cần phân công.</div>
+            @else
+                @include('_system.partialview.assign_property', ['properties' => $properties, 'columns' => $columns])
+            @endif
+        </div>
     </div>
 </div>
+
+
+
 
 <script>
     const typeSelect = document.getElementById('type-select');
     const propertyList = document.getElementById('property-list');
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+
 
     if (typeSelect && propertyList) {
         typeSelect.addEventListener('change', function () {
             const type = this.value;
-
-            // Gửi yêu cầu AJAX để lấy danh sách property theo role
-            fetch(`/admin/property/type/${type}`)
+            let url = '';
+            if (type === 'Sale' || type === 'Rent' || type === 'all') {
+                url = `/admin/property/type/${type}`;
+            } else
+            {
+                url = `/admin/property/status/${type}`;
+            }
+            fetch(url)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Không tìm thấy dữ liệu.');
@@ -105,6 +110,32 @@
             });
         });
     }
+
+    // Xử lý sự kiện khi người dùng nhập từ khóa tìm kiếm
+    searchButton.addEventListener('click', function (event) {
+        const keyword = searchInput.value;
+
+        fetch(`/admin/property/search?keyword=${encodeURIComponent(keyword)}`)
+            .then(response => {
+            if (!response.ok) {
+                throw new Error('Không tìm thấy dữ liệu.');
+            }
+            return response.text();
+            })
+            .then(html => {
+                propertyList.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                propertyList.innerHTML = `
+                    <div class="alert alert-danger">Không tìm thấy property nào.</div>
+                `;
+            });
+
+        });
+
+
+
 </script>
 
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetailProperty;
 use Illuminate\Http\Request;
 
 use App\Models\User;
@@ -32,7 +33,7 @@ class SystemController extends Controller
     public function getUser()
     {
         $columns = Schema::getColumnListing('user');
-        $users = User::all(); // Sửa $user thành $users
+        $users = User::paginate(10); // Sửa $user thành $users
         if ($columns === null || $users->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.users', compact('error')); // Truyền thông báo lỗi sang view
@@ -50,11 +51,34 @@ class SystemController extends Controller
 
         if($role == 'all')
         {
-            $users = User::all();
+            $users = User::paginate(10);
         }
         else
         {
-            $users = User::where('role', $role)->get();
+            $users = User::where('role', $role)->paginate(10);
+        }
+        $columns = Schema::getColumnListing('user');
+        if ($columns === null || $users->isEmpty()) {
+            return response()->json(['error' => 'Không tìm thấy user nào.'], 404); // Truyền thông báo lỗi sang view
+        }
+        else {
+            return view('_system.partialview.user_table', compact('columns','users')); // Đảm bảo biến truyền vào view là $users
+        }
+    }
+
+    public function getUserByStatus(Request $request,$status)
+    {
+        if (empty($columnsToShow)) {
+            $columnsToShow = Schema::getColumnListing('user');
+        }
+
+        if($status == 'all')
+        {
+            $users = User::paginate(10);
+        }
+        else
+        {
+            $users = User::where('StatusUser', $status)->paginate(10);
         }
         $columns = Schema::getColumnListing('user');
         if ($columns === null || $users->isEmpty()) {
@@ -114,7 +138,18 @@ class SystemController extends Controller
         return redirect()->route('admin.users')->with('success', 'Người dùng đã được tạo thành công.');
     }
 
-    public function EditUser(Request $request, $id)
+    public function editUserForm($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return redirect()->back()->withErrors(['error' => 'Người dùng không tồn tại.'], 404);
+        }
+        $columns = Schema::getColumnListing('user');
+        return view('_system.partialview.edit_user', compact('user'));
+    }
+
+    public function UpdateUser(Request $request, $id)
     {
         $user = User::find($id);
 
@@ -125,7 +160,7 @@ class SystemController extends Controller
         // Xử lý cập nhật thông tin người dùng
         $validated = $request->validate([
             'name' => 'required|max:255',
-            'email' => 'required|email|unique:user,Email,' . $id,
+            'email' => 'required|email|unique:user,Email,' . $id . ',UserID',
             'birth' => 'required',
             'sex' => 'required',
             'identity_card' => 'required|max:12',
@@ -135,15 +170,34 @@ class SystemController extends Controller
             'district' => 'required|max:255',
             'province' => 'required|max:255',
             'role' => 'required',
-            'password' => 'nullable|min:6|max:30',
+            'password' => 'required|min:6|max:30',
+            'status' => 'required|in:active,inactive',
         ]);
 
-        // Nếu password không được nhập, loại bỏ khỏi mảng validated
+        // Map lại tên trường cho đúng DB
+        $data = [
+            'Name' => $validated['name'],
+            'Email' => $validated['email'],
+            'Birth' => $validated['birth'],
+            'Sex' => $validated['sex'],
+            'IdentityCard' => $validated['identity_card'],
+            'Phone' => $validated['phone'],
+            'Address' => $validated['address'],
+            'Ward' => $validated['ward'],
+            'District' => $validated['district'],
+            'Province' => $validated['province'],
+            'Role' => $validated['role'],
+            'StatusUser' => $validated['status'],
+            'PasswordHash' => $validated['password'],
+        ];
+
+        // Nếu có nhập password mới thì cập nhật
         if (empty($validated['password'])) {
-            unset($validated['password']);
+           $user->password  = $validated['password']; // Giữ nguyên mật khẩu cũ
         }
 
-        $user->update($validated);
+
+        $user->update($data);
 
         return redirect()->route('admin.users')->with('success', 'Người dùng đã được cập nhật thành công.');
     }
@@ -187,10 +241,9 @@ class SystemController extends Controller
                   ->orWhereRaw('LOWER(Email) LIKE ?', ['%' . strtolower($keyword) . '%'])
                   ->orWhereRaw('LOWER(Phone) LIKE ?', ['%' . strtolower($keyword) . '%']);
         })
-        ->get();
+        ->paginate(12);
 
-        // Chuyển đổi kết quả thành mảng thuần túy (nếu cần)
-        $users = $users->toArray();
+
 
         // Kiểm tra nếu không có dữ liệu
         if (empty($users)) {
@@ -229,6 +282,8 @@ class SystemController extends Controller
     //     }
     // }
 
+    // Phần này của property
+
     public function getProperty()
     {
         $columns = Schema::getColumnListing('properties');
@@ -250,20 +305,110 @@ class SystemController extends Controller
         $columns = Schema::getColumnListing('properties');
 
         if ($type == 'all') {
-            $properties = Property::with(['danhMuc'])->get();
+            $properties = Property::with(['danhMuc'])->paginate(10); // Sửa pageinate thành paginate
         } else {
             $properties = Property::with(['danhMuc'])
                 ->where('TypePro', $type)
-                ->get();
+                ->paginate(10);
         }
 
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
         if ($columns === null || $properties->isEmpty()) {
-            return response()->json(['error' => 'Không tìm thấy bất động sản nào.'], 404); // Truyền thông báo lỗi sang view
+            return view('_system.partialview.property_table', compact('error'));
         } else {
-            return view('_system.partialview.property_table', compact('columns', 'properties')); // Đảm bảo biến truyền vào view là $users
+            return view('_system.partialview.property_table', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
         }
     }
 
+    public function getPropertyByStatus(Request $request, $status)
+    {
+        $columns = Schema::getColumnListing('properties');
+
+        if ($status == 'all') {
+            $properties = Property::with(['danhMuc'])->paginate(10); // Sửa pageinate thành paginate
+        } else {
+            $properties = Property::with(['danhMuc'])
+                ->where('Status', $status)
+                ->paginate(10);
+        }
+
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+        if ($columns === null || $properties->isEmpty()) {
+            return view('_system.partialview.property_table', compact('error'));
+        } else {
+            return view('_system.partialview.property_table', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
+        }
+    }
+
+    public function SearchProperty(Request $request)
+    {
+        $keyword = $request->input('keyword');
+
+        $columns = Schema::getColumnListing('properties');
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+
+        $properties = Property::with(['danhMuc', 'chusohuu', 'moigioi', 'quantri'])
+                    ->whereRaw('LOWER(Title) LIKE ?', ['%' . strtolower($keyword) . '%'])
+                    ->paginate(10);
+
+        if ($columns === null || $properties->isEmpty()) {
+            return view('_system.partialview.property_table', compact('error'));
+        }
+
+        return view('_system.property', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
+    }
+
+    public function getPropertyById($id)
+    {
+        $property = Property::with(['chitiet'])->find($id);
+        if (!$property) {
+            return redirect()->back()->withErrors(['error' => 'Bất động sản không tồn tại.'], 404);
+        }
+        $columns = Schema::getColumnListing('properties');
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+        return view('_system.partialview.info_property', compact('property','columns','owners','agents','admins','categories'));
+    }
+
+    public function EditPropertyByStatus(Request $request, $id)
+    {
+        $property = Property::find($id);
+
+        if (!$property) {
+            return redirect()->back()->withErrors(['error' => 'Bất động sản không tồn tại.'], 404);
+        }
+
+        // Xử lý cập nhật thông tin bất động sản
+        $validated = $request->validate([
+            'status' => 'required|in:active,inactive,pending,rented,sold',
+            'approvedDate' => 'nullable|date',
+            'approvedBy' => 'nullable',
+        ]);
+
+        // Cập nhật trạng thái bất động sản
+        $property->Status = $validated['status'];
+
+        // Nếu bất động sản được duyệt (active), cập nhật người duyệt và ngày duyệt
+        if ($validated['status'] == 'active' && ($property->getOriginal('Status') != 'active')) {
+            $property->ApprovedBy = $request->input('approvedBy', Auth::id());
+            $property->ApprovedDate = now();
+        }
+
+        $property->save();
+
+        return redirect()->route('admin.property')->with('success', 'Trạng thái bất động sản đã được cập nhật thành công.');
+    }
 
     public function createPropertyForm()
     {
@@ -271,8 +416,9 @@ class SystemController extends Controller
         return view('_system.partialview.create_property', compact('provinces'));
     }
 
+    //
     // Phần này của appoinment
-
+    //
 
     public function getAppointment()
     {
@@ -315,6 +461,11 @@ class SystemController extends Controller
         }
     }
 
+
+    //
+    // Phần này của feedback
+    //
+
     public function getFeedback()
     {
         $columns = Schema::getColumnListing('feedbacks');
@@ -326,15 +477,83 @@ class SystemController extends Controller
         return view('_system.feedback', compact('columns','feedbacks')); // Đảm bảo biến truyền vào view là $users
     }
 
+    // Hàm lọc phản hồi theo trạng thái và số sao
+
+    public function getFeedbackByStatusRating(Request $request)
+    {
+        $columns = Schema::getColumnListing('feedbacks');
+        $status = $request->query('status', 'all');
+        $min = $request->query('min', 'all');
+        $max = $request->query('max', 'all');
+
+        $query = feedback::query();
+
+        if ($status !== 'all') {
+            $query->where('Status', $status);
+        }
+
+        if ($min !== 'all' && $max !== 'all') {
+            $query->whereBetween('Rating', [(float)$min, (float)$max]);
+        }
+
+        $feedbacks = $query->paginate(10);
+
+        // Luôn trả về view, KHÔNG trả về response()->json hay status 404
+    $error = null;
+    if ($columns === null) {
+        $error = 'Không lấy được cấu trúc bảng.';
+    }
+    // Không cần else, cứ trả về view, view sẽ tự kiểm tra $feedbacks->isEmpty()
+
+    return view('_system.partialview.feedback_table', compact('columns', 'feedbacks', 'error'));
+
+    }
+
+
+    public function updatefeedback(Request $request, $id)
+    {
+        $feedback = feedback::find($id);
+
+        if (!$feedback) {
+            return redirect()->back()->withErrors(['error' => 'Phản hồi không tồn tại.'], 404);
+        }
+
+        // Xử lý cập nhật thông tin phản hồi
+        $validated = $request->validate([
+            'status' => 'required|in:Chờ duyệt,Đã duyệt,Hủy bỏ',
+        ]);
+
+        // Cập nhật trạng thái phản hồi
+        $feedback->Status = $validated['status'];
+        $feedback->save();
+
+        return redirect()->back()->with('success', 'Trạng thái phản hồi đã được cập nhật thành công.');
+    }
+
+    public function deletefeedback($id)
+    {
+        $feedback = feedback::find($id);
+        if (!$feedback) {
+            return redirect()->back()->withErrors(['error' => 'Phản hồi không tồn tại.'], 404);
+        }
+        $feedback->delete();
+
+        return redirect()->route('admin.feedback')->with('success', 'Phản hồi đã được xóa thành công.');
+    }
+
+    //
+    // Phần này của commission
+    //
+
     public function getCommission()
     {
         $columns = Schema::getColumnListing('commission');
-        $commission = Commission::all();
-        if ($columns === null || $commission->isEmpty()) {
+        $commissions = Commission::all();
+        if ($columns === null || $commissions->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.commission', compact('error')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.commission', compact('columns','commission')); // Đảm bảo biến truyền vào view là $users
+        return view('_system.commission', compact('columns','commissions')); // Đảm bảo biến truyền vào view là $users
     }
 
 

@@ -10,6 +10,7 @@
         'resources/js/app.js',
         'resources/sass/app.scss',
         'resources/js/dscactinh.js',
+        'resources/js/dscactinh_edit.js',
     ])
     <title>Document</title>
 

@@ -74,7 +74,7 @@
                                     <h5 class="modal-title" id="editModalLabel{{ $user->UserID }}">Chỉnh sửa người dùng</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
-                                <form action="{{ route('admin.users.edit', $user->UserID) }}" method="POST">
+                                <form action="{{ route('admin.users.update', $user->UserID) }}" method="POST">
                                     @csrf
                                     @method('PUT')
                                     <div class="modal-body">
@@ -91,6 +91,9 @@
                 @endforeach
             </tbody>
         </table>
+        <div class="d-flex justify-content-center mt-3">
+            {{ $users->links() }}
+        </div>
     </div>
 @endif
 

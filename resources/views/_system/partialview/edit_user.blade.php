@@ -8,16 +8,13 @@
     </div>
 @endif
 
-<form id="addUserForm" action="{{ isset($user) ? route('admin.users.edit', $user->UserID) : route('admin.users.store') }}" method="POST">
-    @if (isset($user))
-        @method('PUT')
-    @endif
-    @csrf
-    {{-- Name --}}
-    <div class="mb-3">
-        <label for="Name" class="form-label">Tên User</label>
-        <input type="text" class="form-control" id="name" name="name" placeholder="Nhập họ tên" value="{{ $user->Name ?? '' }}" required>
-    </div>
+{{-- Bỏ form ở đây, form sẽ nằm ở ngoài khi include --}}
+
+{{-- Name --}}
+<div class="mb-3">
+    <label for="Name" class="form-label">Tên User</label>
+    <input type="text" class="form-control" id="name" name="name" placeholder="Nhập họ tên" value="{{ $user->Name ?? '' }}" required>
+</div>
 
     {{-- Email --}}
     <div class="mb-3">
@@ -70,6 +67,14 @@
         <input type="text" class="form-control" id="phone" name="phone" placeholder="Nhập số điện thoại" value="{{ $user->Phone ?? '' }}" required pattern="\d{10}">
     </div>
 
+    {{-- Status --}}
+    <div class="mb-3">
+        <label for="userStatus" class="form-label">Trạng thái</label>
+        <select class="form-control" id="status" name="status" required>
+            <option value="active" {{ (isset($user) && $user->StatusUser == 'active') ? 'selected' : '' }}>Hoạt động</option>
+            <option value="inactive" {{ (isset($user) && $user->StatusUser == 'inactive') ? 'selected' : '' }}>Ngừng hoạt động</option>
+        </select>
+
     {{-- Address --}}
     <div class="mb-3">
         <label for="userAddress" class="form-label">Địa chỉ</label>
@@ -104,4 +109,3 @@
     </div>
 
 
-</form>

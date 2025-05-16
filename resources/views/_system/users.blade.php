@@ -10,13 +10,15 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     {{-- Combobox chọn role --}}
     <div class="d-flex align-items-center">
-        <label for="role-select" class="me-2">Chọn Role:</label>
+        <label for="role-select" class="me-2">Lọc danh sách:</label>
         <select id="role-select" class="form-control" style="width: 200px;">
             <option value="all">Tất cả</option>
             <option value="Admin">Admin</option>
             <option value="Agent">Agent</option>
             <option value="Owner">Owner</option>
             <option value="Customer">Customer</option>
+            <option value="Active">Hoạt động</option>
+            <option value="Inactive">Ngừng hoạt động</option>
         </select>
     </div>
 
@@ -65,6 +67,7 @@
     @else
     @include('_system.partialview.user_table', ['users' => $users, 'columns' => $columns])
     @endif
+
 </div>
 
 @if(session('showModal'))
@@ -78,25 +81,31 @@
 
 <script>
     document.getElementById('role-select').addEventListener('change', function () {
-        const role = this.value;
+        const value = this.value;
 
-        // Gửi yêu cầu AJAX để lấy danh sách user theo role
-        fetch(`/admin/user/role/${role}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Không tìm thấy dữ liệu.');
-            }
-            return response.text();
-        })
-        .then(html => {
-            document.getElementById('user-list').innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('user-list').innerHTML = `
-                <div class="alert alert-danger">Không tìm thấy user nào.</div>
-            `;
-        });
+        let url = '';
+        if (value === 'Active' || value === 'Inactive') {
+            url = `/admin/user/status/${value}`;
+        } else {
+            url = `/admin/user/role/${value}`;
+        }
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không tìm thấy dữ liệu.');
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById('user-list').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('user-list').innerHTML = `
+                    <div class="alert alert-danger">Không tìm thấy user nào.</div>
+                `;
+            });
     });
 
     document.querySelectorAll('.column-checkbox').forEach(checkbox => {

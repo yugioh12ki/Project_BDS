@@ -76,7 +76,7 @@
     {{-- Ward --}}
     <div class="mb-3">
         <label for="userWard" class="form-label">Phường/Xã</label>
-        <select class="form-select" id="ward" name="ward" required>
+        <select class="form-select" id="ward" name="ward" data-selected="" required>
             <option value="">Chọn phường/Xã</option>
             {{-- Các tùy chọn phường sẽ được thêm vào đây --}}
         </select>
@@ -85,7 +85,7 @@
     {{-- District --}}
     <div class="mb-3">
         <label for="userDistrict" class="form-label">Quận</label>
-        <select class="form-select" id="district" name="district" required>
+        <select class="form-select" id="district" name="district" data-selected="" required>
             <option value="">Chọn quận</option>
             {{-- Các tùy chọn quận sẽ được thêm vào đây --}}
         </select>
@@ -94,7 +94,7 @@
     {{-- Province --}}
     <div class="mb-3">
         <label for="userProvince" class="form-label">Tỉnh</label>
-        <select class="form-select" id="province" name="province" required>
+        <select class="form-select" id="province" name="province" data-selected="" required>
             <option value="">Chọn tỉnh</option>
             {{-- Các tùy chọn tỉnh sẽ được thêm vào đây --}}
         </select>
@@ -103,3 +103,5 @@
     {{-- Submit Button --}}
     <button type="submit" class="btn btn-primary">Lưu</button>
 </form>
+
+<script src="{{ asset('js/dscactinh.js') }}"></script>
