@@ -8,7 +8,8 @@
         'resources/sass/header.scss',
         'resources/sass/footer.scss',
         'resources/sass/home.scss',
-        'resources/js/home.js'
+        'resources/js/home.js',
+        'resources/js/user-dropdown.js',
         ])
     {{-- Từ bản laravel 12x trở lên sử dụng @vite để điều hướng scss --}}
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>

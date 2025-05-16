@@ -1,14 +1,14 @@
-* {
+* { 
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-  }
+}
 
-  body {
+body {
     font-family: Arial, sans-serif;
-  }
+}
 
-  .navbar {
+.navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -17,31 +17,31 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
     &__left {
-      display: flex;
-      align-items: center;
+        display: flex;
+        align-items: center;
     }
 
     &__logo {
-      width: 40px;
-      height: 40px;
-      margin-right: 20px;
-      border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        margin-right: 20px;
+        border-radius: 50%;
     }
 
     &__menu {
-      list-style: none;
-      display: flex;
-      gap: 20px;
+        list-style: none;
+        display: flex;
+        gap: 20px;
 
-      li a {
-        text-decoration: none;
-        color: #ffffff;
-        font-size: 14px;
+        li a {
+            text-decoration: none;
+            color: #ffffff;
+            font-size: 14px;
 
-        &:hover {
-          color: #007bff;
+            &:hover {
+                color: #007bff;
+            }
         }
-      }
     }
 
     &__right {
@@ -59,51 +59,97 @@
             border: 1px solid #ddd;
             cursor: pointer;
             font-size: 0.875rem;
-            color:#ffffff;
+            color: #ffffff;
 
             &:hover {
-              background-color: #ff0000;
+                background-color: #ff0000;
             }
 
             .icon {
-              width: 1.25rem;
-              height: 1.25rem;
-              stroke: rgb(255, 254, 254);
+                width: 1.25rem;
+                height: 1.25rem;
+                stroke: rgb(255, 254, 254);
             }
 
             span {
-              white-space: nowrap;
+                white-space: nowrap;
             }
-          }
-      .btn-login {
-        padding: 12px 20px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 14px;
-        cursor: pointer;
-
-        &:hover {
-          background-color: #f00202;
         }
-      }
 
-      .btn-register {
-        padding: 12px 20px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 14px;
-        cursor: pointer;
+        .btn-login, .btn-register {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
 
-        &:hover {
-          background-color: #f00202;
+            &:hover {
+                background-color: #f00202;
+            }
         }
-      }
+
+        // Dropdown user styles
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+
+            &-btn {
+                background: none;
+                border: none;
+                font-size: 18px;
+                color: #222;
+                cursor: pointer;
+                padding: 8px 16px;
+                border-radius: 8px;
+                transition: background 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+
+                &:hover, &:focus {
+                    background: #E3DAC9;
+                }
+            }
+
+            &-content {
+                display: none;
+                position: absolute;
+                right: 0;
+                background: #fff;
+                min-width: 120px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+                z-index: 100;
+                border-radius: 8px;
+                margin-top: 6px;
+                overflow: hidden; // đẹp khi hover
+
+                &.show {
+                    display: block;
+                }
+
+                form {
+                    margin: 0;
+                }
+
+                .logout-btn {
+                    background: none;
+                    border: none;
+                    width: 100%;
+                    text-align: left;
+                    padding: 10px 16px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    transition: background 0.2s;
+                    color: #222;
+
+                    &:hover {
+                        background: #fff;
+                    }
+                }
+            }
+        }
     }
-
-
-  }
-
+}

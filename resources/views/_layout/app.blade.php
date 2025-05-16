@@ -9,7 +9,7 @@
         'resources/sass/footer.scss',
         'resources/sass/login.scss',
         'resources/sass/register.scss',
-        'resources/js/dscactinh.js'
+        'resources/js/dscactinh.js',
         ])
     {{-- Từ bản laravel 12x trở lên sử dụng @vite để điều hướng scss --}}
     {{-- <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> --}}
