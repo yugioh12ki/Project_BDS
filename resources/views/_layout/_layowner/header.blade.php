@@ -1,12 +1,22 @@
-<header style="background-color: #333; color: #fff; padding: 10px;">
-    <h2 style="margin: 0;">Bảng điều khiển Chủ sở hữu</h2>
-    <nav>
-        <a href="{{ route('owner.dashboard') }}" style="color: #fff; margin-right: 10px;">Trang chủ</a>
-        <a href="{{ route('logout') }}"
-           onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-           style="color: #fff;">Đăng xuất</a>
-        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-            @csrf
-        </form>
-    </nav>
+<header class="owner-header">
+    <div class="header-left">
+        <a href="{{ route('owner.dashboard') }}">
+            <img src="{{ asset('images/logo_owner.png') }}" alt="Logo Chủ sở hữu" class="header-logo" style="height:40px;object-fit:contain;">
+        </a>
+    </div>
+    <div class="header-right dropdown">
+        @if(Auth::check() && Auth::user()->Role === 'Owner')
+            <button class="user-greeting dropdown-toggle" type="button" id="dropdownUserMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                Xin chào, {{ Auth::user()->Name }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUserMenu">
+                <li>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button class="dropdown-item" type="submit">Đăng xuất</button>
+                    </form>
+                </li>
+            </ul>
+        @endif
+    </div>
 </header>
