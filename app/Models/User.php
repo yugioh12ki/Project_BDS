@@ -92,7 +92,14 @@ class User extends Authenticatable
 
     public function feedback_customer()
     {
-        return $this->hasMany(Feedback::class, 'OwnerID', 'UserID');
+        return $this->hasMany(Feedback::class, 'CusID', 'UserID');
+    }
+
+    // Mối quan hệ với bảng 'profile_*' của bảng
+
+    public function profile_agent()
+    {
+        return $this->hasOne(profile_agent::class, 'UserID', 'UserID');
     }
 
 

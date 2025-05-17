@@ -2,7 +2,13 @@
         <thead>
             <tr>
                 @foreach ($columns as $column )
+                @if($column === 'CusID')
+                    <th>Khách hàng</th>
+                @elseif($column === 'AgentID')
+                    <th>Người phụ trách</th>
+                @else
                     <th>{{ $column }}</th>
+                @endif
                 @endforeach
                 <th>Chức năng</th>
             </tr>
@@ -23,6 +29,12 @@
                                     </select>
                                 </form>
                             </td>
+                        @elseif($column === 'CusID')
+                            <td>
+                                {{ $feedback->user_Cus ? $feedback->user_Cus->Name : $feedback->CusID }}
+                            </td>
+                        @elseif($column === 'AgentID')
+                            <td>{{ $feedback->user_Agent ? $feedback->user_Agent->Name : $feedback->AgentID }}</td>
                         @else
                             <td>{{ $feedback->$column }}</td>
                         @endif

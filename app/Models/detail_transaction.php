@@ -14,7 +14,7 @@ class detail_transaction extends Model
     public $timestamps = false;
     public $incrementing = false;
 
-    public function transaction()
+    public function detail_trans()
     {
         return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
     }

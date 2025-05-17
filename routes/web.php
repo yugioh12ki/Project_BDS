@@ -50,12 +50,21 @@ Route::get('/register',[RegisterController::class,"register"])->name('register')
 Route::middleware(['auth'])->group(function()
 {
 
-    Route::middleware(['checkRole:Admin'])->prefix('admin')->name('admin.')->group(function () {
+        // Routes danh cho người dùng đã đăng nhập không cần phải liên quan đến quyền
+        Route::get('/document/view/{id}', [SystemController::class, 'viewDocument'])->name('admin.document.view');
+        Route::get('/document/download/{id}', [SystemController::class, 'downloadDocument'])->name('admin.document.download');
+
+
+        // Routes dành cho người dùng đã đăng nhập có quyền là Admin
+
+
+        Route::middleware(['checkRole:Admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/admin', [SystemController::class, 'admin'])->name('dashboard');
 
         // Route điều hướng đến trang quản lý bất động sản
 
         Route::get('/property', [SystemController::class, "getProperty"])->name('property');
+        Route::get('/property/search', [SystemController::class, 'SearchProperty'])->name('property.search');
         Route::get('/property/{id}', [SystemController::class, "getPropertyById"])->name('property.id');
         Route::get('/property/type/{type}', [SystemController::class, "getPropertyByType"])->name('property.type');
         Route::get('/property/status/{status}', [SystemController::class, "getPropertyByStatus"])->name('property.status');
@@ -64,7 +73,11 @@ Route::middleware(['auth'])->group(function()
         Route::delete('/property/{id}',[SystemController::class, 'deleteProperty'])->name('property.delete');
         Route::get('/property/{id}/edit', [SystemController::class, 'EditPropertyByStatus'])->name('property.edit');
         Route::put('/property/{id}', [SystemController::class, 'EditPropertyByStatus'])->name('property.update');
-        Route::get('/property/search', [SystemController::class, 'SearchProperty'])->name('property.search');
+
+        // Route cho việc gán và quản lý agent cho bất động sản
+        Route::get('/assign-property', [SystemController::class, 'getAssignProperty'])->name('assign.property');
+        Route::post('/assign-property', [SystemController::class, 'assignAgentToProperty'])->name('assign.property.store');
+        Route::get('/check-agent-limit/{agentId}', [SystemController::class, 'checkAgentPropertyCount'])->name('check.agent.limit');
 
         // Route điều hướng đến trang quản lý người dùng
 
@@ -81,8 +94,21 @@ Route::middleware(['auth'])->group(function()
         // Route điều hướng đến trang quản lý lịch hẹn
 
         Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
+        Route::get('/appointment/search-by-date', [SystemController::class, "searchAppointmentByDate"])->name('appointment.search.date');
+        Route::get('/appointment/{id}', [SystemController::class, "getAppointmentById"])->name('appointment.id');
+        Route::delete('/appointment/{id}', [SystemController::class, "deleteAppointment"])->name('appointment.delete');
+
+
+        // Transaction routes - ordered from most specific to general
+        Route::put('/transaction/{transactionId}/payment-statuses', [SystemController::class, 'updatePaymentStatuses'])->name('transaction.updatePaymentStatuses');
+        Route::post('/transaction/{transactionId}/add-payment', [SystemController::class, 'addPayment'])->name('transaction.addPayment');
+        Route::post('/transaction/{id}/document', [SystemController::class, 'addDocument'])->name('transaction.addDocument');
+        Route::get('/transaction/{id}', [SystemController::class, "getTransactionById"])->name('transaction.id');
+        Route::delete('/transaction/{id}', [SystemController::class, 'deleteTransaction'])->name('transaction.delete');
         Route::get('/transaction', [SystemController::class, "getTransaction"])->name('transaction');
 
+        // Document routes
+        Route::delete('/document/{id}', [SystemController::class, 'deleteDocument'])->name('admin.document.delete');
 
         // Route điều hướng đến trang quản lý đánh giá khách hàng tới môi giới
         Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');
@@ -95,9 +121,6 @@ Route::middleware(['auth'])->group(function()
         Route::get('/commission', [SystemController::class, "getCommission"])->name('commission');
 
     });
-
-
-
 
 
 

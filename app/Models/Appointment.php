@@ -26,7 +26,7 @@ class Appointment extends Model
 
     public function user_customer()
     {
-        return $this->belongsTo(User::class, 'CustomerID', 'UserID');
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
     }
 
     //Mối quan hệ với bảng 'property'

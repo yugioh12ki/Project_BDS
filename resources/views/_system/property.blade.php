@@ -43,7 +43,7 @@
             <div class="d-flex align-items-center">
                 <form action="{{ route('admin.property.search') }}" class="d-flex align-items-center">
                     <input type="text" name="keyword" id="search-input" class="form-control" placeholder="Nhập từ khóa tìm kiếm" style="width: 300px;">
-                    <button type="submit" class="btn btn-secondary ms-2">
+                    <button type="submit" id="search-button" class="btn btn-secondary ms-2">
                         <i class="fa fa-search"></i> Tìm kiếm
                     </button>
                 </form>
@@ -80,6 +80,8 @@
     const propertyList = document.getElementById('property-list');
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
+    const searchForm = document.querySelector('form');  // Lấy form
+
 
 
     if (typeSelect && propertyList) {
@@ -112,15 +114,17 @@
     }
 
     // Xử lý sự kiện khi người dùng nhập từ khóa tìm kiếm
-    searchButton.addEventListener('click', function (event) {
+
+   searchForm.addEventListener('submit', function(event) {
+        event.preventDefault();  // Ngăn form reload trang
         const keyword = searchInput.value;
 
         fetch(`/admin/property/search?keyword=${encodeURIComponent(keyword)}`)
             .then(response => {
-            if (!response.ok) {
-                throw new Error('Không tìm thấy dữ liệu.');
-            }
-            return response.text();
+                if (!response.ok) {
+                    throw new Error('Không tìm thấy dữ liệu.');
+                }
+                return response.text();
             })
             .then(html => {
                 propertyList.innerHTML = html;
@@ -131,8 +135,9 @@
                     <div class="alert alert-danger">Không tìm thấy property nào.</div>
                 `;
             });
+    });
 
-        });
+
 
 
 

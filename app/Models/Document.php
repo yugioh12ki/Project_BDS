@@ -14,7 +14,7 @@ class Document extends Model
 
     public $incrementing = false;
     public $timestamps = false;
-    public $keyType = 'string';
+
 
     public function transaction()
     {

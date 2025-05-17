@@ -12,6 +12,8 @@ use App\Models\Transaction;
 use App\Models\feedback;
 use App\Models\Commission;
 use App\Models\DanhMucBDS;
+use App\Models\detail_transaction;
+use App\Models\Document;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -361,7 +363,7 @@ class SystemController extends Controller
                     ->paginate(10);
 
         if ($columns === null || $properties->isEmpty()) {
-            return view('_system.partialview.property_table', compact('error'));
+            return view('_system.property', compact('error'));
         }
 
         return view('_system.property', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
@@ -417,13 +419,95 @@ class SystemController extends Controller
     }
 
     //
+    // Phần này của AssignProperty
+    //
+
+    // Hàm function này lấy danh sách User và Profile_Agent của người dùng
+    public function getAssignProperty()
+    {
+        // Get columns from both user and profile_agent tables
+        // Lấy danh sách agent
+        $agents = User::where('Role', 'Agent')->get();
+
+        // Lấy danh sách bất động sản chưa có agent hoặc đang cần phân công lại
+        foreach ($agents as $agent) {
+        $agent->activePropertyCount = Property::where('AgentID', $agent->UserID)
+                                    ->where('Status', 'active')
+                                    ->count();
+        }
+
+        // Lấy danh sách bất động sản chưa có agent hoặc đang cần phân công lại
+        $properties = Property::with(['chusohuu', 'moigioi'])
+                    ->paginate(10);
+
+        // Trả về view với dữ liệu
+        return view('_system.partialview.assign_property', compact('agents', 'properties'));
+    }
+
+    public function assignAgentToProperty(Request $request)
+    {
+        $request->validate([
+            'agentId' => 'required|exists:user,UserID',
+            'propertyIds' => 'required|array',
+            'propertyIds.*' => 'exists:properties,PropertyID'
+        ]);
+
+        try {
+            // Lấy agent
+            $agent = User::find($request->agentId);
+
+            // Kiểm tra xem agent đã quản lý quá 10 bất động sản active chưa
+            $activeCount = Property::where('AgentID', $request->agentId)
+                            ->where('Status', 'active')
+                            ->count();
+
+            // Đếm số bất động sản active mới sẽ được gán
+            $newActiveCount = Property::whereIn('PropertyID', $request->propertyIds)
+                                ->where('Status', 'active')
+                                ->whereNot(function($query) use ($request) {
+                                    $query->where('AgentID', $request->agentId);
+                                })
+                                ->count();
+
+            // Kiểm tra nếu vượt quá 10
+            if ($activeCount + $newActiveCount > 10) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Môi giới {$agent->Name} đã quản lý {$activeCount} bất động sản active. Không thể thêm {$newActiveCount} bất động sản active nữa (giới hạn 10)."
+                ]);
+            }
+
+            // Tiến hành gán agent cho các bất động sản
+            foreach ($request->propertyIds as $propertyId) {
+                $property = Property::find($propertyId);
+                if ($property) {
+                    $property->AgentID = $request->agentId;
+                    $property->save();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã gán môi giới cho ' . count($request->propertyIds) . ' bất động sản thành công.',
+                'agentName' => $agent->Name
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    //
     // Phần này của appoinment
     //
 
     public function getAppointment()
     {
         $columns = Schema::getColumnListing('appointments');
-        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->get();
+        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->paginate(10);
         if ($columns === null || $appointments->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.appointment', compact('error')); // Truyền thông báo lỗi sang view
@@ -431,16 +515,63 @@ class SystemController extends Controller
         return view('_system.appointment', compact('columns','appointments')); // Đảm bảo biến truyền vào view là $users
     }
 
+    public function getAppointmentById(Request $request, $id)
+    {
+        $columns = Schema::getColumnListing('appointments');
+        $appointment = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->find($id)->paginate(10);
+        if ($columns === null || $appointment === null) {
+            $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
+            return view('_system.appointment', compact('error')); // Truyền thông báo lỗi sang view
+        }
+        return view('_system.partialview.checkedit_appoint', compact('columns','appointment')); // Đảm bảo biến truyền vào view là $users
+    }
+
+    // Xóa Cuộc Hẹn
+    public function deleteAppointment($id)
+    {
+        try {
+            $appointment = Appointment::find($id);
+            if (!$appointment) {
+                return back()->with('error', 'Không tìm thấy cuộc hẹn');
+            }
+
+            $appointment->delete();
+
+            return back()->with('success', 'Xóa cuộc hẹn thành công!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Lỗi: ' . $e->getMessage());
+        }
+    }
+
+    //Tìm kiếm cuộc hẹn theo ngày
+    public function searchAppointmentByDate(Request $request)
+    {
+        $date = $request->input('date');
+        $columns = Schema::getColumnListing('appointments');
+        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])
+                        ->whereDate('AppointmentDateStart', $date)
+                        ->get();
+
+        if ($columns === null || $appointments->isEmpty()) {
+            return view('_system.appointment', ['error' => 'Không tìm thấy cuộc hẹn nào vào ngày ' . $date]);
+        }
+
+        return view('_system.appointment', compact('columns', 'appointments'));
+    }
+
+
+
+    //
+    // Phần này của transaction
+    //
+
     public function getTransaction()
     {
         $columns = Schema::getColumnListing('transactions');
         $transactions = Transaction::with([
             'trans_owner', 'trans_agent', 'trans_cus', 'detailTransaction'
             ])->get();
-        if ($columns === null || $transactions->isEmpty()) {
-            $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
-            return view('_system.transaction', compact('error')); // Truyền thông báo lỗi sang view
-        }
+
         return view('_system.transaction', compact('columns','transactions')); // Đảm bảo biến truyền vào view là $users
     }
 
@@ -457,10 +588,144 @@ class SystemController extends Controller
         if ($columns === null || $transactions->isEmpty()) {
             return response()->json(['error' => 'Không tìm thấy giao dịch nào.'], 404); // Truyền thông báo lỗi sang view
         } else {
-            return view('_system.partialview.transaction_table', compact('columns', 'transactions')); // Đảm bảo biến truyền vào view là $users
+            return view('_system.partialview.trans_table', compact('columns', 'transactions')); // Đảm bảo biến truyền vào view là $users
         }
     }
 
+
+
+    // Cập nhật đồng thời trạng thái Transaction, các detail_transaction và các document liên quan trong 1 lần submit
+    public function getTransactionById($id)
+    {
+        $transaction = Transaction::with([
+            'trans_owner',
+            'trans_agent',
+            'trans_cus',
+            'detailTransaction',
+            'document'
+        ])->find($id);
+
+        if (!$transaction) {
+            return back()->with('error', 'Không tìm thấy giao dịch');
+        }
+
+        return view('_system.partialview.edit_trans', compact('transaction'));
+    }
+
+    // Chỉ cập nhật trạng thái các khoản thanh toán
+    public function updatePaymentStatuses(Request $request, $transactionId)
+    {
+        try {
+        $transaction = Transaction::find($transactionId);
+        if (!$transaction) {
+            return back()->with('error', 'Không tìm thấy giao dịch');
+        }
+
+        $payment_ids = $request->payment_ids;
+        $statuses = $request->statuses;
+
+        $errorList = [];
+
+        if (is_array($payment_ids) && is_array($statuses)) {
+            for ($i = 0; $i < count($payment_ids); $i++) {
+                $numPay = $payment_ids[$i];
+                $status = $statuses[$i];
+
+                $updated = detail_transaction::where('TransactionID', $transactionId)
+                    ->where('Num_Pay', $numPay)
+                    ->update(['DTran_Status' => $status]);
+
+                if (!$updated) {
+                    $errorList[] = "Không tìm thấy hoặc không thể cập nhật chi tiết giao dịch số $numPay";
+                }
+            }
+        }
+
+        if (count($errorList) > 0) {
+            return back()->with('error', implode(' | ', $errorList));
+        }
+
+        return back()->with('success', 'Cập nhật trạng thái thanh toán thành công!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Lỗi: ' . $e->getMessage());
+        }
+    }
+
+    // Thêm khoản thanh toán mới
+    public function addPayment(Request $request, $transactionId)
+    {
+        $request->validate([
+            'Price' => 'required|numeric|min:1',
+        ]);
+
+        $transaction = Transaction::find($transactionId);
+        if (!$transaction) {
+            return back()->with('error', 'Không tìm thấy giao dịch');
+        }
+
+        // Đếm số khoản thanh toán hiện có để tăng Num_Pay
+        $maxNumPay = detail_transaction::where('TransactionID', $transactionId)
+            ->max('Num_Pay');
+
+        $newNumPay = $maxNumPay + 1;
+
+        try {
+            // Tạo khoản thanh toán mới
+            $detailTransaction = new detail_transaction();
+            $detailTransaction->TransactionID = $transactionId;
+            $detailTransaction->Num_Pay = $newNumPay;
+            $detailTransaction->Price = $request->Price;
+            $detailTransaction->DTran_Date = now();
+            $detailTransaction->DTran_Status = 'Chờ đợi';
+            $detailTransaction->save();
+
+            return back()->with('success', 'Thêm khoản thanh toán mới thành công!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Lỗi khi thêm khoản thanh toán: ' . $e->getMessage());
+        }
+    }
+
+
+    public function deleteTransaction($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Tìm giao dịch
+            $transaction = Transaction::with(['detailTransaction', 'document'])->find($id);
+
+            if (!$transaction) {
+                return back()->with('error', 'Không tìm thấy giao dịch');
+            }
+
+            // Xóa các tài liệu liên quan
+            foreach ($transaction->document as $document) {
+                // Xóa file vật lý
+                $filePath = storage_path('app/' . $document->FilePath);
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+
+                // Xóa bản ghi tài liệu
+                $document->delete();
+            }
+
+            // Xóa các chi tiết giao dịch bằng query builder thay vì Eloquent
+            DB::table('detail_transaction')
+                ->where('TransactionID', $id)
+                ->delete();
+
+            // Xóa giao dịch
+            $transaction->delete();
+
+            DB::commit();
+
+            return back()->with('success', 'Xóa giao dịch thành công');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi khi xóa giao dịch: ' . $e->getMessage());
+        }
+    }
 
     //
     // Phần này của feedback
@@ -469,7 +734,7 @@ class SystemController extends Controller
     public function getFeedback()
     {
         $columns = Schema::getColumnListing('feedbacks');
-        $feedbacks = feedback::all();
+        $feedbacks = feedback::with(['user_Cus', 'user_Agent'])->paginate(10);
         if ($columns === null || $feedbacks->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.feedback', compact('error')); // Truyền thông báo lỗi sang view
@@ -486,7 +751,7 @@ class SystemController extends Controller
         $min = $request->query('min', 'all');
         $max = $request->query('max', 'all');
 
-        $query = feedback::query();
+        $query = feedback::with(['user_Cus', 'user_Agent']);
 
         if ($status !== 'all') {
             $query->where('Status', $status);
@@ -558,9 +823,199 @@ class SystemController extends Controller
 
 
     private function fetchProvinces()
-{
-    // Gọi API để lấy danh sách tỉnh
-    $response = Http::get('https://provinces.open-api.vn/api/?depth=2');
-    return $response->json();
-}
+    {
+        // Gọi API để lấy danh sách tỉnh
+        $response = Http::get('https://provinces.open-api.vn/api/?depth=2');
+        return $response->json();
+    }
+
+    public function viewDocument($id)
+    {
+        // Kiểm tra xác thực người dùng
+        if (!Auth::check()) {
+            abort(403, 'Vui lòng đăng nhập để truy cập tài liệu.');
+        }
+
+        // Tìm tài liệu
+        $document = Document::with(['transaction'])->find($id);
+
+        if (!$document) {
+            return back()->with('error', 'Không tìm thấy tài liệu');
+        }
+
+        // Kiểm tra quyền truy cập
+        $user = Auth::user();
+        $transaction = $document->transaction;
+
+        // Chỉ cho phép admin, agent liên quan, chủ sở hữu và khách hàng liên quan đến giao dịch này truy cập
+        $hasAccess = false;
+
+        if ($user->Role == 'Admin') {
+            $hasAccess = true;
+        } elseif ($user->Role == 'Agent' && $transaction->AgentID == $user->UserID) {
+            $hasAccess = true;
+        } elseif ($user->Role == 'Owner' && $transaction->OwnerID == $user->UserID) {
+            $hasAccess = true;
+        } elseif ($user->Role == 'Customer' && $transaction->CusID == $user->UserID) {
+            $hasAccess = true;
+        }
+
+        if (!$hasAccess) {
+            abort(403, 'Bạn không có quyền xem tài liệu này.');
+        }
+
+        // Ghi log truy cập
+        Log::info('User ' . $user->UserID . ' accessed document ' . $id . ' at ' . now());
+
+        // Sử dụng đường dẫn private trong storage thay vì public
+        $filePath = storage_path('app/' .$document->FilePath);
+
+        if (!file_exists($filePath)) {
+            return back()->with('error', 'Tài liệu không tồn tại trên hệ thống');
+        }
+
+        // Trả về file thông qua response để tránh truy cập trực tiếp
+        return response()->file($filePath);
+    }
+
+    public function downloadDocument($id)
+    {
+        // Kiểm tra xác thực người dùng
+        if (!Auth::check()) {
+            abort(403, 'Vui lòng đăng nhập để tải tài liệu.');
+        }
+
+        // Tìm tài liệu
+        $document = Document::with(['transaction'])->find($id);
+
+        if (!$document) {
+            return back()->with('error', 'Không tìm thấy tài liệu');
+        }
+
+        // Kiểm tra quyền truy cập giống như viewDocument
+        $user = Auth::user();
+        $transaction = $document->transaction;
+
+        $hasAccess = false;
+        if ($user->Role == 'Admin') {
+            $hasAccess = true;
+        } elseif ($user->Role == 'Agent' && $transaction->AgentID == $user->UserID) {
+            $hasAccess = true;
+        } elseif ($user->Role == 'Owner' && $transaction->OwnerID == $user->UserID) {
+            $hasAccess = true;
+        } elseif ($user->Role == 'Customer' && $transaction->CusID == $user->UserID) {
+            $hasAccess = true;
+        }
+
+        if (!$hasAccess) {
+            abort(403, 'Bạn không có quyền tải tài liệu này.');
+        }
+
+
+        // Đường dẫn file trong storage private
+        $filePath = storage_path('app/' . $document->FilePath);
+
+        if (!file_exists($filePath)) {
+            return back()->with('error', 'Tài liệu không tồn tại trên hệ thống');
+        }
+
+        // Tạo tên file download
+        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+        $downloadName = $document->DocumentType . '.' . $extension;
+
+        // Trả về response download
+        return response()->download($filePath, $downloadName);
+    }
+
+
+
+    public function addDocument(Request $request, $transactionId)
+    {
+        $request->validate([
+            'document' => 'required|file|max:10240', // Max 10MB
+            'DocumentType' => 'required|string',
+        ]);
+
+        $transaction = Transaction::find($transactionId);
+        if (!$transaction) {
+            return back()->with('error', 'Không tìm thấy giao dịch');
+        }
+
+        try {
+
+            $transactionFolder = 'documents/trans_' . $transactionId;
+            // Xử lý upload file vào storage private
+            $file = $request->file('document');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+
+            // Lưu vào thư mục private
+            $filePath = $file->storeAs($transactionFolder, $fileName);
+
+            // Tạo bản ghi tài liệu mới
+            $document = new Document();
+
+            $document->TransactionID = $transactionId;
+            $document->DocumentType = $request->DocumentType;
+            $document->FilePath = $filePath; // Chỉ lưu tên file, không lưu đường dẫn đầy đủ
+            $document->UploadedDate = now();
+            $document->save();
+
+            Log::info('Document added successfully for transaction: ' . $transactionId);
+
+            return back()->with('success', 'Tải lên tài liệu thành công!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Lỗi khi tải tài liệu: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteDocument($id)
+    {
+        // Kiểm tra xác thực người dùng
+        if (!Auth::check()) {
+            abort(403, 'Vui lòng đăng nhập để thực hiện thao tác này.');
+        }
+
+        // Tìm tài liệu
+        $document = Document::with(['transaction'])->find($id);
+
+        if (!$document) {
+            return back()->with('error', 'Không tìm thấy tài liệu');
+        }
+
+        // Kiểm tra quyền xóa - chỉ Admin và Agent liên quan mới được xóa
+        $user = Auth::user();
+        $transaction = $document->transaction;
+
+        $hasAccess = false;
+        if ($user->Role == 'Admin') {
+            $hasAccess = true;
+        } elseif ($user->Role == 'Agent' && $transaction->AgentID == $user->UserID) {
+            $hasAccess = true;
+        }
+
+        if (!$hasAccess) {
+            abort(403, 'Bạn không có quyền xóa tài liệu này.');
+        }
+
+        try {
+            // Đường dẫn file trong storage
+            $filePath = storage_path('app/' . $document->FilePath);
+
+            // Xóa file từ storage nếu tồn tại
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+
+            // Xóa bản ghi từ cơ sở dữ liệu
+            $document->delete();
+
+            return back()->with('success', 'Xóa tài liệu thành công!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Lỗi khi xóa tài liệu: ' . $e->getMessage());
+        }
+    }
+
+
+
 }

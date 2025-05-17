@@ -8,7 +8,7 @@
     </div>
 @endif
 
-{{-- Bỏ form ở đây, form sẽ nằm ở ngoài khi include --}}
+
 
 {{-- Name --}}
 <div class="mb-3">

@@ -28,4 +28,20 @@
     @include('_layout.footer')
 </footer>
 
+<script>
+    $(document).ready(function() {
+        // Xử lý các modal giao dịch
+        $('.modal').on('hidden.bs.modal', function () {
+            // Xóa các thông báo lỗi hoặc thành công khi đóng modal
+            $(this).find('.alert').remove();
+        });
+
+        // Thiết lập mặc định cho tab trong modal
+        $('.modal').on('shown.bs.modal', function () {
+            // Đảm bảo tab đầu tiên hiển thị
+            $(this).find('.nav-tabs .nav-link:first').tab('show');
+        });
+    });
+</script>
+
 </html>
