@@ -1,24 +1,23 @@
 .drawer-wrapper {
   z-index: 9999;
   position: fixed;
-  top: 70px; // Đặt xuống dưới header (giả sử header cao 70px)
+  top: 70px; 
   left: 0;
   width: 370px;
   height: calc(100vh - 70px);
   pointer-events: none;
 }
 
-/* Sidebar */
 .drawer-list {
   position: fixed;
-  top: 74px; // Sát ngay dưới header, chỉ cách 4px
+  top: 74px; 
   left: 0;
   width: 370px;
   height: calc(100vh - 74px);
   background: #f3f7fa;
   box-shadow: 2px 2px 18px rgba(30,45,60,0.10);
   border-radius: 0 14px 14px 0;
-  transform: translateX(-105%); // Ẩn menu khi chưa active
+  transform: translateX(-105%);
   transition: transform 0.32s cubic-bezier(0.77,0,0.175,1);
   display: flex;
   flex-direction: column;
@@ -26,16 +25,15 @@
   pointer-events: auto;
 }
 .drawer-list.active {
-  transform: translateX(0); // Hiện menu khi active
+  transform: translateX(0);
 }
 
-/* Hamburger button */
 .drawer-hamburger {
   position: fixed;
-  top: 0px; // Sát ngay dưới header, cùng top với menu
-  left: 372px; // Sát mép phải menu
+  top: 0px; 
+  left: 372px; 
   width: 48px;
-  height: 56px; // Chiều cao bằng 1 thanh menu
+  height: 56px; 
   background: #fff;
   border: none;
   box-shadow: 0 2px 16px rgba(44,62,80,0.13);
@@ -53,12 +51,11 @@
   height: 3.5px;
   background: #374151;
   border-radius: 2px;
-  margin: 8px 0; // Đều nhau trên dưới
+  margin: 8px 0; 
   display: block;
   transition: all 0.2s;
 }
 
-/* Menu list */
 .drawer-list ul {
   list-style: none;
   padding: 20px 0 0 0;
@@ -90,7 +87,6 @@
   border: 1.5px solid #b2d4f7;
 }
 
-
 .drawer-list i {
   font-size: 1.27rem;
   margin-right: 12px;
@@ -102,63 +98,13 @@
   color: #1191ee;
 }
 
-/* Submenu hiệu ứng dropdown */
-.drawer-has-submenu {
-  // Không chỉnh gì thêm ở đây, để xử lý hiệu ứng bên dưới
-}
-
-.drawer-list .submenu-arrow {
-  margin-left: auto;
-  font-size: 1.2rem;
-  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
-}
-.drawer-has-submenu.open .submenu-arrow {
-  transform: rotate(180deg);
-}
-
-// Submenu transition slide down
-.drawer-list .drawer-submenu {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.32s cubic-bezier(0.4,0,0.2,1), padding 0.22s;
-  padding-left: 38px;
-  margin-top: 0px;
-  background: transparent;
-  will-change: max-height;
-}
-
-.drawer-has-submenu.open > .drawer-submenu {
-  max-height: 300px; // Đủ để chứa nhiều item
-  margin-top: 6px;
-  padding-bottom: 8px;
-  // Có thể dùng thêm animation, box-shadow ở đây nếu thích
-}
-
-.drawer-list .drawer-submenu a {
-  font-size: 16px;
-  font-weight: 400;
-  background: transparent;
-  border: none;
-  color: #556075;
-  padding: 7px 0;
-  margin-bottom: 0;
-  border-radius: 7px;
-  transition: color 0.14s, background 0.15s;
-}
-
-.drawer-list .drawer-submenu a:hover {
-  color: #1a85d6;
-  background: #eaf6ff;
-}
-
-/* Overlay */
 .drawer-overlay {
   position: fixed;
   top: 70px;
   left: 0;
   width: 100vw;
   height: calc(100vh - 70px);
-  background: transparent; // Không còn màu tối overlay
+  background: transparent; 
   z-index: 9998;
   opacity: 1;
   display: none;
@@ -169,7 +115,6 @@
   opacity: 1;
 }
 
-/* Responsive */
 @media (max-width: 700px) {
   .drawer-list {
     width: 92vw;
