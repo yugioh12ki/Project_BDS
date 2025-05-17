@@ -2,7 +2,7 @@
 @section('title', 'Chủ sở hữu')
 
 @section('content')
-
+    {{-- Nội dung dashboard --}}
+    {{-- ... --}}
 @endsection
-
 

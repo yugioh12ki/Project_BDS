@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Property;
+use App\Models\User;
+use App\Models\DanhMucBDS;
 use App\Models\Appointment;
+use App\Models\DetailProperty;
 use App\Models\Transaction;
 
 class OwnerController extends Controller
@@ -19,55 +23,106 @@ class OwnerController extends Controller
 
     public function listProperty()
     {
-        $properties = Property::where('OwnerID', auth()->id())->get();
-        return view('owners.property.index', compact('properties'));
+        $ownerId = Auth::user()->UserID;
+        $properties = Property::with('danhMuc')
+            ->where('OwnerID', $ownerId)
+            ->get();
+        $categories = DanhMucBDS::all();
+        $owners = collect([Auth::user()]);
+
+        return view('owners.property.index', compact('properties', 'categories', 'owners'));
     }
+
 
     public function createProperty()
     {
-        return view('owners.property.create');
+        $categories = DanhMucBDS::all();
+        return view('owners.property.create', compact('categories'));
     }
 
     public function storeProperty(Request $request)
     {
         $validated = $request->validate([
             'Title' => 'required|string|max:255',
-            'Address' => 'required|string',
-            'Description' => 'nullable|string',
-            'Type' => 'required|in:rent,sale',
-            'Price' => 'required|numeric',
-            'LegalDocs.*' => 'nullable|file|mimes:pdf,jpg,png',
-            'Images.*' => 'nullable|image',
+            'Address' => 'required|string|max:255',
+            'Price' => 'required|numeric|min:0',
+            'Province' => 'required|string|max:255',
+            'District' => 'required|string|max:255',
+            'Ward' => 'required|string|max:255',
+            'PropertyType' => 'required|integer',
+            'TypePro' => 'required|string', 
+
+            'Floor' => 'required|integer|min:0',
+            'Area' => 'required|integer|min:1',
+            'Bedroom' => 'required|integer|min:0',
+            'Bath_WC' => 'required|integer|min:0',
+            'Road' => 'required|integer|min:0',
+ 
+            'legal' => 'nullable|string|max:255',
+            'view' => 'nullable|string|max:255',
+            'near' => 'nullable|string|max:255',
+            'Interior' => 'nullable|string|max:255',
+            'WaterPrice' => 'nullable|string|max:255',
+            'PowerPrice' => 'nullable|string|max:255',
+            'Utilities' => 'nullable|string|max:255',
+            'Description' => 'nullable|string'
         ]);
 
-        $property = Property::create([
-            'PropertyID' => uniqid('PROP_'),
-            'OwnerID' => auth()->id(),
-            'Title' => $validated['Title'],
-            'Address' => $validated['Address'],
-            'Description' => $validated['Description'] ?? '',
-            'Type' => $validated['Type'],
-            'Price' => $validated['Price'],
-        ]);
+        $detail = new DetailProperty();
+        $detail->Floor = $validated['Floor'];
+        $detail->Area = $validated['Area'];
+        $detail->Bedroom = $validated['Bedroom'];
+        $detail->Bath_WC = $validated['Bath_WC'];
+        $detail->Road = $validated['Road'];
+        $detail->legal = $validated['legal'] ?? null;
+        $detail->view = $validated['view'] ?? null;
+        $detail->near = $validated['near'] ?? null;
+        $detail->Interior = $validated['Interior'] ?? null;
+        $detail->WaterPrice = $validated['WaterPrice'] ?? null;
+        $detail->PowerPrice = $validated['PowerPrice'] ?? null;
+        $detail->Utilities = $validated['Utilities'] ?? null;
+        $detail->save();
 
-        if ($request->hasFile('Images')) {
-            foreach ($request->file('Images') as $img) {
-                $img->store('properties/images', 'public');
-            }
-        }
+        $idDetail = $detail->IdDetail;
+        $property = new Property();
+        $property->Title = $validated['Title'];
+        $property->Address = $validated['Address'];
+        $property->Price = $validated['Price'];
+        $property->Province = $validated['Province'];
+        $property->District = $validated['District'];
+        $property->Ward = $validated['Ward'];
+        $property->PropertyType = $validated['PropertyType'];
+        $property->TypePro = $validated['TypePro'];
+        $property->Description = $validated['Description'] ?? null;
+        $property->IdDetail = $idDetail;
+        $property->OwnerID = Auth::user()->UserID;
+        $property->PostedDate = now()->format('Y-m-d');
+        $property->Status = 'inactive'; 
+        $property->save();
 
-        return redirect()->route('owner.property.index')->with('success', 'Đã thêm BĐS thành công');
+        return redirect()->route('owner.property.index')->with('success', 'Thêm bất động sản thành công!');
     }
+
 
     public function appointments()
     {
-        $appointments = Appointment::where('OwnerID', auth()->id())->with('user', 'agent')->get();
-        return view('owners.appointments.index', compact('appointments'));
+        $ownerId = Auth::user()->UserID;
+        $appointments = Appointment::with('property')
+            ->whereHas('property', function($query) use ($ownerId) {
+                $query->where('OwnerID', $ownerId);
+            })
+            ->get();
+
+        return view('owners.appointments', compact('appointments'));
     }
 
     public function transactions()
     {
-        $transactions = Transaction::where('OwnerID', auth()->id())->get();
-        return view('owners.transactions.index', compact('transactions'));
+        $ownerId = Auth::user()->UserID;
+        $transactions = Transaction::with('property')
+            ->where('OwnerID', $ownerId)
+            ->get();
+
+        return view('owners.transactions', compact('transactions'));
     }
 }

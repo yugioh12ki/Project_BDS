@@ -134,11 +134,83 @@ class SystemController extends Controller
     {
         $columns = Schema::getColumnListing('properties');
         $properties = Property::all();
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+
         if ($columns === null || $properties->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.property', compact('error')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.property', compact('columns','properties')); // Đảm bảo biến truyền vào view là $users
+        return view('_system.property', compact('columns','properties','owners','agents','admins','categories')); // Đảm bảo biến truyền vào view là $users
+    }
+
+    public function getPropertyByType(Request $request, $type)
+    {
+        $columns = Schema::getColumnListing('properties');
+
+        if ($type == 'all') {
+            $properties = Property::with(['danhMuc'])->paginate(10); // Sửa pageinate thành paginate
+        } else {
+            $properties = Property::with(['danhMuc'])
+                ->where('TypePro', $type)
+                ->paginate(10);
+        }
+
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+        if ($columns === null || $properties->isEmpty()) {
+            return view('_system.partialview.property_table', compact('error'));
+        } else {
+            return view('_system.partialview.property_table', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
+        }
+    }
+
+    public function getPropertyByStatus(Request $request, $status)
+    {
+        $columns = Schema::getColumnListing('properties');
+
+        if ($status == 'all') {
+            $properties = Property::with(['danhMuc'])->paginate(10); // Sửa pageinate thành paginate
+        } else {
+            $properties = Property::with(['danhMuc'])
+                ->where('Status', $status)
+                ->paginate(10);
+        }
+
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+        if ($columns === null || $properties->isEmpty()) {
+            return view('_system.partialview.property_table', compact('error'));
+        } else {
+            return view('_system.partialview.property_table', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
+        }
+    }
+
+    public function SearchProperty(Request $request)
+    {
+        $keyword = $request->input('keyword');
+
+        $columns = Schema::getColumnListing('properties');
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+
+        $properties = Property::with(['danhMuc', 'chusohuu', 'moigioi', 'quantri'])
+                    ->whereRaw('LOWER(Title) LIKE ?', ['%' . strtolower($keyword) . '%'])
+                    ->paginate(10);
+
+        if ($columns === null || $properties->isEmpty()) {
+            return view('_system.partialview.property_table', compact('error'));
+        }
+
+        return view('_system.property', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
     }
 
     public function getAppointment()

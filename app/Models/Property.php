@@ -16,4 +16,45 @@ class Property extends Model
     public $incrementing = false; // Nếu khóa chính không phải là số nguyên tự động tăng
 
     protected $keyType = 'string'; // Nếu khóa chính là chuỗi
+    public function danhMuc()
+    {
+        return $this->belongsTo(DanhMucBDS::class, 'PropertyType', 'Protype_ID');
+    }
+
+    public function chiTiet()
+    {
+        return $this->belongsTo(DetailProperty::class, 'IdDetail', 'IdDetail');
+    }
+
+    public function chusohuu()
+    {
+        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
+    }
+    public function moigioi()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
+    public function quantri()
+    {
+        return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
+    }
+
+    protected $fillable = [
+         'OwnerID',
+         'AgentID',
+         'PostedDate',
+         'ApprovedBy',
+         'ApprovedDate',
+         'Status',
+         'Province',
+         'District',
+         'Ward',
+         'Address',
+         'PropertyType',
+          'Price',
+          'Title',
+        'Description',
+        'IdDetail',
+        'TypePro',
+    ];
 }
