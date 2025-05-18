@@ -9,11 +9,18 @@
         'resources/sass/footer.scss',
         'resources/sass/login.scss',
         'resources/sass/register.scss',
+        'resources/sass/apphome.scss',
+        'resources/sass/banner.scss',
+        'resources/sass/change-password.scss',
+        'resources/sass/search-results.scss',
+        'resources/sass/property-detail.scss',
         'resources/js/dscactinh.js',
+        'resources/js/home.js',
         ])
     {{-- Từ bản laravel 12x trở lên sử dụng @vite để điều hướng scss --}}
     {{-- <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <header>
     @include('_layout.header')
@@ -23,6 +30,8 @@
     @yield('login')
     @yield('register')
     @yield('home')
+    @yield('changepassword')
+    @yield('profilecustomer')
 </body>
 <footer>
     @include('_layout.footer')

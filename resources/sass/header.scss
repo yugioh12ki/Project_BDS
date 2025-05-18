@@ -12,9 +12,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    background-color: #adadad;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 0 32px;
+    background-color: #cbbb82;
+    height: 80px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 
     &__left {
         display: flex;
@@ -22,115 +23,130 @@ body {
     }
 
     &__logo {
-        width: 40px;
-        height: 40px;
-        margin-right: 20px;
-        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+        margin-right: 28px;
+        border-radius: 16px;
+        background: #fff;
+        object-fit: contain;
     }
 
     &__menu {
         list-style: none;
         display: flex;
-        gap: 20px;
+        gap: 38px;
 
         li a {
             text-decoration: none;
-            color: #ffffff;
-            font-size: 14px;
-
-            &:hover {
-                color: #007bff;
-            }
+            color: #444;
+            font-size: 18px;
+            font-weight: 500;
+            padding: 8px 0;
+            transition: color 0.17s;
+            &:hover { color: #059669; }
         }
     }
 
     &__right {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 18px;
 
-        .icon-label {
+        .navbar__call {
+            background: #c5a574;
+            color: #fff;
+            border-radius: 24px;
+            padding: 0 28px 0 16px;
+            height: 48px;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.6rem;
-            border-radius: 9999px;
-            background-color: rgb(69, 245, 236);
-            border: 1px solid #ddd;
-            cursor: pointer;
-            font-size: 0.875rem;
-            color: #ffffff;
-
-            &:hover {
-                background-color: #ff0000;
-            }
-
-            .icon {
-                width: 1.25rem;
-                height: 1.25rem;
-                stroke: rgb(255, 254, 254);
-            }
-
-            span {
-                white-space: nowrap;
-            }
+            font-size: 17px;
+            gap: 10px;
+            .bi-telephone { font-size: 22px; }
         }
 
         .btn-login, .btn-register {
-            padding: 12px 20px;
-            background-color: #007bff;
-            color: #fff;
+            padding: 0 24px;
+            background-color: #6af7c2;
+            color: #21765d;
             border: none;
-            border-radius: 10px;
-            font-size: 14px;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            height: 48px;
             cursor: pointer;
-
-            &:hover {
-                background-color: #f00202;
-            }
+            transition: background 0.17s;
+            margin-left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        .btn-login:hover, .btn-register:hover { background: #53e1ae; }
 
-        // Dropdown user styles
         .user-dropdown {
             position: relative;
             display: inline-block;
-
             &-btn {
                 background: none;
                 border: none;
-                font-size: 18px;
-                color: #222;
+                font-size: 16px;
+                color: #2d3748;
                 cursor: pointer;
-                padding: 8px 16px;
+                padding: 10px 16px;
                 border-radius: 8px;
-                transition: background 0.2s;
+                transition: all 0.2s ease;
                 display: flex;
                 align-items: center;
-                gap: 4px;
+                gap: 8px;
+                font-weight: 500;
 
-                &:hover, &:focus {
-                    background: #E3DAC9;
+                &:hover, &:focus { 
+                    background: rgba(255, 255, 255, 0.2);
+                    color: #1a202c;
                 }
             }
-
             &-content {
                 display: none;
                 position: absolute;
                 right: 0;
-                background: #fff;
-                min-width: 120px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-                z-index: 100;
+                top: 100%;
+                background: #ffffff;
+                min-width: 200px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                z-index: 1000;
                 border-radius: 8px;
-                margin-top: 6px;
-                overflow: hidden; // đẹp khi hover
-
-                &.show {
+                margin-top: 8px;
+                padding: 8px 0;
+                border: 1px solid #e2e8f0;
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: all 0.2s ease;
+                
+                &.show { 
                     display: block;
+                    opacity: 1;
+                    transform: translateY(0);
                 }
 
-                form {
+                a.dropdown-item {
+                    display: flex;
+                    align-items: center;
+                    padding: 10px 16px;
+                    text-decoration: none;
+                    color: #4a5568;
+                    font-size: 15px;
+                    transition: all 0.2s ease;
+                    
+                    &:hover {
+                        background: #f7fafc;
+                        color: #2d3748;
+                    }
+                }
+
+                form { 
                     margin: 0;
+                    padding: 8px 0;
+                    border-top: 1px solid #e2e8f0;
                 }
 
                 .logout-btn {
@@ -139,14 +155,16 @@ body {
                     width: 100%;
                     text-align: left;
                     padding: 10px 16px;
-                    font-size: 16px;
+                    font-size: 15px;
                     cursor: pointer;
-                    border-radius: 8px;
-                    transition: background 0.2s;
-                    color: #222;
+                    color: #e53e3e;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
 
-                    &:hover {
-                        background: #fff;
+                    &:hover { 
+                        background: #fff5f5;
+                        color: #c53030;
                     }
                 }
             }

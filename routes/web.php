@@ -123,7 +123,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['checkRole:Customer'])->prefix('customer')->name('customer.')->group(function () {
         Route::get('/', [CustomerController::class, 'index'])->name('home');
-        // các route khác của customer...
+        // Profile routes
+        Route::get('/profile', [CustomerController::class, 'showProfile'])->name('profile');
+        Route::put('/profile', [CustomerController::class, 'updateProfile'])->name('profile.update');
+        // Change password routes
+        Route::get('/change-password', [CustomerController::class, 'showChangePasswordForm'])->name('change-password');
+        Route::post('/change-password', [CustomerController::class, 'changePassword'])->name('password.change');
     });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)
@@ -133,3 +138,9 @@ Route::middleware(['auth'])->group(function () {
     })->name('logout');
 
 });
+
+// Route tìm kiếm bất động sản
+Route::get('/search', [App\Http\Controllers\CustomerController::class, 'search'])->name('customer.search');
+
+// Route chi tiết bất động sản
+Route::get('/property/{id}', [App\Http\Controllers\CustomerController::class, 'propertyDetail'])->name('property.detail');
