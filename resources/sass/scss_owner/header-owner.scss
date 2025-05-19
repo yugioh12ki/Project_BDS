@@ -10,9 +10,11 @@
     padding: 0 24px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     z-index: 1001;
     box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+.header-left {
+    margin-right: auto;
 }
 .header-left h2 {
     margin: 0;
@@ -21,10 +23,11 @@
     color: #4A4A4A;
 }
 .header-right {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    position: relative;
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    position: relative !important;
+    margin-left: auto !important;
 }
 .user-greeting {
     color: #4A4A4A;
@@ -68,7 +71,7 @@
     }
 }
 .content-area {
-    margin-top: 110px; /* 60px header + 50px nav */
+    margin-top: 60px;
     padding: 24px 16px 16px 16px;
 }
 @media (max-width: 768px) {
@@ -78,16 +81,108 @@
         padding: 10px 8px;
         gap: 6px;
     }
-    .header-left h2 {
-        font-size: 1.05rem;
+    .header-left {
+        margin-right: 0;
+    }
+    .header-nav {
+        margin: 5px auto;
+        width: 100%;
+        ul {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        li {
+            margin: 3px 5px;
+        }
+        a.header-nav-link {
+            font-size: 0.85rem;
+            padding: 8px 10px;
+        }
+    }
+    .header-right {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
     }
     .user-greeting {
         font-size: 0.95rem;
         padding: 2px 8px;
     }
     .content-area {
-        margin-top: 100px; /* Adjust for mobile, header might wrap, nav might be smaller or wrap */
+        margin-top: 120px;
         padding: 12px 4px 4px 4px;
     }
 }
 /* --- END HEADER OWNER --- */
+
+/* New Header Navigation Styles - Updated */
+.header-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-grow: 1 !important;
+}
+
+.header-nav ul {
+    display: flex !important;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 20px !important;
+}
+
+.header-nav li {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.header-nav a.header-nav-link {
+    padding: 8px 12px !important;
+    text-decoration: none !important;
+    color: #4A4A4A !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    border-radius: 4px !important;
+    transition: background-color 0.2s, color 0.2s !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.header-nav a.header-nav-link:hover {
+    background-color: rgba(0,0,0,0.05) !important;
+    color: #333 !important;
+}
+
+.header-nav a.header-nav-link i {
+    margin-right: 6px !important;
+}
+/* End New Header Navigation Styles */
+
+/* Notification Icon Styles - Updated */
+.notification-icon-wrapper {
+    position: relative !important;
+}
+
+.notification-icon {
+    color: #4A4A4A !important;
+    font-size: 1.2rem !important;
+    text-decoration: none !important;
+    padding: 5px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.notification-count {
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    background-color: #E74C3C !important; 
+    color: white !important;
+    border-radius: 50% !important;
+    padding: 1px 5px !important;
+    font-size: 0.7rem !important;
+    font-weight: bold !important;
+    line-height: 1 !important;
+}
+/* End Notification Icon Styles */

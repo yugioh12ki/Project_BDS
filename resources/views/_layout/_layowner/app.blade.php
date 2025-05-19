@@ -19,8 +19,6 @@
 <header>
     @include('_layout._layowner.header')
 </header>
-{{-- Include the new horizontal navigation bar directly below the header --}}
-@include('_layout._layowner.nav') {{-- Updated from sidebar to nav --}}
 
 <body>
     {{-- Remove old menu toggle button --}}
@@ -35,6 +33,8 @@
     <div class="content-area">
         @yield('content')
     </div>
-    <!-- Offcanvas Thêm BĐS đã bị loại bỏ khỏi layout tổng, chỉ include ở view dashboard -->
+    
+    <!-- Footer -->
+    @include('_layout._layowner.footer')
 </body>
 </html>
