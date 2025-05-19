@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class SystemController extends Controller
 {
@@ -26,7 +27,82 @@ class SystemController extends Controller
     public function admin()
     {
         if (Auth::check()) {
-            return view('_system.index');
+            // Get statistics
+            $totalTransactions = Transaction::count();
+            $pendingTransactions = Transaction::where('TranStatus', 'Pending')->count();
+            $completedTransactions = Transaction::where('TranStatus', 'Paid')->count();
+            $canceledTransactions = Transaction::where('TranStatus', 'Cancel')->count();
+
+            $totalProperties = Property::count();
+            $totalCommissions = Commission::count();
+            $pendingCommissions = Commission::where('StatusCommission', 'Pending')->count();
+            $successCommissions = Commission::where('StatusCommission', 'Success')->count();
+
+            // Calculate total commission amount
+            $totalCommissionAmount = Commission::sum('Amount');
+
+            // Calculate average commission percentage
+            $avgCommissionPercentage = Commission::avg('Percentage');
+
+            // Get top 5 agents by commission
+            $topAgents = DB::table('commission')
+                ->join('user', 'commission.AgentID', '=', 'user.UserID')
+                ->select('user.UserID', 'user.Name', DB::raw('SUM(commission.Amount) as totalAmount'))
+                ->groupBy('user.UserID', 'user.Name')
+                ->orderByDesc('totalAmount')
+                ->limit(5)
+                ->get();
+
+            // Get recent transactions
+            $recentTransactions = Transaction::with(['trans_property', 'trans_agent', 'trans_owner', 'trans_cus'])
+                ->orderByDesc('TransactionDate')
+                ->limit(5)
+                ->get();
+
+            // Get monthly transaction statistics for current year
+            $currentYear = date('Y');
+            $monthlyStats = DB::table('transactions')
+                ->select(DB::raw('MONTH(TransactionDate) as month'), DB::raw('COUNT(*) as count'), DB::raw('SUM(TotalPrice) as total'))
+                ->whereYear('TransactionDate', $currentYear)
+                ->groupBy(DB::raw('MONTH(TransactionDate)'))
+                ->orderBy('month')
+                ->get();
+
+            $monthlyData = array_fill(1, 12, ['count' => 0, 'total' => 0]);
+            foreach ($monthlyStats as $stat) {
+                $monthlyData[$stat->month] = ['count' => $stat->count, 'total' => $stat->total];
+            }
+
+            // Prepare data for charts
+            $transactionStatusLabels = ['Pending', 'Paid', 'Cancelled'];
+            $transactionStatusData = [$pendingTransactions, $completedTransactions, $canceledTransactions];
+
+            $commissionStatusLabels = ['Pending', 'Success', 'Cancelled'];
+            $commissionStatusData = [
+                $pendingCommissions,
+                $successCommissions,
+                Commission::where('StatusCommission', 'Cancel')->count()
+            ];
+
+            return view('_system.index', compact(
+                'totalTransactions',
+                'pendingTransactions',
+                'completedTransactions',
+                'canceledTransactions',
+                'totalProperties',
+                'totalCommissions',
+                'pendingCommissions',
+                'successCommissions',
+                'totalCommissionAmount',
+                'avgCommissionPercentage',
+                'topAgents',
+                'recentTransactions',
+                'monthlyData',
+                'transactionStatusLabels',
+                'transactionStatusData',
+                'commissionStatusLabels',
+                'commissionStatusData'
+            ));
         } else {
             abort(403, 'Bạn không có quyền truy cập vào trang này.');
         }
@@ -813,13 +889,195 @@ class SystemController extends Controller
     public function getCommission()
     {
         $columns = Schema::getColumnListing('commission');
-        $commissions = Commission::all();
+        $commissions = Commission::with(['comm_agent', 'comm_trans'])->paginate(10);
+        $transactions = Transaction::where('TranStatus', 'Paid')->get();
+
         if ($columns === null || $commissions->isEmpty()) {
-            $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
-            return view('_system.commission', compact('error')); // Truyền thông báo lỗi sang view
+            $error = '404 Error: Lỗi lấy dữ liệu';
+            return view('_system.commission', compact('error'));
         }
-        return view('_system.commission', compact('columns','commissions')); // Đảm bảo biến truyền vào view là $users
+
+        return view('_system.commission', compact('columns', 'commissions', 'transactions'));
     }
+
+    // Hiển thị form tạo mới commission
+    public function createCommissionForm()
+    {
+        $transactions = Transaction::where('TranStatus', 'Paid')->get(); // Lấy danh sách giao dịch đã thanh toán
+
+        return view('_system.partialview.create_commission', compact('transactions'));
+    }
+
+    // Xử lý lưu commission mới
+    public function createCommission(Request $request)
+    {
+
+        $validated = $request->validate([
+            'TransactionID' => 'required|exists:transactions,TransactionID',
+            'RentMonth' => 'nullable|integer',
+            'Percentage' => 'required|numeric',
+            'StatusCommission' => 'required|in:Success,Pending,Cancel',
+            'PaidDate' => 'nullable|date',
+        ]);
+
+        // Lấy thông tin Transaction
+        $transaction = Transaction::with('trans_agent')->where('TransactionID', $validated['TransactionID'])->where('TranStatus', 'Paid')->first();
+
+        if (!$transaction) {
+            return redirect()->back()->withErrors(['error' => 'Giao dịch không hợp lệ hoặc chưa được thanh toán.']);
+        }
+
+        // Tạo Commission mới
+        $commission = new Commission();
+
+        $commission->AgentID = $transaction->AgentID; // Lấy AgentID từ Transaction
+        $commission->TransactionID = $validated['TransactionID'];
+        $commission->StatusCommission = $validated['StatusCommission'];
+
+        if (isset($validated['RentMonth'])) {
+            $commission->RentMonth = $validated['RentMonth'];
+        }
+
+        if (isset($validated['Percentage'])) {
+            $commission->Percentage = $validated['Percentage'];
+        }
+
+        // Xử lý PaidDate theo trạng thái
+        if ($validated['StatusCommission'] === 'Success') {
+            $commission->PaidDate = now();
+        } else {
+            $commission->PaidDate = null;
+        }
+
+        $commission->save();
+
+        return redirect()->route('admin.commission')->with('success', 'Hoa hồng đã được tạo thành công.');
+    }
+
+
+    // Xử lý cập nhật commission
+    public function updateCommission(Request $request, $id)
+    {
+        $commission = Commission::find($id);
+
+        if (!$commission) {
+            return redirect()->back()->withErrors(['error' => 'Không tìm thấy hoa hồng.']);
+        }
+
+        $validated = $request->validate([
+            'StatusCommission' => 'required|in:Success,Pending,Cancel',
+            'PaidDate' => 'nullable|date',
+        ]);
+
+        // Chỉ cập nhật StatusCommission và PaidDate, không động đến TransactionID, AgentID, RentMonth, Percentage
+        $commission->StatusCommission = $validated['StatusCommission'];
+        if ($validated['StatusCommission'] === 'Success') {
+            $commission->PaidDate = now();
+        }
+        else {
+            $commission->PaidDate = null; // Hoặc null nếu bạn muốn xóa giá trị
+        }
+        $commission->update();
+
+        return redirect()->route('admin.commission')->with('success', 'Hoa hồng đã được cập nhật thành công.');
+    }
+
+    // Xử lý xóa commission
+    public function deleteCommission($id)
+    {
+        try {
+            $commission = Commission::find($id);
+
+            if (!$commission) {
+                return redirect()->back()->withErrors(['error' => 'Không tìm thấy hoa hồng.']);
+            }
+
+            $commission->delete();
+
+            return redirect()->route('admin.commission')->with('success', 'Hoa hồng đã được xóa thành công.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Không thể xóa hoa hồng. ' . $e->getMessage()]);
+        }
+    }
+
+    // Lọc commission theo trạng thái
+
+    public function getCommissionByStatus(Request $request, $status)
+    {
+        $columns = Schema::getColumnListing('commission');
+        $paidDate = $request->input('paid_date');
+
+        $query = Commission::with(['comm_agent', 'comm_trans']);
+        if ($status != 'all') {
+            $query->where('StatusCommission', $status);
+        }
+        if ($paidDate) {
+            $query->whereDate('PaidDate', $paidDate);
+        }
+        $commissions = $query->paginate(10);
+
+        if ($columns === null || $commissions->isEmpty()) {
+            $error = 'Không tìm thấy hoa hồng nào với trạng thái: ' . $status . ($paidDate ? (' và ngày thanh toán: ' . $paidDate) : '');
+            return view('_system.commission', compact('error', 'columns', 'commissions', 'status', 'paidDate'));
+        }
+
+        return view('_system.commission', compact('columns', 'commissions', 'status', 'paidDate'));
+    }
+
+    // Lấy chi tiết commission
+    public function getCommissionById($id)
+    {
+        $commission = Commission::with(['comm_agent', 'comm_trans'])->find($id);
+
+        if (!$commission) {
+            return redirect()->back()->withErrors(['error' => 'Không tìm thấy hoa hồng.']);
+        }
+
+        $columns = Schema::getColumnListing('commission');
+        $commissions = Commission::with(['comm_agent', 'comm_trans'])->get();
+
+        return view('_system.commission', compact('commission'));
+    }
+
+    // Tìm kiếm commission
+    public function searchCommission(Request $request)
+    {
+        $keyword = $request->input('keyword');
+        $paidDate = $request->input('paid_date');
+
+        $columns = Schema::getColumnListing('commission');
+
+        $query = Commission::with(['comm_agent', 'comm_trans']);
+
+        if ($paidDate) {
+            // Lọc theo ngày thanh toán (PaidDate)
+            $query->whereDate('PaidDate', $paidDate);
+        } elseif ($keyword) {
+            // Tìm kiếm với các quan hệ (dùng with để eager loading)
+            $query->where(function($q) use ($keyword) {
+                $q->where('CommissionID', 'LIKE', "%$keyword%")
+                  ->orWhere('AgentID', 'LIKE', "%$keyword%")
+                  ->orWhere('TransactionID', 'LIKE', "%$keyword%")
+                  ->orWhere('Amount', 'LIKE', "%$keyword%")
+                  ->orWhere('TypeCom', 'LIKE', "%$keyword%")
+                  ->orWhere('StatusCommission', 'LIKE', "%$keyword%")
+                  ;
+            })
+            ->orWhereHas('comm_agent', function($q) use ($keyword) {
+                $q->where('Name', 'LIKE', "%$keyword%") ;
+            });
+        }
+
+        $commissions = $query->get();
+
+        if ($columns === null || $commissions->isEmpty()) {
+            $error = $paidDate ? ('Không tìm thấy hoa hồng nào với ngày thanh toán: ' . $paidDate) : ('Không tìm thấy hoa hồng nào phù hợp với từ khóa: ' . $keyword);
+            return view('_system.commission', compact('error', 'columns', 'commissions', 'keyword', 'paidDate'));
+        }
+
+        return view('_system.commission', compact('columns', 'commissions', 'keyword', 'paidDate'));
+    }
+
 
 
     private function fetchProvinces()
@@ -931,10 +1189,25 @@ class SystemController extends Controller
 
     public function addDocument(Request $request, $transactionId)
     {
-        $request->validate([
+        if ($request->hasFile('document')) {
+        $fileSize = $request->file('document')->getSize();
+        $maxSize = 10 * 1024 * 1024; // 10MB
+
+        if ($fileSize > $maxSize) {
+            return back()->with('error', 'Tập tin quá lớn! Kích thước tối đa cho phép là 10MB. Tập tin của bạn: ' .
+                round($fileSize / (1024 * 1024), 2) . 'MB');
+        }
+    }
+        $validator = Validator::make($request->all(), [
             'document' => 'required|file|max:10240', // Max 10MB
             'DocumentType' => 'required|string',
+        ],[
+            'document.max' => 'Kích thước file không được vượt quá 10MB',
         ]);
+
+        if($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
 
         $transaction = Transaction::find($transactionId);
         if (!$transaction) {
@@ -1016,6 +1289,66 @@ class SystemController extends Controller
         }
     }
 
+    /**
+     * Lấy dữ liệu thống kê giao dịch theo tháng để hiển thị trên biểu đồ
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMonthlyStats()
+    {
+        try {
+            $currentYear = date('Y');
 
+            // Lấy dữ liệu theo tháng cho năm hiện tại
+            $monthlyStats = DB::table('transactions')
+                ->select(
+                    DB::raw('MONTH(TransactionDate) as month'),
+                    DB::raw('COUNT(*) as count'),
+                    DB::raw('SUM(TotalPrice) as total')
+                )
+                ->whereYear('TransactionDate', $currentYear)
+                ->groupBy(DB::raw('MONTH(TransactionDate)'))
+                ->orderBy('month')
+                ->get();
 
+            // Tạo mảng labels và dữ liệu theo tháng
+            $labels = [];
+            $transactionCounts = array_fill(0, 12, 0); // Khởi tạo mảng với 12 phần tử là 0
+            $totalPrices = array_fill(0, 12, 0);
+
+            // Tên các tháng trong tiếng Việt
+            $monthNames = [
+                1 => 'Tháng 1', 2 => 'Tháng 2', 3 => 'Tháng 3', 4 => 'Tháng 4',
+                5 => 'Tháng 5', 6 => 'Tháng 6', 7 => 'Tháng 7', 8 => 'Tháng 8',
+                9 => 'Tháng 9', 10 => 'Tháng 10', 11 => 'Tháng 11', 12 => 'Tháng 12'
+            ];
+
+            // Lấy tên các tháng cho labels
+            for ($i = 1; $i <= 12; $i++) {
+                $labels[] = $monthNames[$i];
+            }
+
+            // Điền dữ liệu vào mảng
+            foreach ($monthlyStats as $stat) {
+                $monthIndex = $stat->month - 1; // Chuyển từ 1-12 sang 0-11 để phù hợp với index mảng
+                $transactionCounts[$monthIndex] = $stat->count;
+                $totalPrices[$monthIndex] = $stat->total;
+            }
+
+            // Trả về dữ liệu dưới dạng JSON
+            return response()->json([
+                'labels' => $labels,
+                'transactionCounts' => $transactionCounts,
+                'totalPrices' => $totalPrices,
+                'year' => $currentYear
+            ]);
+        } catch (\Exception $e) {
+            // Log lỗi và trả về response lỗi
+            Log::error('Error getting monthly stats: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Không thể lấy dữ liệu thống kê theo tháng.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

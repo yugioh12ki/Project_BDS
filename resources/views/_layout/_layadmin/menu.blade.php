@@ -8,7 +8,7 @@
         <li><a href="{{ route('admin.appointment') }}"><i class="fas fa-calendar-alt"></i> Quản lý cuộc hẹn</a></li>
         <li><a href="{{ route('admin.transaction') }}"><i class="fas fa-file-contract"></i> Quản lý hợp đồng giao dịch BĐS</a></li>
         <li><a href="{{ route('admin.commission') }}"><i class="fas fa-hand-holding-usd"></i> Quản lý hoa hồng môi giới</a></li>
-        <li><a href=""><i class="fas fa-chart-bar"></i> Thống kê báo cáo</a></li>
+        <li><a href="{{ route('admin.dashboard') }}"><i class="fas fa-chart-bar"></i> Thống kê báo cáo</a></li>
         <li><a href=""><i class="fas fa-comments"></i> Quản lý Chatbox hỗ trợ KH</a></li>
       </ul>
     </nav>

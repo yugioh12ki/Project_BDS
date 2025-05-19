@@ -44,4 +44,13 @@ class Transaction extends Model
         return $this->belongsTo(user::class, 'CusID', 'UserID');
     }
 
+    public function trans_property()
+    {
+        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
+    }
+
+    public function trans_commission()
+    {
+        return $this->hasMany(Commission::class, 'TransactionID', 'TransactionID');
+    }
 }

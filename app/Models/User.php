@@ -102,6 +102,10 @@ class User extends Authenticatable
         return $this->hasOne(profile_agent::class, 'UserID', 'UserID');
     }
 
+    public function comm_agent()
+    {
+        return $this->hasOne(Commission::class, 'UserID', 'UserID');
+    }
 
 
     public function getAuthPassword()

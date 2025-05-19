@@ -131,10 +131,10 @@
                                     <td>{{ date('d/m/Y H:i', strtotime($doc->UploadedDate)) }}</td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="{{ route('document.view', $doc->DocumentID) }}" target="_blank" class="btn btn-sm btn-info">
+                                            <a href="{{ route('admin.document.view', $doc->DocumentID) }}" target="_blank" class="btn btn-sm btn-info">
                                                 <i class="fas fa-eye"></i> Xem
                                             </a>
-                                            <a href="{{ route('document.download', $doc->DocumentID) }}" class="btn btn-sm btn-success">
+                                            <a href="{{ route('admin.document.download', $doc->DocumentID) }}" class="btn btn-sm btn-success">
                                                 <i class="fas fa-download"></i> Tải xuống
                                             </a>
 
@@ -166,23 +166,39 @@
                             <div class="row">
                                 <div class="col-md-5 mb-3">
                                     <label class="form-label">Loại tài liệu</label>
-                                    <input type="text" name="DocumentType" id="documentType{{ $transaction->TransactionID }}" class="form-control" required>
-                                    <small class="text-muted">Định dạng file</small>
+                                    <select name="DocumentType" id="documentType{{ $transaction->TransactionID }}" class="form-select" required>
+                                        <option value="">-- Chọn loại tài liệu --</option>
+                                        <option value="PDF Document">PDF Document</option>
+                                        <option value="Word Document">Word Document</option>
+                                        <option value="Excel Document">Excel Document</option>
+                                        <option value="Text Document">Text Document</option>
+                                        <option value="Rich Text Document">Rich Text Document</option>
+                                        <option value="PowerPoint Document">PowerPoint Document</option>
+                                    </select>
+                                    <small class="text-muted">Chọn loại tài liệu phù hợp</small>
                                 </div>
                                 <div class="col-md-5 mb-3">
                                     <label class="form-label">Chọn file</label>
                                     <input type="file" name="document" id="documentFile{{ $transaction->TransactionID }}" class="form-control" required
                                         accept=".pdf,.doc,.docx,.xls,.xlsx">
-                                    <small class="text-muted">Chỉ chấp nhận file PDF, DOC, DOCX, XLS, XLSX</small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> Chỉ chấp nhận file PDF, DOC, DOCX, XLS, XLSX
+                                        <span class="file-size-warning">(tối đa 10MB)</span>
+                                    </small>
+                                </div>
+                                    <!-- Cải thiện khu vực cảnh báo -->
+                                <div id="fileWarning{{ $transaction->TransactionID }}" class="alert alert-warning mt-2 d-none">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span id="warningMessage{{ $transaction->TransactionID }}">File không được hỗ trợ. Vui lòng chọn file văn bản.</span>
+                                    <div class="mt-2">
+                                        <small>Hướng dẫn: Vui lòng nén file để giảm kích thước trước khi tải lên.</small>
+                                    </div>
                                 </div>
                                 <div class="col-md-2 mb-3 d-flex align-items-end">
                                     <button type="submit" id="uploadBtn{{ $transaction->TransactionID }}" class="btn btn-success w-100">Tải lên</button>
                                 </div>
                             </div>
-                            <div id="fileWarning{{ $transaction->TransactionID }}" class="alert alert-warning mt-2 d-none">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <span id="warningMessage{{ $transaction->TransactionID }}">File không được hỗ trợ. Vui lòng chọn file văn bản.</span>
-                            </div>
+
                         </form>
                     @endif
 
@@ -197,28 +213,63 @@
 
 <script>
 $(document).ready(function() {
+    // Xử lý ngay khi trang load, không chỉ khi modal hiển thị
+    setupDocumentHandlers();
+
+    // Khi modal hiển thị, đảm bảo xử lý lại
     $('#editModal{{ $transaction->TransactionID }}').on('shown.bs.modal', function () {
         // Tab handling
         $('#transaction-info-tab{{ $transaction->TransactionID }}').tab('show');
+        setupDocumentHandlers();
+    });
 
-        console.log('Modal shown, setting up file input handler');
+    function setupDocumentHandlers() {
+        console.log('Setting up file input handler');
 
-        // Sử dụng ID đúng của input file
-        $('#documentFile{{ $transaction->TransactionID }}').on('change', function() {
+        // File input handler
+        var fileInput = $('#documentFile{{ $transaction->TransactionID }}');
+        var documentTypeInput = $('#documentType{{ $transaction->TransactionID }}');
+        var uploadBtn = $('#uploadBtn{{ $transaction->TransactionID }}');
+        var warningDiv = $('#fileWarning{{ $transaction->TransactionID }}');
+        var warningMessage = $('#warningMessage{{ $transaction->TransactionID }}');
+
+        console.log('File input exists:', fileInput.length > 0);
+        console.log('Document type input exists:', documentTypeInput.length > 0);
+
+        fileInput.off('change').on('change', function() {
             console.log('File input changed');
             var fileName = $(this).val().split('\\').pop();
             console.log('Selected file:', fileName);
 
-            var uploadBtn = $('#uploadBtn{{ $transaction->TransactionID }}');
-            var warningDiv = $('#fileWarning{{ $transaction->TransactionID }}');
-            var warningMessage = $('#warningMessage{{ $transaction->TransactionID }}');
-
             if (fileName) {
+                var fileSize = this.files[0].size; // kích thước theo bytes
+                var maxSize = 10 * 1024 * 1024; // 10MB
+
+                console.log('File size:', fileSize, 'bytes');
+
+                var readableSize;
+                if (fileSize < 1024 * 1024) {
+                    readableSize = Math.round(fileSize / 1024 * 10) / 10 + ' KB';
+                } else {
+                    readableSize = Math.round(fileSize / (1024 * 1024) * 10) / 10 + ' MB';
+                }
+
+
+                // Nếu file quá lớn
+                if (fileSize > maxSize) {
+                    uploadBtn.prop('disabled', true);
+                    warningDiv.removeClass('d-none');
+                    warningMessage.text('File quá lớn! Kích thước tối đa cho phép là 10MB. File của bạn: ' + Math.round(fileSize / (1024 * 1024) * 10) / 10 + 'MB');
+                    return; // Dừng xử lý tiếp theo
+                }
+
+
+
                 // Lấy phần đuôi file
                 var extension = fileName.split('.').pop().toLowerCase();
                 console.log('File extension:', extension);
 
-                // Danh sách các file văn bản được chấp nhận
+                // Danh sách các file văn bản được chấp nhận và map với dropdown option values
                 var allowedTextTypes = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'rtf', 'ppt', 'pptx'];
 
                 // Danh sách các file ảnh cần hiển thị cảnh báo
@@ -245,13 +296,31 @@ $(document).ready(function() {
                         case 'xlsx':
                             documentType = 'Excel Document';
                             break;
+                        case 'txt':
+                            documentType = 'Text Document';
+                            break;
+                        case 'rtf':
+                            documentType = 'Rich Text Document';
+                            break;
+                        case 'ppt':
+                        case 'pptx':
+                            documentType = 'PowerPoint Document';
+                            break;
                         default:
                             documentType = extension.toUpperCase() + ' Document';
                     }
 
                     console.log('Setting document type to:', documentType);
+
                     // Điền vào trường DocumentType
-                    $('#documentType{{ $transaction->TransactionID }}').val(documentType);
+                    documentTypeInput.val(documentType);
+
+                    // In ra console để kiểm tra việc điền giá trị
+                    console.log('Document type set to:', documentTypeInput.val());
+
+                    // Kích hoạt sự kiện change để đảm bảo các sự kiện phụ thuộc được kích hoạt
+                    documentTypeInput.trigger('change');
+
                 } else if (imageTypes.includes(extension)) {
                     // File ảnh - hiển thị cảnh báo
                     uploadBtn.prop('disabled', true);
@@ -265,19 +334,80 @@ $(document).ready(function() {
                 }
             }
         });
+    }
+});
 
-        // Thêm log để kiểm tra các elements đã được tìm thấy chưa
-        console.log('File input exists:', $('#documentFile{{ $transaction->TransactionID }}').length > 0);
-        console.log('Document type input exists:', $('#documentType{{ $transaction->TransactionID }}').length > 0);
-    });
+// Kiểm tra khi form submit
+$('form').submit(function(e) {
+    // Chỉ áp dụng cho form có input file
+    var fileInput = $(this).find('input[type=file]');
+    if (fileInput.length && fileInput[0].files.length > 0) {
+        var fileSize = fileInput[0].files[0].size;
+        var maxSize = 10 * 1024 * 1024; // 10MB
+
+        // Kiểm tra kích thước file
+        if (fileSize > maxSize) {
+            e.preventDefault(); // Ngăn form submit
+
+            // Hiển thị cảnh báo
+            var warningDiv = $('#fileWarning{{ $transaction->TransactionID }}');
+            var warningMessage = $('#warningMessage{{ $transaction->TransactionID }}');
+
+            warningDiv.removeClass('d-none');
+            warningMessage.html('<strong>Không thể tải lên:</strong> File quá lớn! Kích thước tối đa cho phép là 10MB.');
+
+            // Scroll đến cảnh báo
+            $('html, body').animate({
+                scrollTop: warningDiv.offset().top - 100
+            }, 500);
+
+            // Hiệu ứng nhấp nháy
+            warningDiv.addClass('warning-flash');
+            setTimeout(function() {
+                warningDiv.removeClass('warning-flash');
+            }, 1000);
+
+            return false;
+        }
+
+        // Kiểm tra nếu đã chọn loại tài liệu
+        var documentType = $(this).find('select[name="DocumentType"]').val();
+        if (!documentType) {
+            e.preventDefault(); // Ngăn form submit
+            alert('Vui lòng chọn loại tài liệu trước khi tải lên.');
+            return false;
+        }
+    }
 });
 
 
 
 // Đảm bảo ID của tab và nội dung tab không trùng nhau giữa các modal
-$(document).ready(function() {
-    $('#editModal{{ $transaction->TransactionID }}').on('shown.bs.modal', function () {
-        $('#transaction-info-tab{{ $transaction->TransactionID }}').tab('show');
-    });
-});
+// $(document).ready(function() {
+//     $('#editModal{{ $transaction->TransactionID }}').on('shown.bs.modal', function () {
+//         $('#transaction-info-tab{{ $transaction->TransactionID }}').tab('show');
+//     });
+// });
 </script>
+
+<style>
+.file-size-warning {
+    font-weight: bold;
+    color: #d9534f;
+}
+
+.alert-warning {
+    border-left: 5px solid #f0ad4e;
+}
+
+/* Hiệu ứng nhấp nháy khi có lỗi */
+@keyframes warningFlash {
+    0% { background-color: #fcf8e3; }
+    50% { background-color: #f8d7da; }
+    100% { background-color: #fcf8e3; }
+}
+
+.warning-flash {
+    animation: warningFlash 1s;
+}
+</style>

@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\Transaction;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,4 +18,21 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+// API lấy môi giới theo TransactionID
+Route::get('/agents-by-transaction/{transactionId}', function ($transactionId) {
+    $transaction = Transaction::find($transactionId);
+    if (!$transaction) {
+        return response()->json([], 404);
+    }
+    $agent = User::find($transaction->AgentID);
+    if ($agent) {
+        return response()->json([
+            'AgentID' => $agent->UserID,
+            'Name' => $agent->Name
+        ]);
+    } else {
+        return response()->json([], 404);
+    }
 });
