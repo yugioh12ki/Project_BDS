@@ -1,0 +1,107 @@
+/* Styles for the new horizontal owner navigation */
+.owner-nav {
+    background-color: #fff; // White background for the nav bar
+    padding: 0 15px;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    height: 50px; // Adjust height as needed
+    display: flex;
+    align-items: center; // Center items vertically
+}
+
+.owner-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex; // Arrange list items horizontally
+    align-items: center;
+    height: 100%;
+}
+
+.owner-nav li {
+    margin: 0; // Remove original margin
+    position: relative; // For submenu positioning
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.owner-nav a.nav-link, .owner-nav a.nav-link-sub {
+    display: flex;
+    align-items: center;
+    padding: 0 15px; // Horizontal padding for links
+    font-size: 0.95rem; // Slightly smaller font
+    color: #333; // Darker text color
+    text-decoration: none;
+    font-weight: 500; // Medium weight
+    height: 100%;
+    border: none; // Remove previous borders
+    border-radius: 0; // Remove previous border-radius
+    background: transparent; // Ensure no background from old styles
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.owner-nav a.nav-link:hover, .owner-nav a.nav-link-sub:hover {
+    color: #4A00E0; // Use a color from the header gradient
+    background-color: #f5f5f5; // Light background on hover
+}
+
+.owner-nav a.nav-link i, .owner-nav a.nav-link-sub i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+    color: #555;
+}
+
+/* Submenu (Dropdown) Styles */
+.nav-item-has-submenu .nav-submenu {
+    display: none;
+    position: absolute;
+    top: 100%; // Position below the parent link
+    left: 0;
+    background-color: #fff;
+    list-style: none;
+    padding: 5px 0;
+    margin: 0;
+    min-width: 200px; // Minimum width for the dropdown
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 1px solid #eee;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 1000;
+    flex-direction: column; // Stack submenu items vertically
+    height: auto; // Override parent li height
+}
+
+.nav-item-has-submenu:hover .nav-submenu {
+    display: flex; // Show submenu on hover of parent li
+}
+
+.nav-item-has-submenu .nav-submenu li {
+    width: 100%;
+    height: auto; // Override parent li height
+}
+
+.nav-item-has-submenu .nav-submenu a.nav-link-sub {
+    padding: 10px 15px; // Padding for submenu items
+    width: 100%;
+    height: auto; // Override parent li height
+    border-bottom: 1px solid #f0f0f0; // Separator for submenu items
+}
+.nav-item-has-submenu .nav-submenu li:last-child a.nav-link-sub {
+    border-bottom: none;
+}
+
+.owner-nav .submenu-arrow {
+    font-size: 0.7rem;
+    margin-left: 6px;
+    transition: transform 0.2s;
+}
+
+.nav-item-has-submenu:hover .submenu-arrow {
+    transform: rotate(180deg);
+}
+
+/* Commenting out the .content-area part as it's handled in header-owner.scss */
+/* .content-area {
+    /* margin-top: 110px; */
+/* } */ 

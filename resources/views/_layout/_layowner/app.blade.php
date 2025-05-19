@@ -19,14 +19,17 @@
 <header>
     @include('_layout._layowner.header')
 </header>
-<body>
-    <!-- Nút toggle sidebar (chỉ icon 3 gạch) -->
-    <button class="menu-toggle" aria-label="Mở menu">
-        &#9776;
-    </button>
+{{-- Include the new horizontal navigation bar directly below the header --}}
+@include('_layout._layowner.nav') {{-- Updated from sidebar to nav --}}
 
-    <!-- Dropdown menu xổ xuống -->
-    @include('_layout._layowner.sidebar')
+<body>
+    {{-- Remove old menu toggle button --}}
+    {{-- <button class="menu-toggle" aria-label="Mở menu">
+        &#9776;
+    </button> --}}
+
+    {{-- Dropdown menu xổ xuống - This was the old sidebar, now it's the nav bar included above --}}
+    {{-- @include('_layout._layowner.sidebar') --}}
 
     <!-- Nội dung chính -->
     <div class="content-area">

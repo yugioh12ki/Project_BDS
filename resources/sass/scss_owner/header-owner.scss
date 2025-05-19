@@ -5,8 +5,8 @@
     left: 0;
     right: 0;
     height: 60px;
-    background: linear-gradient(to right, #2c3e50, #3498db);
-    color: #fff;
+    background: #C2B280;
+    color: #4A4A4A;
     padding: 0 24px;
     display: flex;
     align-items: center;
@@ -18,7 +18,7 @@
     margin: 0;
     font-size: 1.35rem;
     font-weight: 700;
-    color: #fff;
+    color: #4A4A4A;
 }
 .header-right {
     display: flex;
@@ -27,18 +27,19 @@
     position: relative;
 }
 .user-greeting {
-    color: #fff;
-    background: #3498db;
+    color: #4A4A4A;
+    background: transparent;
     font-weight: 500;
     font-size: 1.1rem;
     cursor: pointer;
-    padding: 4px 12px;
-    border-radius: 6px;
-    border: 1.5px solid #fff2;
-    transition: background 0.2s, color 0.2s;
+    padding: 6px 15px;
+    border-radius: 20px;
+    border: 1px solid #4A4A4A80;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
     &:hover {
-        background: #fff;
-        color: #ffd700;
+        background: #4A4A4A;
+        color: #C2B280;
+        border-color: #4A4A4A;
     }
 }
 .header-right {
@@ -67,7 +68,7 @@
     }
 }
 .content-area {
-    margin-top: 60px;
+    margin-top: 110px; /* 60px header + 50px nav */
     padding: 24px 16px 16px 16px;
 }
 @media (max-width: 768px) {
@@ -85,7 +86,7 @@
         padding: 2px 8px;
     }
     .content-area {
-        margin-top: 70px;
+        margin-top: 100px; /* Adjust for mobile, header might wrap, nav might be smaller or wrap */
         padding: 12px 4px 4px 4px;
     }
 }
