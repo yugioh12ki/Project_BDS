@@ -86,6 +86,18 @@ function rejectProperty(propertyId) {
                     class="property-row {{ isset($status) && $status == 'pending' ? 'pending-property' : '' }}"
                     data-lat="{{ $property->Latitude ?? '' }}"
                     data-lng="{{ $property->Longitude ?? '' }}"
+                    data-address="{{ $property->Address ?? '' }}"
+                    data-ward="{{ $property->Ward ?? '' }}"
+                    data-district="{{ $property->District ?? '' }}"
+                    data-province="{{ $property->Province ?? '' }}"
+                    data-full-address="@php
+                        $addressParts = [];
+                        if(!empty($property->Address)) $addressParts[] = $property->Address;
+                        if(!empty($property->Ward)) $addressParts[] = $property->Ward;
+                        if(!empty($property->District)) $addressParts[] = $property->District;
+                        if(!empty($property->Province)) $addressParts[] = $property->Province;
+                        echo implode(', ', $addressParts);
+                    @endphp"
                     data-category="{{ optional($property->danhMuc)->CategoryID ?? '' }}"
                     data-price="{{ $property->Price ?? 0 }}"
                     data-date="{{ $property->PostedDate !== '0000-00-00' ? $property->PostedDate : '' }}">
@@ -98,17 +110,24 @@ function rejectProperty(propertyId) {
                     </td>
                     @endif
 
-                    <td onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}')">{{ $property->PropertyID }}</td>
-                    <td onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}')">
+                    <td onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '@php
+                        $addressParts = [];
+                        if(!empty($property->Address)) $addressParts[] = $property->Address;
+                        if(!empty($property->Ward)) $addressParts[] = $property->Ward;
+                        if(!empty($property->District)) $addressParts[] = $property->District;
+                        if(!empty($property->Province)) $addressParts[] = $property->Province;
+                        echo implode(', ', $addressParts);
+                    @endphp')">{{ $property->PropertyID }}</td>
+                    <td onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">
                         <div class="property-title">{{ $property->Title }}</div>
                         <div class="d-block d-md-none">
                             <small class="text-muted">{{ optional($property->danhMuc)->ten_pro ?? 'N/A' }} - {{ $property->Address }}</small>
                         </div>
                     </td>
-                    <td class="d-none d-md-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}')">{{ optional($property->danhMuc)->ten_pro ?? 'N/A' }}</td>
-                    <td class="d-none d-md-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}')">{{ $property->Address }}</td>
-                    <td class="d-none d-lg-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}')">{{ $property->PostedDate === '0000-00-00' ? 'N/A' : date('d/m/Y', strtotime($property->PostedDate)) }}</td>
-                    <td class="d-none d-lg-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}')">{{ optional($property->chusohuu)->Name ?? 'N/A' }}</td>
+                    <td class="d-none d-md-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ optional($property->danhMuc)->ten_pro ?? 'N/A' }}</td>
+                    <td class="d-none d-md-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ $property->Address }}</td>
+                    <td class="d-none d-lg-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ $property->PostedDate === '0000-00-00' ? 'N/A' : date('d/m/Y', strtotime($property->PostedDate)) }}</td>
+                    <td class="d-none d-lg-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ optional($property->chusohuu)->Name ?? 'N/A' }}</td>
                     <td onclick="event.stopPropagation();">
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal{{ $property->PropertyID }}">

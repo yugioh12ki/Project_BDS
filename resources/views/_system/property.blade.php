@@ -54,12 +54,15 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">Vị trí trên bản đồ</h6>
                             <div class="map-controls">
-                                <button class="btn btn-sm btn-outline-primary" id="fitAllMarkersBtn">
+                                <button class="btn btn-sm btn-outline-primary" id="fitAllMarkersBtn" title="Hiển thị tất cả vị trí">
                                     <i class="fas fa-compress-arrows-alt"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="card-body">
+                            <div class="alert alert-info mb-2 py-2">
+                                <small><i class="fas fa-info-circle"></i> Nhấn vào bất kỳ bất động sản nào trong danh sách để xem vị trí trên bản đồ. Nếu không có tọa độ, hệ thống sẽ tự động tìm kiếm theo địa chỉ.</small>
+                            </div>
                             <div id="googleMap" style="width:100%;height:500px;"></div>
                         </div>
                     </div>
@@ -76,79 +79,103 @@
 <!-- Load app.js with PropertyManagement module first -->
 <script src="{{ mix('js/app.js') }}"></script>
 
-<!-- Google Maps JavaScript using @googlemaps/google-maps-services-js -->
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+   integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+   crossorigin=""/>
+
+<!-- Leaflet Fullscreen Plugin CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.0.0/Control.FullScreen.css" />
+
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+   crossorigin=""></script>
+
+<!-- Leaflet Fullscreen Plugin -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.0.0/Control.FullScreen.min.js"></script>
+
+<!-- Map JavaScript -->
 <script>
 // Make map and markers globally accessible
 var map;
 var markers = [];
-var infoWindows = [];
 
-// Import the Client from the npm package in the app.js file
-// We'll focus on frontend functionality here
+// Function to show notification
+function showNotification(type, message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : type === 'info' ? 'info' : 'danger'} alert-dismissible fade show notification-toast`;
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Add to document
+    document.body.appendChild(notification);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 5000);
+}
+
+// Initialize map with Leaflet
 function initMap() {
     // Default center of Vietnam
-    var vietnam = {lat: 16.0, lng: 106.0};
+    var vietnamLat = 16.0;
+    var vietnamLng = 106.0;
 
     // Create map
-    map = new google.maps.Map(document.getElementById('googleMap'), {
-        zoom: 5,
-        center: vietnam,
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: true
-    });
+    map = L.map('googleMap').setView([vietnamLat, vietnamLng], 5);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Add fullscreen control
+    map.addControl(new L.Control.Fullscreen());
 
     // Add markers for properties if coordinates exist
     markers = [];
-    infoWindows = [];
-    var bounds = new google.maps.LatLngBounds();
+    var bounds = [];
 
     @if(isset($propertyCoordinates))
         @foreach($propertyCoordinates as $property)
-            var position = {lat: {{ $property['lat'] }}, lng: {{ $property['lng'] }}};
-            var marker = new google.maps.Marker({
-                position: position,
-                map: map,
+            var lat = {{ $property['lat'] }};
+            var lng = {{ $property['lng'] }};
+
+            // Create marker
+            var marker = L.marker([lat, lng], {
                 title: '{{ $property['title'] }}',
-                propertyId: '{{ $property['id'] }}',
-                animation: google.maps.Animation.DROP
-            });
+                propertyId: '{{ $property['id'] }}'
+            }).addTo(map);
 
-            // Extend bounds to include this marker
-            bounds.extend(position);
-
-            var infoContent = '<div class="map-info-window">' +
+            // Add popup with property info
+            marker.bindPopup('<div class="map-info-window">' +
                 '<strong>{{ $property['title'] }}</strong>' +
                 '<p>{{ $property['address'] }}</p>' +
-                '</div>';
+                '</div>');
 
-            var infoWindow = new google.maps.InfoWindow({
-                content: infoContent,
-                maxWidth: 300
+            // Add marker click event
+            marker.on('click', function() {
+                highlightProperty('{{ $property['id'] }}');
             });
 
-            marker.addListener('click', (function(marker, infoWindow, id) {
-                return function() {
-                    // Close all open info windows
-                    infoWindows.forEach(function(iw) {
-                        iw.close();
-                    });
-
-                    // Open this info window
-                    infoWindow.open(map, marker);
-
-                    // Highlight the property in the list
-                    highlightProperty(id);
-                };
-            })(marker, infoWindow, '{{ $property['id'] }}'));
-
+            // Add to markers array and bounds
             markers.push(marker);
-            infoWindows.push(infoWindow);
+            bounds.push([lat, lng]);
         @endforeach
 
         // If we have markers, fit the map to show all of them
         if (markers.length > 0) {
-            map.fitBounds(bounds);
+            // Create a bounds object
+            var boundsObj = L.latLngBounds(bounds);
+            map.fitBounds(boundsObj);
             // Don't zoom in too far on only one marker
             if (markers.length === 1) {
                 map.setZoom(15);
@@ -157,33 +184,206 @@ function initMap() {
     @endif
 
     // Function to select property on map when clicked in list
-    window.selectPropertyOnMap = function(id, lat, lng) {
+    window.selectPropertyOnMap = function(id, lat, lng, address) {
         // Find the marker with the matching property ID
-        var targetMarker = markers.find(marker => marker.propertyId === id);
+        var targetMarker = markers.find(marker => marker.options.propertyId === id);
 
         if (targetMarker) {
-            // Close all info windows
-            infoWindows.forEach(function(iw) {
-                iw.close();
+            // Open popup for this marker
+            targetMarker.openPopup();
+
+            // Center map on this property
+            map.setView(targetMarker.getLatLng(), 15);
+
+            // Highlight the property in the list
+            highlightProperty(id);
+        } else if (lat && lng && lat !== '' && lng !== '') {
+            // If no markers but we have valid coordinates, center on those
+            map.setView([parseFloat(lat), parseFloat(lng)], 15);
+
+            // Create a new marker
+            var row = document.getElementById('property-row-' + id);
+            var title = row ? row.querySelector('.property-title').textContent : 'Bất động sản #' + id;
+
+            var newMarker = L.marker([parseFloat(lat), parseFloat(lng)], {
+                propertyId: id,
+                title: title
+            }).addTo(map);
+
+            // Get additional property information
+            var propertyType = '';
+            var propertyPrice = '';
+            var propertyDate = '';
+
+            if (row) {
+                propertyType = row.getAttribute('data-category') ?
+                    (document.querySelector(`.property-row[data-category="${row.getAttribute('data-category')}"] td:nth-child(3)`) ?
+                    document.querySelector(`.property-row[data-category="${row.getAttribute('data-category')}"] td:nth-child(3)`).textContent.trim() : '') : '';
+                propertyPrice = row.getAttribute('data-price') ? new Intl.NumberFormat('vi-VN').format(row.getAttribute('data-price')) + ' VND' : '';
+                propertyDate = row.getAttribute('data-date') || '';
+            }
+
+            // Add detailed popup with formatted address and property info
+            var popupContent = '<div class="map-info-window">' +
+                '<strong>' + title + '</strong>';
+
+            if (address && address !== '') {
+                popupContent += '<p><i class="fas fa-map-marker-alt"></i> ' + address + '</p>';
+            }
+
+            if (propertyType) {
+                popupContent += '<p><i class="fas fa-home"></i> ' + propertyType + '</p>';
+            }
+
+            if (propertyPrice) {
+                popupContent += '<p><i class="fas fa-tags"></i> ' + propertyPrice + '</p>';
+            }
+
+            if (propertyDate) {
+                popupContent += '<p><i class="far fa-calendar-alt"></i> ' + propertyDate + '</p>';
+            }
+
+            popupContent += '</div>';
+
+            newMarker.bindPopup(popupContent).openPopup();
+
+            // Add click event
+            newMarker.on('click', function() {
+                highlightProperty(id);
             });
 
-            // Find the info window for this marker
-            var index = markers.indexOf(targetMarker);
-            if (index !== -1) {
-                // Open this property's info window
-                infoWindows[index].open(map, targetMarker);
+            markers.push(newMarker);
 
-                // Center map on this property
-                map.setCenter(targetMarker.getPosition());
-                map.setZoom(15);
+            // Highlight the property in the list
+            highlightProperty(id);
+        } else if (address && address !== '') {
+            // If no markers and no coordinates, but we have an address, try to geocode it
+            geocodeAddress(address, id);
+        } else {
+            // If no address found in parameters, try to get it from row attribute
+            var row = document.getElementById('property-row-' + id);
+            if (row && row.getAttribute('data-full-address')) {
+                // Use full address (combines Address, Ward, District, Province)
+                geocodeAddress(row.getAttribute('data-full-address'), id);
+            } else if (row && row.getAttribute('data-address')) {
+                // Fallback to just Address field if full address isn't available
+                geocodeAddress(row.getAttribute('data-address'), id);
+            } else {
+                showNotification('error', 'Không tìm thấy địa chỉ cho bất động sản này');
             }
-        } else if (lat && lng) {
-            // If no markers but we have coordinates, center on those
-            var latLng = new google.maps.LatLng(parseFloat(lat), parseFloat(lng));
-            map.setCenter(latLng);
-            map.setZoom(15);
         }
     };
+
+    // Function to convert address to coordinates using Nominatim (OpenStreetMap's geocoder)
+    function geocodeAddress(address, propertyId) {
+        if (!address) return;
+
+        // Hiển thị thông báo đang tìm kiếm
+        showNotification('info', 'Đang tìm kiếm vị trí của bất động sản...');
+
+        // Thêm "Việt Nam" vào địa chỉ để tăng độ chính xác
+        if (address.toLowerCase().indexOf('việt nam') === -1) {
+            address += ', Việt Nam';
+        }
+
+        // Sử dụng Nominatim API (miễn phí) của OpenStreetMap
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(address))
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const result = data[0];
+                const lat = parseFloat(result.lat);
+                const lng = parseFloat(result.lon);
+
+                // Tạo marker mới nếu chưa tồn tại
+                let markerExists = false;
+                let existingMarker;
+
+                for (let i = 0; i < markers.length; i++) {
+                    if (markers[i].options.propertyId === propertyId) {
+                        markerExists = true;
+                        existingMarker = markers[i];
+                        break;
+                    }
+                }
+
+                if (!markerExists) {
+                    // Lấy thông tin bất động sản từ data attribute của row
+                    var row = document.getElementById('property-row-' + propertyId);
+                    var title = row ? row.querySelector('.property-title').textContent : 'Bất động sản #' + propertyId;
+
+                    // Lấy thêm thông tin chi tiết từ data attribute (nếu có)
+                    var propertyType = '';
+                    var propertyPrice = '';
+                    var propertyDate = '';
+
+                    if (row) {
+                        propertyType = row.getAttribute('data-category') ? document.querySelector(`.property-row[data-category="${row.getAttribute('data-category')}"] td:nth-child(3)`).textContent.trim() : '';
+                        propertyPrice = row.getAttribute('data-price') ? new Intl.NumberFormat('vi-VN').format(row.getAttribute('data-price')) + ' VND' : '';
+                        propertyDate = row.getAttribute('data-date') || '';
+                    }
+
+                    // Tạo marker mới
+                    var marker = L.marker([lat, lng], {
+                        propertyId: propertyId,
+                        title: title
+                    }).addTo(map);
+
+                    // Popup chi tiết cho marker với nhiều thông tin hơn
+                    var popupContent = '<div class="map-info-window">' +
+                        '<strong>' + title + '</strong>';
+
+                    if (address) {
+                        popupContent += '<p><i class="fas fa-map-marker-alt"></i> ' + address + '</p>';
+                    }
+
+                    if (propertyType) {
+                        popupContent += '<p><i class="fas fa-home"></i> ' + propertyType + '</p>';
+                    }
+
+                    if (propertyPrice) {
+                        popupContent += '<p><i class="fas fa-tags"></i> ' + propertyPrice + '</p>';
+                    }
+
+                    if (propertyDate) {
+                        popupContent += '<p><i class="far fa-calendar-alt"></i> ' + propertyDate + '</p>';
+                    }
+
+                    popupContent += '</div>';
+
+                    marker.bindPopup(popupContent).openPopup();
+
+                    // Sự kiện click cho marker
+                    marker.on('click', function() {
+                        highlightProperty(propertyId);
+                    });
+
+                    markers.push(marker);
+
+                    // Di chuyển bản đồ tới marker mới tạo
+                    map.setView([lat, lng], 15);
+
+                    // Cập nhật data attribute của dòng bất động sản
+                    if (row) {
+                        row.setAttribute('data-lat', lat);
+                        row.setAttribute('data-lng', lng);
+                    }
+
+                    showNotification('success', 'Đã tìm thấy vị trí bất động sản');
+                } else {
+                    // Dùng marker đã có sẵn
+                    map.setView(existingMarker.getLatLng(), 15);
+                    existingMarker.openPopup();
+                }
+            } else {
+                showNotification('error', 'Không tìm thấy vị trí cho địa chỉ này');
+            }
+        })
+        .catch(error => {
+            console.error('Geocoding error:', error);
+            showNotification('error', 'Lỗi khi tìm kiếm vị trí: ' + error.message);
+        });
+    }
 
     // Function to highlight property in list
     function highlightProperty(id) {
@@ -241,18 +441,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Load app.js with PropertyManagement module -->
 <script src="{{ mix('js/app.js') }}" defer></script>
 
-<!-- Google Maps API and Services -->
-<script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY', 'YOUR_API_KEY') }}&libraries=places&callback=initMap" async defer></script>
+<!-- OpenStreetMap attrbution -->
 <script>
-    // This is where we would initialize the @googlemaps/google-maps-services-js client
-    // In a real implementation, this would be done in a separate JS file
-    // Example:
-    /*
-    import { Client } from "@googlemaps/google-maps-services-js";
-    const client = new Client({});
-    */
-
-    // Additional geocoding functionality could be implemented here using the library
+    // Initialize the map when document is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+    });
 </script>
 
 <style>
@@ -263,6 +457,40 @@ document.addEventListener('DOMContentLoaded', function() {
     .nav-tabs {
         display: flex;
         justify-content: flex-start;
+    }
+
+    /* Map Info Window Styling */
+    .map-info-window {
+        min-width: 200px;
+        max-width: 300px;
+        padding: 5px;
+    }
+
+    .map-info-window strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #2c3e50;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
+
+    .map-info-window p {
+        margin: 4px 0;
+        font-size: 12px;
+        color: #555;
+    }
+
+    .map-info-window i {
+        width: 16px;
+        margin-right: 5px;
+        color: #3498db;
+    }
+
+    /* Leaflet popup styling */
+    .leaflet-popup-content {
+        margin: 8px 12px;
+    }
         border-top: 1px solid #ddd;
         margin-top: 0;
         background-color: #f8f9fa00;
