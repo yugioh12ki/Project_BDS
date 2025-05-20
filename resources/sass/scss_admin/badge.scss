@@ -1,0 +1,25 @@
+.badge-danger {
+  background-color: #dc3545;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.8em;
+  position: relative;
+  margin-left: 5px;
+  display: inline-block;
+}
+
+.tree-menu li a .badge {
+  float: right;
+  margin-right: 10px;
+}
+
+/* Make sure the badge doesn't affect the menu toggle behavior */
+.tree-menu li a .fa-caret-down {
+  margin-left: 5px;
+}
+
+/* Show active state for menu with pending items */
+.tree-menu li a.has-pending {
+  font-weight: bold;
+}

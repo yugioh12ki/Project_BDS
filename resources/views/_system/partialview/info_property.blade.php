@@ -34,11 +34,11 @@
     </div>
     <div class="mb-2">
       <label class="form-label">Phường</label>
-      <input type="text" class="form-control" value="{{ $property->Province ?? '' }}" readonly>
+      <input type="text" class="form-control" value="{{ $property->Ward ?? '' }}" readonly>
     </div>
     <div class="mb-2">
       <label class="form-label">Quận</label>
-      <input type="text" class="form-control" value="{{ $property->Ward ?? '' }}" readonly>
+      <input type="text" class="form-control" value="{{ $property->District ?? '' }}" readonly>
     </div>
     <div class="mb-2">
       <label class="form-label">Tỉnh</label>

@@ -8,6 +8,8 @@ use App\Http\Controllers\RegisterController;
 use PHPUnit\Event\Telemetry\System;
 use App\Http\Controllers\SystemController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AdminQuestionController;
+use App\Http\Controllers\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,14 +67,21 @@ Route::middleware(['auth'])->group(function()
 
             Route::get('/property', [SystemController::class, "getProperty"])->name('property');
             Route::get('/property/search', [SystemController::class, 'SearchProperty'])->name('property.search');
-            Route::get('/property/{id}', [SystemController::class, "getPropertyById"])->name('property.id');
-            Route::get('/property/type/{type}', [SystemController::class, "getPropertyByType"])->name('property.type');
-            Route::get('/property/status/{status}', [SystemController::class, "getPropertyByStatus"])->name('property.status');
             Route::get('/property/create', [SystemController::class, "createPropertyForm"])->name('property.create');
             Route::post('/property/create', [SystemController::class, 'createProperty'])->name('property.store');
-            Route::delete('/property/{id}',[SystemController::class, 'deleteProperty'])->name('property.delete');
+            Route::post('/property/update-status', [SystemController::class, 'updatePropertyStatus'])->name('property.updateStatus');
+            Route::post('/property/update-batch-status', [SystemController::class, 'updateBatchStatus'])->name('property.updateBatchStatus');
+
+            // Routes với pattern cụ thể - phải đặt trước route với tham số động
+            Route::get('/property/type/{type}/{status}', [SystemController::class, "getPropertyByTypeAndStatus"])->name('property.type.status');
+            Route::get('/property/type/{type}', [SystemController::class, "getPropertyByType"])->name('property.type');
+            Route::get('/property/status/{status}', [SystemController::class, "getPropertyByStatus"])->name('property.status');
             Route::get('/property/{id}/edit', [SystemController::class, 'EditPropertyByStatus'])->name('property.edit');
+
+            // Routes với tham số động - đặt sau các pattern cụ thể
+            Route::delete('/property/{id}',[SystemController::class, 'deleteProperty'])->name('property.delete');
             Route::put('/property/{id}', [SystemController::class, 'EditPropertyByStatus'])->name('property.update');
+            Route::get('/property/{id}', [SystemController::class, "getPropertyById"])->name('property.id');
 
             // Route cho việc gán và quản lý agent cho bất động sản
             Route::get('/assign-property', [SystemController::class, 'getAssignProperty'])->name('assign.property');
@@ -89,7 +98,7 @@ Route::middleware(['auth'])->group(function()
             Route::put('/user/{id}', [SystemController::class, 'UpdateUser'])->name('users.update');
             Route::get('/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('users.byRole');
             Route::get('/user/status/{status}', [SystemController::class, 'getUserByStatus'])->name('users.byStatus');
-            Route::get('/user/search', [SystemController::class, 'SearchUser'])->name('users.search');
+            Route::get('/user/role/{role}/search', [SystemController::class, 'SearchUser'])->name('users.search');
 
             // Route điều hướng đến trang quản lý lịch hẹn
 
@@ -133,6 +142,17 @@ Route::middleware(['auth'])->group(function()
             // Route cho lấy dữ liệu thống kê Dashboard
             Route::get('/dashboard/monthly-stats', [SystemController::class, 'getMonthlyStats'])->name('dashboard.monthlyStats');
 
+            // Route quản lý chatbot
+            Route::prefix('chatbot')->name('chatbot.')->group(function () {
+                Route::prefix('questions')->name('questions.')->group(function () {
+                    Route::get('/', [ChatbotController::class, 'index'])->name('index');
+                    Route::get('/create', [ChatbotController::class, 'create'])->name('create');
+                    Route::post('/store', [ChatbotController::class, 'store'])->name('store');
+                    Route::get('/edit/{id}', [ChatbotController::class, 'edit'])->name('edit');
+                    Route::put('/update/{id}', [ChatbotController::class, 'update'])->name('update');
+                    Route::delete('/destroy/{id}', [ChatbotController::class, 'destroy'])->name('destroy');
+                });
+            });
         });
 
 
@@ -143,3 +163,6 @@ Route::middleware(['auth'])->group(function()
         return redirect()->route('login'); // Chuyển hướng về trang chủ
     })->name('logout');
 });
+
+// Route API cho chatbot
+Route::post('/api/chatbot', [ChatbotController::class, 'answer'])->name('chatbot.answer');

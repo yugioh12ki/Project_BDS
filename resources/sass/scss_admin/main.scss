@@ -387,3 +387,34 @@ table tr:hover {
         box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
     }
 }
+
+// Tab styles giống sidebar
+.nav-tabs {
+    border-bottom: 2px solid #3498db;
+    background: #2c3e50;
+    border-radius: 8px 8px 0 0;
+    padding: 0.2rem 0.5rem 0 0.5rem;
+    display: flex;
+    gap: 2px;
+}
+.nav-tabs .nav-link {
+    color: #f8fafc;
+    background: #3498db;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    margin-right: 4px;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+    font-size: 1rem;
+    min-width: 120px;
+    text-align: center;
+}
+.nav-tabs .nav-link.active, .nav-tabs .nav-link:focus, .nav-tabs .nav-link:hover {
+    background: #5dade2;
+    color: #fff;
+    border: none;
+}
+.nav-tabs .nav-link:not(.active):hover {
+    background: #2980b9;
+    color: #fff;
+}

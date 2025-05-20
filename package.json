@@ -13,8 +13,11 @@
         "vite": "^5.0.0"
     },
     "dependencies": {
+        "@googlemaps/google-maps-services-js": "^3.4.1",
         "@popperjs/core": "^2.11.8",
         "bootstrap": "^5.3.6",
-        "chart.js": "^4.4.9"
+        "chart.js": "^4.4.9",
+        "google-maps": "^4.3.3",
+        "vietnam-provinces": "^0.0.4"
     }
 }

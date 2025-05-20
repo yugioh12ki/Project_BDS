@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Http\Controllers\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,3 +37,6 @@ Route::get('/agents-by-transaction/{transactionId}', function ($transactionId) {
         return response()->json([], 404);
     }
 });
+
+// API nhận câu hỏi và trả về câu trả lời từ chatbot
+Route::post('/chatbot/answer', [ChatbotController::class, 'answer']);

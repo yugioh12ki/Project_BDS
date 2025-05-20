@@ -140,7 +140,7 @@ class SystemController extends Controller
             return response()->json(['error' => 'Không tìm thấy user nào.'], 404); // Truyền thông báo lỗi sang view
         }
         else {
-            return view('_system.partialview.user_table', compact('columns','users')); // Đảm bảo biến truyền vào view là $users
+            return view('_system.users', compact('columns','users')); // Đảm bảo biến truyền vào view là $users
         }
     }
 
@@ -308,34 +308,32 @@ class SystemController extends Controller
     public function SearchUser(Request $request)
     {
         $keyword = $request->input('keyword');
+        $role = $request->route('role');
 
+        $query = User::query();
 
-        // Thực hiện tìm kiếm trực tiếp trong bảng user
-        $users = DB::table('user')
-        ->select('*')
-        ->where(function ($query) use ($keyword) {
-            $query->whereRaw('LOWER(UserID) LIKE ?', ['%' . strtolower($keyword) . '%'])
-                  ->orWhereRaw('LOWER(Name) LIKE ?', ['%' . strtolower($keyword) . '%'])
-                  ->orWhereRaw('LOWER(Email) LIKE ?', ['%' . strtolower($keyword) . '%'])
-                  ->orWhereRaw('LOWER(Phone) LIKE ?', ['%' . strtolower($keyword) . '%']);
-        })
-        ->paginate(12);
-
-
-
-        // Kiểm tra nếu không có dữ liệu
-        if (empty($users)) {
-            return view('_system.users', [
-                'users' => [],
-                'columns' => Schema::getColumnListing('user'), // Lấy tất cả các cột từ bảng
-                'error' => 'Không tìm thấy user nào.'
-            ]);
+        // Lọc theo role nếu có
+        if (!empty($role) && $role !== 'all') {
+            $query->where('Role', $role);
         }
 
-        // Trả về view bảng user
+        // Tìm kiếm theo keyword
+        if (!empty($keyword)) {
+            $query->where(function ($q) use ($keyword) {
+                $q->whereRaw('LOWER(Name) LIKE ?', ['%' . strtolower($keyword) . '%'])
+                  ->orWhereRaw('LOWER(Email) LIKE ?', ['%' . strtolower($keyword) . '%'])
+                  ->orWhereRaw('LOWER(Phone) LIKE ?', ['%' . strtolower($keyword) . '%']);
+            });
+        }
+
+        $users = $query->paginate(12);
+        $columns = Schema::getColumnListing('user');
+
+        // Đảm bảo chỉ truyền 1 biến $users duy nhất vào view cha, không lồng hoặc include lại bảng user_table
         return view('_system.users', [
             'users' => $users,
-            'columns' => Schema::getColumnListing('user') // Lấy tất cả các cột từ bảng
+            'columns' => $columns,
+            'error' => $users->isEmpty() ? 'Không tìm thấy user nào.' : null
         ]);
     }
 
@@ -362,10 +360,18 @@ class SystemController extends Controller
 
     // Phần này của property
 
-    public function getProperty()
+    public function getProperty(Request $request)
     {
         $columns = Schema::getColumnListing('properties');
-        $properties = Property::all();
+        $typePro = $request->query('TypePro');
+
+        // Nếu có TypePro, lọc theo loại BĐS (Cho thuê hoặc Cho bán)
+        if ($typePro) {
+            $properties = Property::where('TypePro', $typePro)->get();
+        } else {
+            $properties = Property::all();
+        }
+
         $owners = User::where('Role', 'Owner')->get();
         $agents = User::where('Role', 'Agent')->get();
         $admins = User::where('Role', 'Admin')->get();
@@ -373,31 +379,208 @@ class SystemController extends Controller
 
         if ($columns === null || $properties->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
-            return view('_system.property', compact('error')); // Truyền thông báo lỗi sang view
+            return view('_system.property', compact('error', 'categories')); // Truyền thông báo lỗi và categories sang view
         }
-        return view('_system.property', compact('columns','properties','owners','agents','admins','categories')); // Đảm bảo biến truyền vào view là $users
+
+        // Truyền thêm thông tin về loại BĐS đang xem để hiển thị tab đúng
+        return view('_system.property', compact('columns','properties','owners','agents','admins','categories', 'typePro'));
     }
 
     public function getPropertyByType(Request $request, $type)
     {
         $columns = Schema::getColumnListing('properties');
 
-        if ($type == 'all') {
-            $properties = Property::with(['danhMuc'])->paginate(10); // Sửa pageinate thành paginate
-        } else {
-            $properties = Property::with(['danhMuc'])
-                ->where('TypePro', $type)
-                ->paginate(10);
-        }
+        // Chuyển đổi từ slug tiếng Anh sang giá trị trong CSDL
+        $typeProMapping = [
+            'rent' => 'Rent',
+            'sale' => 'Sale'
+        ];
+
+        $typePro = isset($typeProMapping[$type]) ? $typeProMapping[$type] : $type;
+
+        $properties = Property::with(['danhMuc'])
+            ->where('TypePro', $typePro)
+            ->paginate(10);
 
         $owners = User::where('Role', 'Owner')->get();
         $agents = User::where('Role', 'Agent')->get();
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
+
         if ($columns === null || $properties->isEmpty()) {
-            return view('_system.partialview.property_table', compact('error'));
+            $error = '404 Error: Lỗi lấy dữ liệu'; // Định nghĩa biến error
+            return view('_system.property', compact('error'));
         } else {
-            return view('_system.partialview.property_table', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
+            return view('_system.property', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories', 'typePro'));
+        }
+    }
+
+    public function getPropertyByTypeAndStatus(Request $request, $type, $status)
+    {
+        // Chuyển đổi từ slug tiếng Anh sang giá trị trong CSDL
+        $typeProMapping = [
+            'rent' => 'Rent',
+            'sale' => 'Sale'
+        ];
+
+        $typePro = isset($typeProMapping[$type]) ? $typeProMapping[$type] : $type;
+
+        $columns = Schema::getColumnListing('properties');
+
+        $properties = Property::with(['danhMuc'])
+            ->where('TypePro', $typePro)
+            ->where('Status', $status)
+            ->paginate(10);
+
+        $owners = User::where('Role', 'Owner')->get();
+        $agents = User::where('Role', 'Agent')->get();
+        $admins = User::where('Role', 'Admin')->get();
+        $categories = DanhMucBDS::all();
+
+        // Get property coordinates for map display
+        $propertyCoordinates = [];
+        foreach ($properties as $property) {
+            if ($property->Latitude && $property->Longitude) {
+                $propertyCoordinates[] = [
+                    'id' => $property->PropertyID,
+                    'lat' => $property->Latitude,
+                    'lng' => $property->Longitude,
+                    'title' => $property->Title,
+                    'address' => $property->Address
+                ];
+            }
+        }
+
+        if ($columns === null || $properties->isEmpty()) {
+            $error = '404 Error: Lỗi lấy dữ liệu';
+            return view('_system.property', compact('error', 'type', 'typePro', 'status', 'categories'));
+        } else {
+            return view('_system.property', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories', 'type', 'typePro', 'status', 'propertyCoordinates'));
+        }
+    }
+
+    public function updatePropertyStatus(Request $request)
+    {
+        // Validate the request
+        $validated = $request->validate([
+            'property_id' => 'required',
+            'status' => 'required|in:approved,rejected',
+            'reason' => 'nullable|string',
+        ]);
+
+        try {
+            // Find the property
+            $property = Property::findOrFail($request->property_id);
+
+            // Update property status based on action
+            if ($request->status == 'approved') {
+                // When approved, set status to 'inactive'
+                $property->Status = 'inactive';
+                $property->ApprovedDate = now();
+                $property->ApprovedBy = auth()->id();
+            } else if ($request->status == 'rejected') {
+                // When rejected, set status to 'rejected'
+                $property->Status = 'rejected';
+
+                // If reason is provided, store the reason
+                if ($request->has('reason')) {
+                    $property->RejectReason = $request->reason;
+                }
+            }
+
+            $property->save();
+
+            // Return JSON response for AJAX
+            return response()->json([
+                'success' => true,
+                'message' => $request->status == 'approved' ? 'Bất động sản đã được duyệt thành công.' : 'Bất động sản đã bị từ chối.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update the status of a batch of properties
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateBatchStatus(Request $request)
+    {
+        // Validate request data
+        $validator = Validator::make($request->all(), [
+            'property_ids' => 'required',
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // Decode property IDs
+            $propertyIds = json_decode($request->property_ids, true);
+
+            if (!is_array($propertyIds) || count($propertyIds) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No property IDs provided'
+                ], 400);
+            }
+
+            // Get current admin ID
+            $adminId = Auth::id();
+
+            // Prepare update data based on status
+            if ($request->status === 'approved') {
+                // When approved, set status to 'inactive'
+                $updateData = [
+                    'Status' => 'inactive',
+                    'ApprovedBy' => $adminId,
+                    'ApprovedDate' => now()
+                ];
+            } else {
+                // When rejected, set status to 'rejected'
+                $updateData = [
+                    'Status' => 'rejected',
+                    'ApprovedBy' => $adminId,
+                    'ApprovedDate' => now()
+                ];
+
+                // Add reason if provided (for rejected properties)
+                if ($request->has('reason')) {
+                    $updateData['RejectReason'] = $request->reason;
+                }
+            }
+
+            // Update all properties
+            $updatedCount = Property::whereIn('PropertyID', $propertyIds)->update($updateData);
+
+            // Return success response
+            return response()->json([
+                'success' => true,
+                'message' => "Đã cập nhật trạng thái cho $updatedCount bất động sản thành công",
+                'updated_count' => $updatedCount
+            ]);
+
+        } catch (\Exception $e) {
+            // Log the error
+            Log::error('Batch property status update error: ' . $e->getMessage());
+
+            // Return error response
+            return response()->json([
+                'success' => false,
+                'message' => 'Đã xảy ra lỗi trong quá trình cập nhật trạng thái',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -439,7 +622,7 @@ class SystemController extends Controller
                     ->paginate(10);
 
         if ($columns === null || $properties->isEmpty()) {
-            return view('_system.property', compact('error'));
+            return view('_system.property', compact('error', 'categories'));
         }
 
         return view('_system.property', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories'));
