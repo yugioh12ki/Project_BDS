@@ -36,46 +36,67 @@ Route::post('/login', [LoginController::class, "authenticate"])->name('login.aut
 //Đăng Ký
 Route::get('/register',[RegisterController::class,"register"])->name('register');
 
-// Route::prefix('admin')->group(
-//     function () {
-//         Route::get('/dashboard', [SystemController::class, "admin"])->name('admin.dashboard');
-//         Route::get('/property', [SystemController::class, "getProperty"])->name('property');
-//         Route::get('/user', [SystemController::class, "getUser"])->name('users');
-//         Route::get('/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('users.byRole');
-//         Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
-//         Route::get('/transaction', [SystemController::class, "getTransaction"])->name('transaction');
-//         Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');
-//         Route::get('/commission', [SystemController::class, "getCommission"])->name('commission');
-//     }
-// );
+// Demo route - không cần auth
+Route::get('/property-cards-demo', function () {
+    // Tạo dữ liệu mẫu cho card BĐS
+    $properties = collect([
+        (object)[
+            'PropertyID' => 'P001',
+            'Title' => 'Căn hộ cao cấp, Trung tâm',
+            'Address' => '123 Nguyễn Huệ',
+            'Ward' => 'Quận 1',
+            'District' => 'Quận 1',
+            'Province' => 'TP.HCM',
+            'Price' => 5200000000,
+            'TypePro' => 'Sale',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Căn hộ'],
+            'chiTiet' => (object)['Area' => 85, 'Bedroom' => 2, 'Bath_WC' => 2]
+        ],
+        (object)[
+            'PropertyID' => 'P002',
+            'Title' => 'Nhà phố liền kề',
+            'Address' => '456 Lê Văn Lương',
+            'Ward' => 'Quận 7',
+            'District' => 'Quận 7',
+            'Province' => 'TP.HCM',
+            'Price' => 35000000,
+            'TypePro' => 'Rent',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Nhà phố'],
+            'chiTiet' => (object)['Area' => 120, 'Bedroom' => 3, 'Bath_WC' => 3]
+        ],
+        (object)[
+            'PropertyID' => 'P003',
+            'Title' => 'Biệt thự view sông',
+            'Address' => '789 Nguyễn Văn Linh',
+            'Ward' => 'Quận 7',
+            'District' => 'Quận 7',
+            'Province' => 'TP.HCM',
+            'Price' => 25000000000,
+            'TypePro' => 'Sale',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Biệt thự'],
+            'chiTiet' => (object)['Area' => 350, 'Bedroom' => 5, 'Bath_WC' => 6]
+        ]
+    ]);
 
-// Route::middleware(['auth'])->group(function()
-// {
+    $categories = collect([
+        (object)['Protype_ID' => 1, 'ten_pro' => 'Căn hộ'],
+        (object)['Protype_ID' => 2, 'ten_pro' => 'Nhà phố'],
+        (object)['Protype_ID' => 3, 'ten_pro' => 'Biệt thự']
+    ]);
 
-//     Route::get('/admin', [SystemController::class, 'admin'])->name('admin.dashboard');
-//     Route::get('/admin/property', [SystemController::class, "getProperty"])->name('admin.property');
-//     Route::get('/admin/user', [SystemController::class, "getUser"])->name('admin.users');
-//     Route::get('/admin/user/create', [SystemController::class, "createUserForm"])->name('admin.users.create');
-//     Route::post('/admin/user/create', [SystemController::class, 'createUser'])->name('admin.users.store');
-//     Route::get('/admin/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('admin.users.byRole');
-//     Route::get('/admin/appointment', [SystemController::class, "getAppointment"])->name('admin.appointment');
-//     Route::get('/admin/transaction', [SystemController::class, "getTransaction"])->name('admin.transaction');
-//     Route::get('/admin/feedback', [SystemController::class, "getFeedback"])->name('admin.feedback');
-//     Route::get('/admin/commission', [SystemController::class, "getCommission"])->name('admin.commission');
+    $owners = collect([]);
 
-//     Route::get('/owner', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
-//     Route::get('/owner/property', [OwnerController::class, 'listProperty'])->name('owner.property.index');
-//     Route::get('/owner/property/create', [OwnerController::class, 'createProperty'])->name('owner.property.create');
-//     Route::post('/owner/property', [OwnerController::class, 'storeProperty'])->name('owner.property.store');
-//     Route::get('/owner/appointments', [OwnerController::class, 'appointments'])->name('owner.appointments.index');
-//     Route::get('/owner/transactions', [OwnerController::class, 'transactions'])->name('owner.transactions.index');
-
-//     // Route đăng xuất
-//     Route::post('/logout', function () {
-//         Auth::logout(); // Đăng xuất người dùng
-//         return redirect()->route('login'); // Chuyển hướng về trang chủ
-//     })->name('logout');
-// });
+    return view('owners.property.index', compact('properties', 'categories', 'owners'));
+});
 
 Route::middleware(['auth'])->group(function () {
 
@@ -119,5 +140,4 @@ Route::middleware(['auth'])->group(function () {
         Auth::logout();
         return redirect()->route('login');
     })->name('logout');
-
 });

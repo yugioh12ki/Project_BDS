@@ -23,12 +23,14 @@ class OwnerController extends Controller
 
     public function listProperty()
     {
-        $ownerId = Auth::user()->UserID;
-        $properties = Property::with('danhMuc')
-            ->where('OwnerID', $ownerId)
-            ->get();
+        // Lấy tất cả bất động sản từ database, không lọc theo OwnerID
+        $properties = Property::with(['danhMuc', 'chiTiet', 'images'])->get();
+        
+        // Debug để kiểm tra dữ liệu
+        // dd($properties);
+        
         $categories = DanhMucBDS::all();
-        $owners = collect([Auth::user()]);
+        $owners = User::all();
 
         return view('owners.property.index', compact('properties', 'categories', 'owners'));
     }

@@ -142,15 +142,27 @@
                         @endif
                         
                         <!-- Options Menu Button -->
-                        <div class="position-absolute top-0 end-0 m-3">
+                        <div class="dropdown position-absolute top-0 end-0 m-3">
                             <button class="btn btn-sm btn-light rounded-circle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Chỉnh sửa</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2"></i>Xem chi tiết</a></li>
+                                <li>
+                                    <a class="dropdown-item edit-property" href="#" data-bs-toggle="modal" data-bs-target="#editPropertyModal" data-property-id="{{ $property->PropertyID }}">
+                                        <i class="bi bi-pencil me-2 text-primary"></i> Chỉnh sửa
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-eye me-2 text-secondary"></i> Xem chi tiết
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Xóa</a></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#">
+                                        <i class="bi bi-trash me-2"></i> Xóa
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -213,6 +225,31 @@
                             </div>
                         </div>
                         
+                        <!-- Utility Prices -->
+                        @if($property->TypePro == 'Rent' || $property->TypePro == 'Rented')
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            @if($property->chiTiet && $property->chiTiet->WaterPrice)
+                            <span class="badge bg-info text-dark">
+                                <i class="bi bi-droplet-fill me-1"></i> Nước: 
+                                {{ number_format($property->chiTiet->WaterPrice) }} VNĐ
+                            </span>
+                            @endif
+                            
+                            @if($property->chiTiet && $property->chiTiet->PowerPrice)
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-lightning-fill me-1"></i> Điện: 
+                                {{ number_format($property->chiTiet->PowerPrice) }} VNĐ
+                            </span>
+                            @endif
+                            
+                            @if($property->chiTiet && $property->chiTiet->Utilities)
+                            <span class="badge bg-secondary text-white">
+                                <i class="bi bi-tools me-1"></i> {{ $property->chiTiet->Utilities }}
+                            </span>
+                            @endif
+                        </div>
+                        @endif
+                        
                         <!-- Price Information -->
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             @if($property->TypePro == 'Rent' || $property->TypePro == 'Rented')
@@ -226,9 +263,9 @@
                             @endif
                             
                             <div>
-                                <a href="{{ route('owner.property.index') }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i> Chi tiết
-                                </a>
+                                <button class="btn btn-outline-primary edit-property" data-bs-toggle="modal" data-bs-target="#editPropertyModal" data-property-id="{{ $property->PropertyID }}">
+                                    <i class="bi bi-pencil-square me-1"></i> Chỉnh sửa
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -256,6 +293,15 @@
       <div class="modal-body">
         @include('_system.partialview.create_property')
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Property Modal -->
+<div class="modal fade" id="editPropertyModal" tabindex="-1" aria-labelledby="editPropertyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      @include('_system.partialview.edit_property')
     </div>
   </div>
 </div>
@@ -318,6 +364,146 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchInput) searchInput.addEventListener('input', filterProperties);
     if (typeFilter) typeFilter.addEventListener('change', filterProperties);
     if (statusFilter) statusFilter.addEventListener('change', filterProperties);
+    
+    // Xử lý chỉnh sửa bất động sản
+    const editButtons = document.querySelectorAll('.edit-property');
+    
+    editButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // No need to prevent default since we're using data-bs-toggle and data-bs-target
+            const propertyId = this.dataset.propertyId;
+            
+            // Gọi API để lấy thông tin bất động sản
+            fetch(`/api/properties/${propertyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Mock data cho demo - trong thực tế, sẽ lấy từ response API
+                    const mockData = {
+                        PropertyID: propertyId,
+                        Title: 'Căn hộ cao cấp, Trung tâm',
+                        Address: '123 Nguyễn Huệ, Quận 1, TP.HCM',
+                        Ward: 'Quận 1',
+                        District: 'Quận 1',
+                        Province: 'TP.HCM',
+                        TypePro: 'Sale',
+                        PropertyType: 1,
+                        Price: 5200000000,
+                        Description: 'Căn hộ cao cấp tại trung tâm thành phố với đầy đủ tiện nghi, view đẹp, an ninh 24/7.',
+                        chiTiet: {
+                            Area: 85,
+                            Bedroom: 2,
+                            Bath_WC: 2,
+                            Floor: 2,
+                            legal: 'Sổ đỏ / sổ hồng',
+                            Interior: 'đầy đủ',
+                            WaterPrice: 30000,
+                            PowerPrice: 3500,
+                            Utilities: 'Có phí dịch vụ',
+                            view: 'Sông Sài Gòn',
+                            near: 'Công viên, trường học',
+                            Road: 'Đường 12m'
+                        },
+                        images: [
+                            {ImageURL: 'https://via.placeholder.com/600x400', IsThumbnail: 1}
+                        ]
+                    };
+                    
+                    // Điền thông tin vào form
+                    document.getElementById('edit_property_id').value = mockData.PropertyID;
+                    document.getElementById('edit_title').value = mockData.Title;
+                    document.getElementById('edit_address').value = mockData.Address;
+                    document.getElementById('edit_district').value = mockData.District;
+                    document.getElementById('edit_ward').value = mockData.Ward;
+                    document.getElementById('edit_province').value = mockData.Province;
+                    document.getElementById('edit_type_pro').value = mockData.TypePro;
+                    document.getElementById('edit_property_type').value = mockData.PropertyType;
+                    document.getElementById('edit_price').value = mockData.Price;
+                    document.getElementById('edit_description').value = mockData.Description;
+                    
+                    // Thông tin chi tiết
+                    if (mockData.chiTiet) {
+                        document.getElementById('edit_area').value = mockData.chiTiet.Area;
+                        document.getElementById('edit_bedroom').value = mockData.chiTiet.Bedroom;
+                        document.getElementById('edit_bathroom').value = mockData.chiTiet.Bath_WC;
+                        document.getElementById('edit_floor').value = mockData.chiTiet.Floor;
+                        document.getElementById('edit_legal').value = mockData.chiTiet.legal;
+                        document.getElementById('edit_interior').value = mockData.chiTiet.Interior;
+                        
+                        // Load utility prices and additional fields
+                        if (document.getElementById('edit_water_price'))
+                            document.getElementById('edit_water_price').value = mockData.chiTiet.WaterPrice || '';
+                        if (document.getElementById('edit_power_price'))
+                            document.getElementById('edit_power_price').value = mockData.chiTiet.PowerPrice || '';
+                        if (document.getElementById('edit_utilities'))
+                            document.getElementById('edit_utilities').value = mockData.chiTiet.Utilities || '';
+                        if (document.getElementById('edit_view'))
+                            document.getElementById('edit_view').value = mockData.chiTiet.view || '';
+                        if (document.getElementById('edit_near'))
+                            document.getElementById('edit_near').value = mockData.chiTiet.near || '';
+                        if (document.getElementById('edit_road'))
+                            document.getElementById('edit_road').value = mockData.chiTiet.Road || '';
+                    }
+                    
+                    // Handle legal documents
+                    if (mockData.chiTiet && mockData.chiTiet.legal) {
+                        const legalDocs = mockData.chiTiet.legal.split('/').map(doc => doc.trim());
+                        
+                        // Check the corresponding checkboxes
+                        if (legalDocs.includes('Sổ hồng') && document.getElementById('edit_so_hong'))
+                            document.getElementById('edit_so_hong').checked = true;
+                        if (legalDocs.includes('Sổ đỏ') && document.getElementById('edit_so_do'))
+                            document.getElementById('edit_so_do').checked = true;
+                        if (legalDocs.includes('Hợp đồng mua bán') && document.getElementById('edit_hop_dong_mua_ban'))
+                            document.getElementById('edit_hop_dong_mua_ban').checked = true;
+                        // Add other document types as needed
+                    }
+                    
+                    // Hiển thị hình ảnh
+                    const imagesContainer = document.getElementById('property_images_container');
+                    imagesContainer.innerHTML = '';
+                    
+                    if (mockData.images && mockData.images.length > 0) {
+                        mockData.images.forEach(image => {
+                            const imgEl = document.createElement('div');
+                            imgEl.className = 'position-relative';
+                            imgEl.innerHTML = `
+                                <img src="${image.ImageURL}" alt="Property image" style="width: 120px; height: 90px; object-fit: cover; border-radius: 4px;">
+                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 rounded-circle" style="width: 24px; height: 24px; padding: 0; line-height: 24px;">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                                ${image.IsThumbnail ? '<div class="position-absolute bottom-0 start-0 bg-primary text-white px-2 py-1 small rounded-end">Ảnh bìa</div>' : ''}
+                            `;
+                            imagesContainer.appendChild(imgEl);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    });
+    
+    // Xử lý form submit
+    const editPropertyForm = document.getElementById('editPropertyForm');
+    editPropertyForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Trong thực tế, gửi dữ liệu qua AJAX
+        // const formData = new FormData(this);
+        
+        // Đóng modal
+        const editPropertyModal = bootstrap.Modal.getInstance(document.getElementById('editPropertyModal'));
+        editPropertyModal.hide();
+        
+        // Hiển thị thông báo thành công
+        const alertHtml = `
+            <div class="alert alert-success alert-dismissible fade show">
+                Cập nhật thông tin bất động sản thành công!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        document.querySelector('.property-dashboard').insertAdjacentHTML('afterbegin', alertHtml);
+    });
 });
 </script>
 @endsection
