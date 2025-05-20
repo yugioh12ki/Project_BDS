@@ -10,6 +10,7 @@ use App\Models\DanhMucBDS;
 use App\Models\Appointment;
 use App\Models\DetailProperty;
 use App\Models\Transaction;
+use Carbon\Carbon;
 
 class OwnerController extends Controller
 {
@@ -36,11 +37,11 @@ class OwnerController extends Controller
     }
 
 
-    public function createProperty()
-    {
-        $categories = DanhMucBDS::all();
-        return view('owners.property.create', compact('categories'));
-    }
+    // public function createProperty()
+    // {
+    //     $categories = DanhMucBDS::all();
+    //     return view('property.create_proper', compact('categories'));
+    // }
 
     public function storeProperty(Request $request)
     {
@@ -109,13 +110,34 @@ class OwnerController extends Controller
     public function appointments()
     {
         $ownerId = Auth::user()->UserID;
-        $appointments = Appointment::with('property')
-            ->whereHas('property', function($query) use ($ownerId) {
-                $query->where('OwnerID', $ownerId);
-            })
+        
+        // Lấy danh sách lịch hẹn liên quan đến chủ nhà
+        $appointments = Appointment::where('OwnerID', $ownerId)
+            ->with(['property', 'user_agent', 'user_customer'])
+            ->orderBy('AppointmentDateStart', 'desc')
             ->get();
+            
+        // Phân loại các cuộc hẹn
+        $upcomingAppointments = $appointments->filter(function($appointment) {
+            return $appointment->AppointmentDateStart >= Carbon::today() && 
+                  ($appointment->Status == 'pending' || 
+                   $appointment->Status == 'confirmed');
+        });
+        
+        $completedAppointments = $appointments->filter(function($appointment) {
+            return $appointment->Status == 'completed' || $appointment->Status == 'Hoàn Thành';
+        });
+        
+        $cancelledAppointments = $appointments->filter(function($appointment) {
+            return $appointment->Status == 'cancelled' || $appointment->Status == 'Đã Hủy';
+        });
 
-        return view('owners.appointments', compact('appointments'));
+        return view('owners.appointment.appointments', compact(
+            'appointments', 
+            'upcomingAppointments', 
+            'completedAppointments', 
+            'cancelledAppointments'
+        ));
     }
 
     public function transactions()

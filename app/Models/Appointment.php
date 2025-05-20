@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Appointment extends Model
 {
@@ -13,6 +14,53 @@ class Appointment extends Model
     protected $primaryKey = 'AppointmentID';
 
     public $timestamps = false;
+
+    // Fillable attributes
+    protected $fillable = [
+        'OwnerID',
+        'AgentID',
+        'CustomerID',
+        'PropertyID',
+        'TitleAppoint',
+        'DescAppoint',
+        'AppointmentDateStart',
+        'AppointmentDateEnd',
+        'Status'
+    ];
+
+    // Cast attributes
+    protected $casts = [
+        'AppointmentDateStart' => 'datetime',
+        'AppointmentDateEnd' => 'datetime'
+    ];
+
+    // Status constants
+    const STATUS_PENDING = 'pending';
+    const STATUS_CONFIRMED = 'confirmed';
+    const STATUS_CANCELLED = 'Đã Hủy';
+    const STATUS_COMPLETED = 'Hoàn Thành';
+
+    // Scopes
+    public function scopePending($query)
+    {
+        return $query->where('Status', self::STATUS_PENDING);
+    }
+
+    public function scopeConfirmed($query)
+    {
+        return $query->where('Status', self::STATUS_CONFIRMED);
+    }
+
+    public function scopeToday($query)
+    {
+        return $query->whereDate('AppointmentDateStart', Carbon::today());
+    }
+
+    public function scopeUpcoming($query)
+    {
+        return $query->whereDate('AppointmentDateStart', '>=', Carbon::today())
+                     ->where('Status', '!=', self::STATUS_CANCELLED);
+    }
 
     //Mối quan hệ với bảng 'user'
     public function user_owner()
