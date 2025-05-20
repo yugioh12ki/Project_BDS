@@ -146,7 +146,7 @@
                             <button class="btn btn-sm btn-light rounded-circle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
-                            <ul class="dropdown-menu">
+                            <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <a class="dropdown-item edit-property" href="#" data-bs-toggle="modal" data-bs-target="#editPropertyModal" data-property-id="{{ $property->PropertyID }}">
                                         <i class="bi bi-pencil me-2 text-primary"></i> Chỉnh sửa
@@ -174,7 +174,7 @@
                         </div>
                         
                         <!-- Location -->
-                        <p class="card-text text-muted mb-3">
+                        <p class="card-text text-muted mb-3 text-truncate">
                             <i class="bi bi-geo-alt me-1"></i> 
                             {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
                         </p>
@@ -207,7 +207,7 @@
                         </div>
                         
                         <!-- Property Features -->
-                        <div class="d-flex justify-content-between text-center mb-3">
+                        <div class="d-flex justify-content-between text-center mb-3 property-features-container">
                             <div class="property-feature">
                                 <i class="bi bi-rulers d-block mb-1 fs-5"></i>
                                 <span class="fw-bold d-block">{{ $property->chiTiet->Area ?? 'N/A' }}</span>
@@ -251,7 +251,7 @@
                         @endif
                         
                         <!-- Price Information -->
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex justify-content-between align-items-center price-edit-container">
                             @if($property->TypePro == 'Rent' || $property->TypePro == 'Rented')
                                 <div>
                                     <h5 class="fw-bold mb-0 text-primary">{{ number_format($property->Price / 1000000) }} triệu VNĐ<span class="fs-6 fw-normal">/tháng</span></h5>
@@ -327,6 +327,68 @@
     .rounded-top-4 {
         border-top-left-radius: 0.75rem !important;
         border-top-right-radius: 0.75rem !important;
+    }
+    .card-body {
+        padding: 1.25rem !important;
+    }
+    .property-item .card {
+        display: flex;
+        flex-direction: column;
+    }
+    .property-item .card-body {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .property-item .card-body > .d-flex:last-child {
+        margin-top: auto;
+    }
+    /* Fix for buttons at bottom */
+    .property-item .btn-outline-primary {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    /* Fix for dropdown menus */
+    .dropdown-menu-end {
+        right: 0;
+        left: auto;
+    }
+    .property-image {
+        position: relative;
+        height: 220px;
+    }
+    .property-image img, 
+    .property-image .bg-light {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+    /* Better responsive styling */
+    @media (max-width: 767.98px) {
+        .property-item {
+            margin-bottom: 1.5rem;
+        }
+        .property-image {
+            height: 180px;
+        }
+    }
+    
+    .card-title {
+        height: 1.5em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+    
+    .property-features-container {
+        min-height: 85px;
+    }
+    
+    .price-edit-container {
+        margin-top: auto;
+        padding-top: 0.5rem;
     }
 </style>
 
