@@ -153,7 +153,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="#">
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#viewPropertyModal" data-property-id="{{ $property->PropertyID }}">
                                         <i class="bi bi-eye me-2 text-secondary"></i> Xem chi tiết
                                     </a>
                                 </li>
@@ -306,6 +306,15 @@
   </div>
 </div>
 
+<!-- View Property Modal -->
+<div class="modal fade" id="viewPropertyModal" tabindex="-1" aria-labelledby="viewPropertyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      @include('_system.partialview.view_property_details')
+    </div>
+  </div>
+</div>
+
 <style>
     .hover-shadow:hover {
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
@@ -451,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         PropertyType: 1,
                         Price: 5200000000,
                         Description: 'Căn hộ cao cấp tại trung tâm thành phố với đầy đủ tiện nghi, view đẹp, an ninh 24/7.',
+                        PostedDate: '2023-05-15',
                         chiTiet: {
                             Area: 85,
                             Bedroom: 2,
@@ -464,6 +474,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             view: 'Sông Sài Gòn',
                             near: 'Công viên, trường học',
                             Road: 'Đường 12m'
+                        },
+                        danhMuc: {
+                            ten_pro: 'Căn hộ'
                         },
                         images: [
                             {ImageURL: 'https://via.placeholder.com/600x400', IsThumbnail: 1}
@@ -544,6 +557,182 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         });
     });
+    
+    // Xử lý xem chi tiết bất động sản
+    const viewDetailButtons = document.querySelectorAll('[data-bs-target="#viewPropertyModal"]');
+    const viewPropertyModal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
+    
+    viewDetailButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const propertyId = this.dataset.propertyId;
+            
+            // Gọi API để lấy thông tin bất động sản
+            fetch(`/api/properties/${propertyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Mock data cho demo - trong thực tế, sẽ lấy từ response API
+                    const mockData = {
+                        PropertyID: propertyId,
+                        Title: 'Căn hộ cao cấp, Trung tâm',
+                        Address: '123 Nguyễn Huệ, Quận 1, TP.HCM',
+                        Ward: 'Quận 1',
+                        District: 'Quận 1',
+                        Province: 'TP.HCM',
+                        TypePro: 'Sale',
+                        PropertyType: 1,
+                        Price: 5200000000,
+                        Description: 'Căn hộ cao cấp tại trung tâm thành phố với đầy đủ tiện nghi, view đẹp, an ninh 24/7.',
+                        PostedDate: '2023-05-15',
+                        chiTiet: {
+                            Area: 85,
+                            Bedroom: 2,
+                            Bath_WC: 2,
+                            Floor: 2,
+                            legal: 'Sổ đỏ / sổ hồng',
+                            Interior: 'đầy đủ',
+                            WaterPrice: 30000,
+                            PowerPrice: 3500,
+                            Utilities: 'Có phí dịch vụ',
+                            view: 'Sông Sài Gòn',
+                            near: 'Công viên, trường học',
+                            Road: 'Đường 12m'
+                        },
+                        danhMuc: {
+                            ten_pro: 'Căn hộ'
+                        },
+                        images: [
+                            {ImageURL: 'https://via.placeholder.com/600x400', IsThumbnail: 1}
+                        ]
+                    };
+                    
+                    // Điền thông tin vào modal xem chi tiết
+                    document.getElementById('view_property_id').value = mockData.PropertyID;
+                    document.getElementById('view_property_title').textContent = mockData.Title;
+                    document.getElementById('view_property_address').textContent = `${mockData.Address}, ${mockData.Ward}, ${mockData.District}, ${mockData.Province}`;
+                    
+                    // Thiết lập hình ảnh
+                    if (mockData.images && mockData.images.length > 0) {
+                        const thumbnail = mockData.images.find(img => img.IsThumbnail) || mockData.images[0];
+                        document.getElementById('view_property_image').src = thumbnail.ImageURL;
+                    } else {
+                        document.getElementById('view_property_image').src = 'https://via.placeholder.com/600x400?text=No+Image';
+                    }
+                    
+                    // Thiết lập badge trạng thái
+                    const statusBadge = document.getElementById('view_property_status');
+                    if (mockData.TypePro === 'Sale') {
+                        statusBadge.className = 'badge rounded-pill py-2 px-3 fw-normal bg-danger';
+                        statusBadge.innerHTML = '<i class="bi bi-tag me-1"></i> Đang bán';
+                    } else if (mockData.TypePro === 'Rent') {
+                        statusBadge.className = 'badge rounded-pill py-2 px-3 fw-normal bg-primary';
+                        statusBadge.innerHTML = '<i class="bi bi-key me-1"></i> Đang cho thuê';
+                    } else if (mockData.TypePro === 'Sold') {
+                        statusBadge.className = 'badge rounded-pill py-2 px-3 fw-normal bg-success';
+                        statusBadge.innerHTML = '<i class="bi bi-check-circle me-1"></i> Đã bán';
+                    } else if (mockData.TypePro === 'Rented') {
+                        statusBadge.className = 'badge rounded-pill py-2 px-3 fw-normal bg-info';
+                        statusBadge.innerHTML = '<i class="bi bi-check-circle me-1"></i> Đã cho thuê';
+                    }
+                    
+                    // Thông tin cơ bản
+                    document.getElementById('view_property_type').textContent = mockData.danhMuc ? mockData.danhMuc.ten_pro : 'Bất động sản';
+                    document.getElementById('view_property_area').textContent = mockData.chiTiet.Area ? `${mockData.chiTiet.Area} m²` : 'N/A';
+                    document.getElementById('view_property_bedroom').textContent = mockData.chiTiet.Bedroom || '0';
+                    document.getElementById('view_property_bathroom').textContent = mockData.chiTiet.Bath_WC || '0';
+                    
+                    // Giá bán và giá thuê
+                    if (mockData.TypePro === 'Sale' || mockData.TypePro === 'Sold') {
+                        document.getElementById('view_property_price_sale').textContent = `${(mockData.Price / 1000000000).toFixed(1)} tỷ VNĐ`;
+                        document.getElementById('view_property_price_rent').textContent = 'N/A';
+                    } else if (mockData.TypePro === 'Rent' || mockData.TypePro === 'Rented') {
+                        document.getElementById('view_property_price_sale').textContent = 'N/A';
+                        document.getElementById('view_property_price_rent').textContent = `${(mockData.Price / 1000000)} triệu VNĐ/tháng`;
+                    } else {
+                        document.getElementById('view_property_price_sale').textContent = `${(mockData.Price / 1000000000).toFixed(1)} tỷ VNĐ`;
+                        document.getElementById('view_property_price_rent').textContent = 'Liên hệ';
+                    }
+                    
+                    // Thông tin chi tiết
+                    document.getElementById('view_property_description').textContent = mockData.Description;
+                    document.getElementById('view_property_floor').textContent = mockData.chiTiet.Floor || 'N/A';
+                    document.getElementById('view_property_interior').textContent = mockData.chiTiet.Interior || 'N/A';
+                    document.getElementById('view_property_view').textContent = mockData.chiTiet.view || 'N/A';
+                    document.getElementById('view_property_road').textContent = mockData.chiTiet.Road || 'N/A';
+                    document.getElementById('view_property_posted_date').textContent = new Date(mockData.PostedDate).toLocaleDateString('vi-VN');
+                    document.getElementById('view_property_status_text').textContent = getStatusText(mockData.TypePro);
+                    
+                    // Phí dịch vụ (chỉ hiển thị cho thuê)
+                    const utilityPricesSection = document.getElementById('utility_prices_section');
+                    if (mockData.TypePro === 'Rent' || mockData.TypePro === 'Rented') {
+                        utilityPricesSection.style.display = 'block';
+                        document.getElementById('view_property_water_price').textContent = mockData.chiTiet.WaterPrice ? 
+                            isNaN(mockData.chiTiet.WaterPrice) ? mockData.chiTiet.WaterPrice : `${Number(mockData.chiTiet.WaterPrice).toLocaleString('vi-VN')} VNĐ` : 'N/A';
+                        document.getElementById('view_property_power_price').textContent = mockData.chiTiet.PowerPrice ? 
+                            isNaN(mockData.chiTiet.PowerPrice) ? mockData.chiTiet.PowerPrice : `${Number(mockData.chiTiet.PowerPrice).toLocaleString('vi-VN')} VNĐ` : 'N/A';
+                        document.getElementById('view_property_utilities').textContent = mockData.chiTiet.Utilities || 'N/A';
+                    } else {
+                        utilityPricesSection.style.display = 'none';
+                    }
+                    
+                    // Địa điểm lân cận
+                    document.getElementById('view_property_near').textContent = mockData.chiTiet.near || 'Không có thông tin';
+                    
+                    // Giấy tờ pháp lý
+                    const legalDocsContainer = document.getElementById('legal_documents');
+                    legalDocsContainer.innerHTML = '';
+                    
+                    if (mockData.chiTiet.legal) {
+                        const legalDocs = mockData.chiTiet.legal.split('/').map(doc => doc.trim());
+                        legalDocs.forEach(doc => {
+                            const docElement = document.createElement('div');
+                            docElement.className = 'mb-2';
+                            docElement.innerHTML = `
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-primary me-2"></i>
+                                    <span>${doc}</span>
+                                </div>
+                            `;
+                            legalDocsContainer.appendChild(docElement);
+                        });
+                    } else {
+                        legalDocsContainer.innerHTML = '<p class="text-muted">Không có thông tin giấy tờ pháp lý</p>';
+                    }
+                    
+                    // Thiết lập nút chỉnh sửa
+                    const editFromViewBtn = document.querySelector('.edit-from-view');
+                    editFromViewBtn.dataset.propertyId = mockData.PropertyID;
+                    
+                    // Thêm sự kiện cho nút chỉnh sửa từ xem chi tiết
+                    editFromViewBtn.addEventListener('click', function() {
+                        // Đóng modal xem chi tiết
+                        viewPropertyModal.hide();
+                        
+                        // Tìm nút chỉnh sửa tương ứng và kích hoạt
+                        const editBtn = document.querySelector(`.edit-property[data-property-id="${this.dataset.propertyId}"]`);
+                        if (editBtn) {
+                            // Chờ một chút để modal view đóng hoàn toàn trước khi mở modal edit
+                            setTimeout(() => {
+                                editBtn.click();
+                            }, 500);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    });
+    
+    // Hàm helper để hiển thị trạng thái
+    function getStatusText(typePro) {
+        switch(typePro) {
+            case 'Sale': return 'Đang bán';
+            case 'Rent': return 'Đang cho thuê';
+            case 'Sold': return 'Đã bán';
+            case 'Rented': return 'Đã cho thuê';
+            default: return typePro;
+        }
+    }
     
     // Xử lý form submit
     const editPropertyForm = document.getElementById('editPropertyForm');
