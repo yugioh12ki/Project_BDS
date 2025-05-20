@@ -124,56 +124,112 @@
                  data-status="{{ $property->TypePro }}"
                  data-title="{{ $property->Title }}"
                  data-address="{{ $property->Address }}">
-                <div class="card h-100 border rounded shadow-sm hover-shadow">
-                    <div class="placeholder-image bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                        <i class="bi bi-building text-muted" style="font-size: 5rem; opacity: 0.3;"></i>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="card-title">{{ $property->Title }}</h5>
-                        <p class="card-text text-muted">
-                            <i class="bi bi-geo-alt"></i> 
-                            {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
-                        </p>
-                        <div class="d-flex justify-content-between mb-3">
-                            <div>
-                                <span class="d-block"><strong>Giá: {{ number_format($property->Price) }} ₫</strong></span>
-                                <span class="d-block text-muted small">
-                                    <i class="bi bi-rulers"></i> 
-                                    {{ $property->chiTiet->Area ?? 'N/A' }} m²
-                                </span>
+                <div class="card h-100 border-0 rounded-4 shadow-sm hover-shadow">
+                    <!-- Property Image -->
+                    <div class="property-image position-relative">
+                        @php
+                            $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
+                            $firstImage = $property->images->first();
+                            $imageUrl = $thumbnailImage ? $thumbnailImage->ImageURL : ($firstImage ? $firstImage->ImageURL : null);
+                        @endphp
+                        
+                        @if($imageUrl)
+                            <img src="{{ asset($imageUrl) }}" class="card-img-top rounded-top-4" alt="{{ $property->Title }}" style="height: 220px; object-fit: cover;">
+                        @else
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded-top-4" style="height: 220px;">
+                                <i class="bi bi-image text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
                             </div>
-                            <div class="text-end">
-                                <span class="badge rounded-pill 
-                                    @if($property->TypePro == 'Sale') bg-danger
-                                    @elseif($property->TypePro == 'Rent') bg-primary
-                                    @elseif($property->TypePro == 'Sold') bg-success
-                                    @elseif($property->TypePro == 'Rented') bg-info
-                                    @else bg-secondary @endif">
-                                    @if($property->TypePro == 'Rent')
-                                        Đang cho thuê
-                                    @elseif($property->TypePro == 'Sale')
-                                        Đang bán
-                                    @elseif($property->TypePro == 'Rented')
-                                        Đã cho thuê
-                                    @elseif($property->TypePro == 'Sold')
-                                        Đã bán
-                                    @else
-                                        {{ $property->TypePro }}
-                                    @endif
-                                </span>
-                                <span class="d-block text-muted small mt-1">ID: {{ $property->PropertyID }}</span>
+                        @endif
+                        
+                        <!-- Options Menu Button -->
+                        <div class="position-absolute top-0 end-0 m-3">
+                            <button class="btn btn-sm btn-light rounded-circle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Chỉnh sửa</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2"></i>Xem chi tiết</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Xóa</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Property Type and Title -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0 fw-bold text-truncate" style="max-width: 80%;">{{ $property->Title }}</h5>
+                        </div>
+                        
+                        <!-- Location -->
+                        <p class="card-text text-muted mb-3">
+                            <i class="bi bi-geo-alt me-1"></i> 
+                            {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
+                        </p>
+                        
+                        <!-- Property Type Badge -->
+                        <div class="mb-3">
+                            <span class="badge bg-light text-dark rounded-pill py-2 px-3 fw-normal">
+                                <i class="bi bi-building me-1"></i>
+                                {{ $property->danhMuc ? $property->danhMuc->ten_pro : 'Bất động sản' }}
+                            </span>
+                            
+                            <span class="badge rounded-pill py-2 px-3 fw-normal ms-2
+                                @if($property->TypePro == 'Sale') bg-danger
+                                @elseif($property->TypePro == 'Rent') bg-primary
+                                @elseif($property->TypePro == 'Sold') bg-success
+                                @elseif($property->TypePro == 'Rented') bg-info
+                                @else bg-secondary @endif">
+                                @if($property->TypePro == 'Rent')
+                                    <i class="bi bi-key me-1"></i> Đang cho thuê
+                                @elseif($property->TypePro == 'Sale')
+                                    <i class="bi bi-tag me-1"></i> Đang bán
+                                @elseif($property->TypePro == 'Rented')
+                                    <i class="bi bi-check-circle me-1"></i> Đã cho thuê
+                                @elseif($property->TypePro == 'Sold')
+                                    <i class="bi bi-check-circle me-1"></i> Đã bán
+                                @else
+                                    {{ $property->TypePro }}
+                                @endif
+                            </span>
+                        </div>
+                        
+                        <!-- Property Features -->
+                        <div class="d-flex justify-content-between text-center mb-3">
+                            <div class="property-feature">
+                                <i class="bi bi-rulers d-block mb-1 fs-5"></i>
+                                <span class="fw-bold d-block">{{ $property->chiTiet->Area ?? 'N/A' }}</span>
+                                <small class="text-muted">m²</small>
+                            </div>
+                            <div class="property-feature">
+                                <i class="bi bi-door-open d-block mb-1 fs-5"></i>
+                                <span class="fw-bold d-block">{{ $property->chiTiet->Bedroom ?? '0' }}</span>
+                                <small class="text-muted">Phòng ngủ</small>
+                            </div>
+                            <div class="property-feature">
+                                <i class="bi bi-droplet d-block mb-1 fs-5"></i>
+                                <span class="fw-bold d-block">{{ $property->chiTiet->Bath_WC ?? '0' }}</span>
+                                <small class="text-muted">Phòng tắm</small>
                             </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center">
+                        
+                        <!-- Price Information -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            @if($property->TypePro == 'Rent' || $property->TypePro == 'Rented')
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-primary">{{ number_format($property->Price / 1000000) }} triệu VNĐ<span class="fs-6 fw-normal">/tháng</span></h5>
+                                </div>
+                            @else
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-primary">{{ number_format($property->Price / 1000000000, 1) }} tỷ VNĐ</h5>
+                                </div>
+                            @endif
+                            
                             <div>
-                                <span class="badge bg-light text-dark me-1">
-                                    <i class="bi bi-door-open"></i> {{ $property->chiTiet->Bedroom ?? '0' }} phòng
-                                </span>
-                                <span class="badge bg-light text-dark">
-                                    <i class="bi bi-droplet"></i> {{ $property->chiTiet->Bath_WC ?? '0' }} WC
-                                </span>
+                                <a href="{{ route('owner.property.index') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i> Chi tiết
+                                </a>
                             </div>
-                            <a href="{{ route('owner.property.index') }}" class="btn btn-sm btn-outline-primary">Chi Tiết</a>
                         </div>
                     </div>
                 </div>
@@ -212,6 +268,19 @@
     }
     .stats-icon {
         opacity: 0.8;
+    }
+    .property-feature {
+        flex: 1;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        background-color: #f8f9fa;
+    }
+    .rounded-4 {
+        border-radius: 0.75rem !important;
+    }
+    .rounded-top-4 {
+        border-top-left-radius: 0.75rem !important;
+        border-top-right-radius: 0.75rem !important;
     }
 </style>
 

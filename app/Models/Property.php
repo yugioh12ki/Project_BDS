@@ -38,6 +38,16 @@ class Property extends Model
     {
         return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
     }
+    
+    public function images()
+    {
+        return $this->hasMany(Image::class, 'PropertyID', 'PropertyID');
+    }
+    
+    public function videos()
+    {
+        return $this->hasMany(Video::class, 'PropertyID', 'PropertyID');
+    }
 
     protected $fillable = [
          'OwnerID',
