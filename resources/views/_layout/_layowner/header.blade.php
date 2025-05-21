@@ -32,10 +32,13 @@
                 Xin chào, {{ Auth::user()->Name }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUserMenu">
+                <li><a class="dropdown-item" href="{{ route('owner.profile') }}"><i class="bi bi-person-circle me-2"></i>Thông tin cá nhân</a></li>
+                <li><a class="dropdown-item" href="{{ route('owner.change-password') }}"><i class="bi bi-key me-2"></i>Đổi mật khẩu</a></li>
+                <li><hr class="dropdown-divider"></li>
                 <li>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button class="dropdown-item" type="submit">Đăng xuất</button>
+                        <button class="dropdown-item" type="submit"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button>
                     </form>
                 </li>
             </ul>

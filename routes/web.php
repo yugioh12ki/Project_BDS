@@ -116,12 +116,18 @@ Route::middleware(['auth'])->group(function () {
 
     // Owner routes
     Route::middleware(['checkRole:Owner'])->prefix('owner')->name('owner.')->group(function () {
-        Route::get('/', [OwnerController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('dashboard');
         Route::get('/property', [OwnerController::class, 'listProperty'])->name('property.index');
         Route::get('/property/create', [OwnerController::class, 'createProperty'])->name('property.create');
         Route::post('/property', [OwnerController::class, 'storeProperty'])->name('property.store');
         Route::get('/appointments', [OwnerController::class, 'appointments'])->name('appointments.index');
         Route::get('/transactions', [OwnerController::class, 'transactions'])->name('transactions.index');
+        
+        // Profile and Password routes
+        Route::get('/profile', [OwnerController::class, 'showProfile'])->name('profile');
+        Route::post('/profile', [OwnerController::class, 'updateProfile'])->name('profile.update');
+        Route::get('/change-password', [OwnerController::class, 'showChangePasswordForm'])->name('change-password');
+        Route::post('/change-password', [OwnerController::class, 'changePassword'])->name('change-password.update');
     });
 
     // Giả sử thêm 2 quyền nữa (ví dụ: Agent và Customer)
@@ -140,4 +146,9 @@ Route::middleware(['auth'])->group(function () {
         Auth::logout();
         return redirect()->route('login');
     })->name('logout');
+
+    // Transaction Route trong OwnerController
+    Route::get('/transaction/{id}', [OwnerController::class, 'showTransaction'])->name('transaction.view');
+    Route::get('/transaction/{id}/print', [OwnerController::class, 'printInvoice'])->name('transaction.print');
+    Route::get('/export/transactions', [OwnerController::class, 'exportTransactions'])->name('export.transactions');
 });

@@ -6,10 +6,6 @@
         <div class="row">
             <div class="col">
                 <h3>Lịch Hẹn</h3>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('owner.dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Lịch hẹn</li>
-                </ol>
             </div>
         </div>
     </div>
