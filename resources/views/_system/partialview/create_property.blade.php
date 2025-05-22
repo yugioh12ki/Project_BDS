@@ -70,7 +70,6 @@
                                 <option value="">Chọn</option>
                                 <option value="Rent">Thuê</option>
                                 <option value="Sale">Bán</option>
-                                <option value="Sale/Rent">Sale/Rent</option>
                             </select>
                         </div>
                     </div>
@@ -236,7 +235,7 @@
         <div class="row mt-4">
             <div class="col text-end">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="submit" class="btn btn-success px-4">Lưu và gửi phê duyệt</button>
+                <button type="submit" class="btn btn-success px-4">Lưu</button>
             </div>
         </div>
     </div>

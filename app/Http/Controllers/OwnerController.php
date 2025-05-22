@@ -35,7 +35,13 @@ class OwnerController extends Controller
         $categories = DanhMucBDS::all();
         $owners = User::all();
 
-        return view('owners.property.index', compact('properties', 'categories', 'owners'));
+        // Lấy properties của chủ sở hữu hiện tại cho modal "Tạo tin đăng"
+        $ownerId = Auth::user()->UserID;
+        $ownerProperties = Property::with(['danhMuc', 'chiTiet', 'images'])
+            ->where('OwnerID', $ownerId)
+            ->get();
+
+        return view('owners.property.index', compact('properties', 'categories', 'owners', 'ownerProperties'));
     }
 
 
@@ -375,5 +381,39 @@ class OwnerController extends Controller
         $user->save();
         
         return redirect()->route('owner.profile')->with('success', 'Đổi mật khẩu thành công!');
+    }
+    
+    /**
+     * Lấy danh sách bất động sản cho modal tạo tin đăng
+     */
+    public function getPropertiesForListing()
+    {
+        $ownerId = Auth::user()->UserID;
+        $properties = Property::with(['danhMuc', 'chiTiet', 'images'])
+            ->where('OwnerID', $ownerId)
+            ->whereNull('ApprovedBy')
+            ->where('Status', 'inactive')
+            ->get();
+            
+        return response()->json($properties);
+    }
+
+    /**
+     * Lưu tin đăng ký gửi bất động sản mới
+     */
+    public function storePropertyListing(Request $request)
+    {
+        $validated = $request->validate([
+            'property_id' => 'required|exists:property,PropertyID',
+            // Thêm các validation rules khác tùy thuộc vào yêu cầu
+        ]);
+        
+        // Trong thực tế, sẽ lưu tin đăng và các thông tin liên quan ở đây
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Tin đăng ký gửi bất động sản đã được tạo thành công!',
+            'redirect' => route('owner.property.index')
+        ]);
     }
 }
