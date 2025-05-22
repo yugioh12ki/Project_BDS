@@ -1,5 +1,5 @@
 @extends('_layout._layowner.app')
-@section('title', 'Chủ sở hữu')
+@section('title', 'Chủ Sở Hữu')
 
 @section('content')
     <div class="dashboard-container">

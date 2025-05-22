@@ -21,6 +21,8 @@
     <!-- Nội dung chính -->
     <div class="content-area">
         @yield('content')
+        @yield('listings')
+        @yield('appointments')
     </div>
     
     <!-- Footer -->

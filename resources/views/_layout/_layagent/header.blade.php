@@ -8,8 +8,9 @@
     <div class="header-nav">
         <ul>
             <li><a href="{{ route('agent.dashboard') }}" class="header-nav-link"><i class="bi bi-house-fill"></i> Trang Chủ</a></li>
-            <li><a href="{{ route('agent.listings') }}" class="header-nav-link"><i class="bi bi-building"></i> Danh Sách BĐS</a></li>
-            <li><a href="{{ route('agent.appointments') }}" class="header-nav-link"><i class="bi bi-calendar-event"></i> Lịch Hẹn</a></li>
+            <li><a href="{{ route('agent.listings') }}" class="header-nav-link"><i class="bi bi-list-task"></i>Danh Sách Phân Công Môi Giới</a></li>
+            <li><a href="{{ route('agent.appointments') }}" class="header-nav-link"><i class="bi bi-calendar2-event-fill"></i>Tạo Lịch Hẹn Xem Nhà</a></li>
+            <li><a href="{{ route('agent.appointments') }}" class="header-nav-link"><i class="bi bi-cash-stack"></i>Lịch Sử Giao Dịch</a></li>
         </ul>
     </div>
 
@@ -31,7 +32,8 @@
                 Xin chào, {{ Auth::user()->Name }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUserMenu">
-                <li><a class="dropdown-item" href="{{ route('agent.profile') }}"><i class="bi bi-person-circle me-2"></i>Thông tin cá nhân</a></li>
+                <li><a class="dropdown-item" href="{{ route('agent.profile') }}"><i class="bi bi-person-circle me-2"></i>Thông Tin Cá Nhân</a></li>
+                <li><a class="dropdown-item" href="#"><i class="bi bi-key"></i>Đổi Mật Khẩu</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <form action="{{ route('logout') }}" method="POST">
