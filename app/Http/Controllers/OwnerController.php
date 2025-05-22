@@ -201,7 +201,7 @@ class OwnerController extends Controller
             ? round((($paidAmount - $previousPaidAmount) / $previousPaidAmount) * 100) 
             : 0;
         
-        return view('transactions.transactions', compact(
+        return view('owners.transactions.transactions', compact(
             'transactions',
             'totalValue',
             'transactionCount',
@@ -228,7 +228,7 @@ class OwnerController extends Controller
             abort(403, 'Unauthorized action.');
         }
         
-        return view('transactions.show', compact('transaction'));
+        return view('owners.transactions.show', compact('transaction'));
     }
     
     /**
@@ -245,7 +245,7 @@ class OwnerController extends Controller
         }
         
         // Generate HTML for the invoice
-        $html = View::make('transactions.invoice', compact('transaction'))->render();
+        $html = View::make('owners.transactions.invoice', compact('transaction'))->render();
         
         // Return response with headers for PDF download
         return response($html)
