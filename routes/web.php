@@ -135,7 +135,10 @@ Route::middleware(['auth'])->group(function () {
     // Giả sử thêm 2 quyền nữa (ví dụ: Agent và Customer)
     Route::middleware(['checkRole:Agent'])->prefix('agent')->name('agent.')->group(function () {
         Route::get('/', [AgentController::class, 'dashboard'])->name('dashboard');
-        // các route khác của agent...
+        Route::get('/listings', [AgentController::class, 'listings'])->name('listings');
+        Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments');
+        Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
+        Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');
     });
 
     // Route::middleware(['checkrole:customer'])->prefix('customer')->name('customer.')->group(function () {
