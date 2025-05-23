@@ -23,7 +23,7 @@ class Property extends Model
 
     public function chiTiet()
     {
-        return $this->belongsTo(DetailProperty::class, 'IdDetail', 'IdDetail');
+        return $this->hasOne(DetailProperty::class, 'PropertyID', 'PropertyID');
     }
 
     public function chusohuu()
@@ -38,12 +38,12 @@ class Property extends Model
     {
         return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
     }
-    
+
     public function images()
     {
         return $this->hasMany(Image::class, 'PropertyID', 'PropertyID');
     }
-    
+
     public function videos()
     {
         return $this->hasMany(Video::class, 'PropertyID', 'PropertyID');

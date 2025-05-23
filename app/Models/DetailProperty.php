@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class DetailProperty extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'detail_pro'; // Tên bảng trong cơ sở dữ liệu
     protected $primaryKey = 'IdDetail'; // Khóa chính của bảng
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
@@ -19,7 +19,7 @@ class DetailProperty extends Model
 
     public function property()
     {
-        return $this->belongsTo(Property::class, 'IdDetail', 'IdDetail'); // Khóa ngoại trong bảng detail_pro
+        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
     }
 
 }

@@ -13,15 +13,18 @@ class Image extends Model
 
     protected $primaryKey = 'ImageID';
     public $timestamps = false;
-    
+
     protected $fillable = [
         'ImageID',
         'PropertyID',
+        'ImagePath',
         'ImageURL',
+        'Caption',
         'Description',
-        'IsThumbnail'
+        'IsThumbnail',
+        'UploadedDate'
     ];
-    
+
     public function property()
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');

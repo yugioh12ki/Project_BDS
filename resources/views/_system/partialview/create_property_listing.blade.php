@@ -8,19 +8,17 @@
     </div>
 @endif
 
-<form action="{{ route('owner.property.listings.store') }}" method="POST">
-    @csrf
-    <div class="modal fade" id="createPropertyListingModal" tabindex="-1" aria-labelledby="createPropertyListingModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header border-0 bg-white">
-            <div>
-              <h5 class="modal-title fw-bold fs-4 mb-1" id="createPropertyListingModalLabel">Tạo tin đăng ký gửi bất động sản</h5>
-              <p class="text-muted mb-0 small">Hoàn thành các bước để tạo tin đăng ký gửi bất động sản</p>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-          </div>
-          <div class="modal-body">
+<div class="modal fade" id="createPropertyListingModal" tabindex="-1" aria-labelledby="createPropertyListingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 bg-white">
+        <div>
+          <h5 class="modal-title fw-bold fs-4 mb-1" id="createPropertyListingModalLabel">Tạo tin đăng ký gửi bất động sản</h5>
+          <p class="text-muted mb-0 small">Hoàn thành các bước để tạo tin đăng ký gửi bất động sản</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body">
 
             <div class="bg-light p-3 rounded-3 mb-4">
               <div class="d-flex align-items-center">
@@ -53,20 +51,30 @@
             </div>
 
             <h6 class="fw-bold mb-3">Chọn bất động sản để đăng tin</h6>
-            
+
             <div class="property-selection-list">
               @forelse($ownerProperties ?? [] as $property)
                 <div class="property-item border rounded mb-3 overflow-hidden">
                   <div class="property-content p-0">
                     <div class="property-image bg-light text-center" style="height: 200px; display: flex; align-items: center; justify-content: center;">
                       @php
-                        $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
-                        $firstImage = $property->images->first();
-                        $imageUrl = $thumbnailImage ? $thumbnailImage->ImageURL : ($firstImage ? $firstImage->ImageURL : null);
+                        $thumbnailImage = null;
+                        $firstImage = null;
+                        $imageUrl = null;
+                        
+                        if (isset($property) && $property && isset($property->images)) {
+                            $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
+                            $firstImage = $property->images->first();
+                            if ($thumbnailImage) {
+                                $imageUrl = $thumbnailImage->ImageURL ?: ($thumbnailImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($thumbnailImage->ImagePath) : null);
+                            } elseif ($firstImage) {
+                                $imageUrl = $firstImage->ImageURL ?: ($firstImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($firstImage->ImagePath) : null);
+                            }
+                        }
                       @endphp
-                      
+
                       @if($imageUrl)
-                        <img src="{{ asset($imageUrl) }}" alt="{{ $property->Title }}" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                        <img src="{{ $imageUrl }}" alt="{{ $property->Title ?? 'Property image' }}" style="max-height: 100%; max-width: 100%; object-fit: contain;">
                       @else
                         <svg class="text-secondary" width="80" height="80" fill="currentColor" viewBox="0 0 16 16">
                           <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
@@ -119,7 +127,7 @@
                           </h5>
                         </div>
                         <div class="form-check">
-                          <input class="form-check-input" type="radio" name="property_id" id="property{{ $property->PropertyID }}" value="{{ $property->PropertyID }}" required>
+                          <input class="form-check-input" type="radio" name="selectedProperty" id="property{{ $property->PropertyID }}" value="{{ $property->PropertyID }}" data-type="{{ $property->TypePro }}" required>
                           <label class="form-check-label" for="property{{ $property->PropertyID }}">
                             Chọn bất động sản này
                           </label>

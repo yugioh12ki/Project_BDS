@@ -92,7 +92,7 @@ class OwnerController extends Controller
                 'PowerPrice'   => 'nullable|string',
                 'Utilities'    => 'nullable|string',
             ]);
-    
+
             // Create new property entry
             $property = new Property();
             $property->PropertyID   = $property_ID;
@@ -112,10 +112,10 @@ class OwnerController extends Controller
             $property->ApprovedDate = now();
             $property->Status = 'pending'; // New properties are pending by default
 
-    
+
             // Save the property to get PropertyID
             $property->save();
-    
+
             // Create property details
             $propertyDetail = new DetailProperty();
             $propertyDetail->PropertyID = $property_ID;
@@ -136,9 +136,9 @@ class OwnerController extends Controller
             $propertyDetail->WaterPrice   = $request->input('WaterPrice');
             $propertyDetail->PowerPrice   = $request->input('PowerPrice');
             $propertyDetail->Utilities    = $request->input('Utilities');
-    
+
             $propertyDetail->save();
-    
+
             if ($request->hasFile('property_images')) {
                 foreach ($request->file('property_images') as $imageFile) {
                     if ($imageFile->isValid()) {
@@ -151,7 +151,7 @@ class OwnerController extends Controller
                     }
                 }
             }
-    
+
             if ($request->hasFile('property_video')) {
                 $videoFile = $request->file('property_video');
                 if ($videoFile->isValid()) {
@@ -174,32 +174,32 @@ class OwnerController extends Controller
     public function appointments()
     {
         $ownerId = Auth::user()->UserID;
-        
+
         // Lấy danh sách lịch hẹn liên quan đến chủ nhà
         $appointments = Appointment::where('OwnerID', $ownerId)
             ->with(['property', 'user_agent', 'user_customer'])
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
-            
+
         // Phân loại các cuộc hẹn
         $upcomingAppointments = $appointments->filter(function($appointment) {
-            return $appointment->AppointmentDateStart >= Carbon::today() && 
-                  ($appointment->Status == 'pending' || 
+            return $appointment->AppointmentDateStart >= Carbon::today() &&
+                  ($appointment->Status == 'pending' ||
                    $appointment->Status == 'confirmed');
         });
-        
+
         $completedAppointments = $appointments->filter(function($appointment) {
             return $appointment->Status == 'completed' || $appointment->Status == 'Hoàn Thành';
         });
-        
+
         $cancelledAppointments = $appointments->filter(function($appointment) {
             return $appointment->Status == 'cancelled' || $appointment->Status == 'Đã Hủy';
         });
 
         return view('owners.appointment.appointments', compact(
-            'appointments', 
-            'upcomingAppointments', 
-            'completedAppointments', 
+            'appointments',
+            'upcomingAppointments',
+            'completedAppointments',
             'cancelledAppointments'
         ));
     }
@@ -207,56 +207,56 @@ class OwnerController extends Controller
     public function transactions(Request $request)
     {
         $ownerId = Auth::user()->UserID;
-        
+
         // Process date filter
         $fromDate = $request->input('from_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
-        
+
         // Base query for transactions
         $query = Transaction::with(['property', 'trans_cus', 'trans_agent'])
             ->where('OwnerID', $ownerId);
-        
+
         // Apply date filtering if provided
         if ($fromDate && $toDate) {
             $query->whereBetween('TransactionDate', [$fromDate, $toDate]);
         }
-        
+
         // Get filtered transactions
         $transactions = $query->orderBy('TransactionDate', 'desc')->get();
-        
+
         // Calculate statistics
         $totalValue = $transactions->sum('Amount');
         $transactionCount = $transactions->count();
         $paidAmount = $transactions->where('Status', 'Hoàn thành')->sum('Amount');
-        
+
         // Calculate success rate
-        $successRate = $transactionCount > 0 
-            ? round(($transactions->where('Status', 'Hoàn thành')->count() / $transactionCount) * 100) 
+        $successRate = $transactionCount > 0
+            ? round(($transactions->where('Status', 'Hoàn thành')->count() / $transactionCount) * 100)
             : 0;
-        
+
         // Previous period (for comparison)
         $previousFrom = Carbon::parse($fromDate)->subMonth()->format('Y-m-d');
         $previousTo = Carbon::parse($toDate)->subMonth()->format('Y-m-d');
-        
+
         $previousTransactions = Transaction::where('OwnerID', $ownerId)
             ->whereBetween('TransactionDate', [$previousFrom, $previousTo])
             ->get();
-        
+
         $previousTotalValue = $previousTransactions->sum('Amount');
         $previousCount = $previousTransactions->count();
         $previousPaidAmount = $previousTransactions->where('Status', 'Hoàn thành')->sum('Amount');
-        
+
         // Calculate growth percentages
-        $valueGrowth = $previousTotalValue > 0 
-            ? round((($totalValue - $previousTotalValue) / $previousTotalValue) * 100) 
+        $valueGrowth = $previousTotalValue > 0
+            ? round((($totalValue - $previousTotalValue) / $previousTotalValue) * 100)
             : 0;
-        $countGrowth = $previousCount > 0 
-            ? $transactionCount - $previousCount 
+        $countGrowth = $previousCount > 0
+            ? $transactionCount - $previousCount
             : 0;
-        $paidGrowth = $previousPaidAmount > 0 
-            ? round((($paidAmount - $previousPaidAmount) / $previousPaidAmount) * 100) 
+        $paidGrowth = $previousPaidAmount > 0
+            ? round((($paidAmount - $previousPaidAmount) / $previousPaidAmount) * 100)
             : 0;
-        
+
         return view('owners.transactions.transactions', compact(
             'transactions',
             'totalValue',
@@ -278,15 +278,15 @@ class OwnerController extends Controller
     {
         $transaction = Transaction::with(['property', 'trans_owner', 'trans_cus', 'trans_agent'])
             ->findOrFail($id);
-            
+
         // Check if user has permission to view this transaction
         if (Auth::user()->role == 'owner' && Auth::user()->UserID != $transaction->OwnerID) {
             abort(403, 'Unauthorized action.');
         }
-        
+
         return view('owners.transactions.show', compact('transaction'));
     }
-    
+
     /**
      * In hóa đơn giao dịch.
      */
@@ -294,21 +294,21 @@ class OwnerController extends Controller
     {
         $transaction = Transaction::with(['property', 'trans_owner', 'trans_cus', 'trans_agent'])
             ->findOrFail($id);
-            
+
         // Check if user has permission to view this transaction
         if (Auth::user()->role == 'owner' && Auth::user()->UserID != $transaction->OwnerID) {
             abort(403, 'Unauthorized action.');
         }
-        
+
         // Generate HTML for the invoice
         $html = View::make('owners.transactions.invoice', compact('transaction'))->render();
-        
+
         // Return response with headers for PDF download
         return response($html)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="Transaction-'.$id.'.pdf"');
     }
-    
+
     /**
      * Xuất danh sách giao dịch ra file CSV.
      */
@@ -317,7 +317,7 @@ class OwnerController extends Controller
         $user = Auth::user();
         $fromDate = $request->input('from_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
-        
+
         // Base query depending on user role
         if ($user->role == 'owner') {
             $query = Transaction::with('property')
@@ -327,27 +327,27 @@ class OwnerController extends Controller
         } else {
             abort(403, 'Unauthorized action.');
         }
-        
+
         // Apply date filtering
         $query->whereBetween('TransactionDate', [$fromDate, $toDate]);
-        
+
         // Get filtered transactions
         $transactions = $query->orderBy('TransactionDate', 'desc')->get();
-        
+
         // Create and return CSV/Excel file
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="transactions.csv"',
         ];
-        
+
         $callback = function() use ($transactions) {
             $file = fopen('php://output', 'w');
-            
+
             // Add headers
             fputcsv($file, [
                 'ID', 'Date', 'Property', 'Type', 'Amount', 'Customer', 'Status'
             ]);
-            
+
             // Add data rows
             foreach ($transactions as $transaction) {
                 fputcsv($file, [
@@ -360,10 +360,10 @@ class OwnerController extends Controller
                     $transaction->Status
                 ]);
             }
-            
+
             fclose($file);
         };
-        
+
         return response()->stream($callback, 200, $headers);
     }
 
@@ -382,7 +382,7 @@ class OwnerController extends Controller
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
-        
+
         $validated = $request->validate([
             'FullName' => 'required|string|max:255',
             'PhoneNumber' => 'required|string|max:20',
@@ -390,7 +390,7 @@ class OwnerController extends Controller
             'Address' => 'nullable|string|max:255',
             'Avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
-        
+
         // Xử lý upload avatar nếu có
         if ($request->hasFile('Avatar')) {
             $avatar = $request->file('Avatar');
@@ -398,13 +398,13 @@ class OwnerController extends Controller
             $avatar->move(public_path('images/avatars'), $filename);
             $user->Avatar = $filename;
         }
-        
+
         $user->FullName = $validated['FullName'];
         $user->PhoneNumber = $validated['PhoneNumber'];
         $user->Email = $validated['Email'];
         $user->Address = $validated['Address'];
         $user->save();
-        
+
         return redirect()->route('owner.profile')->with('success', 'Cập nhật thông tin thành công!');
     }
 
@@ -422,36 +422,96 @@ class OwnerController extends Controller
     public function changePassword(Request $request)
     {
         $user = Auth::user();
-        
+
         $validated = $request->validate([
             'current_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ]);
-        
+
         // Kiểm tra mật khẩu hiện tại
         if (!Hash::check($validated['current_password'], $user->password)) {
             return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng']);
         }
-        
+
         $user->password = Hash::make($validated['password']);
         $user->save();
-        
+
         return redirect()->route('owner.profile')->with('success', 'Đổi mật khẩu thành công!');
     }
-    
+
     public function storePropertyListing(Request $request)
     {
         $validated = $request->validate([
             'property_id' => 'required|exists:property,PropertyID',
             // Thêm các validation rules khác tùy thuộc vào yêu cầu
         ]);
-        
+
         // Trong thực tế, sẽ lưu tin đăng và các thông tin liên quan ở đây
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Tin đăng ký gửi bất động sản đã được tạo thành công!',
             'redirect' => route('owner.property.index')
         ]);
+    }
+
+    public function getPropertiesForListing()
+    {
+        try {
+            $ownerId = Auth::user()->UserID;
+
+            // Lấy danh sách bất động sản của owner hiện tại
+            $ownerProperties = Property::with(['danhMuc', 'chiTiet', 'images'])
+                ->where('OwnerID', $ownerId)
+                ->get();
+
+            // Transform data to include required fields for JavaScript
+            $propertiesData = $ownerProperties->map(function($property) {
+                // Get thumbnail or first image
+                $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
+                $firstImage = $property->images->first();
+
+                // Handle image URL - check if ImageURL exists, otherwise use ImagePath
+                $imageUrl = null;
+                if ($thumbnailImage) {
+                    $imageUrl = $thumbnailImage->ImageURL ?: ($thumbnailImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($thumbnailImage->ImagePath) : null);
+                } elseif ($firstImage) {
+                    $imageUrl = $firstImage->ImageURL ?: ($firstImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($firstImage->ImagePath) : null);
+                }
+
+                return [
+                    'PropertyID' => $property->PropertyID,
+                    'Title' => $property->Title,
+                    'TypePro' => $property->TypePro,
+                    'Price' => $property->Price,
+                    'Address' => $property->Address,
+                    'Ward' => $property->Ward,
+                    'District' => $property->District,
+                    'Province' => $property->Province,
+                    'Status' => $property->Status,
+                    'imageUrl' => $imageUrl,
+                    'danhMuc' => $property->danhMuc ? [
+                        'ten_pro' => $property->danhMuc->ten_pro
+                    ] : null,
+                    'chiTiet' => $property->chiTiet ? [
+                        'Area' => $property->chiTiet->Area ?? null,
+                        'Bedroom' => $property->chiTiet->Bedroom ?? 0,
+                        'Bath_WC' => $property->chiTiet->Bath_WC ?? 0
+                    ] : null,
+                    'images' => $property->images->map(function($image) {
+                        $imageUrl = $image->ImageURL ?: ($image->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($image->ImagePath) : null);
+                        return [
+                            'ImageURL' => $imageUrl,
+                            'IsThumbnail' => $image->IsThumbnail ?? 0
+                        ];
+                    })
+                ];
+            });
+
+            return response()->json($propertiesData);
+        } catch (\Exception $e) {
+            Log::error('Error in getPropertiesForListing: ' . $e->getMessage());
+            return response()->json(['error' => 'Có lỗi xảy ra khi tải dữ liệu'], 500);
+        }
     }
 }
