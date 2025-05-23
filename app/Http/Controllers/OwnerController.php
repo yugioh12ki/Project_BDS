@@ -31,16 +31,32 @@ class OwnerController extends Controller
 
     public function listProperty()
     {
-        $properties = Property::with(['danhMuc', 'chiTiet', 'images'])->get();
-        $categories = DanhMucBDS::all();
-        $owners = User::all();
-
         $ownerId = Auth::user()->UserID;
-        $ownerProperties = Property::with(['danhMuc', 'chiTiet', 'images'])
+        
+        // Lấy tất cả BĐS của owner hiện tại
+        $properties = Property::with(['danhMuc', 'chiTiet', 'images'])
             ->where('OwnerID', $ownerId)
             ->get();
 
-        return view('owners.property.index', compact('properties', 'categories', 'owners', 'ownerProperties'));
+        // Lấy BĐS pending để hiển thị trong modal tạo listing
+        $ownerProperties = Property::with(['danhMuc', 'chiTiet', 'images'])
+            ->where('OwnerID', $ownerId)
+            ->where('Status', 'pending')
+            ->get();
+
+        $categories = DanhMucBDS::all();
+        $owners = User::all();
+
+        // Log để debug
+        \Log::info('Properties count: ' . $properties->count());
+        \Log::info('Pending properties count: ' . $ownerProperties->count());
+
+        return view('owners.property.index', compact(
+            'properties',       // Tất cả BĐS để hiển thị trong danh sách
+            'ownerProperties', // BĐS pending để tạo listing
+            'categories',
+            'owners'
+        ));
     }
 
 
@@ -460,18 +476,20 @@ class OwnerController extends Controller
         try {
             $ownerId = Auth::user()->UserID;
 
-            // Lấy danh sách bất động sản của owner hiện tại
+            // Chỉ lấy BĐS của owner hiện tại và có status là pending
             $ownerProperties = Property::with(['danhMuc', 'chiTiet', 'images'])
                 ->where('OwnerID', $ownerId)
+                ->where('Status', 'pending')
                 ->get();
 
-            // Transform data to include required fields for JavaScript
+            \Log::info('Found ' . $ownerProperties->count() . ' pending properties for owner ' . $ownerId);
+
+            // Transform data to include required fields
             $propertiesData = $ownerProperties->map(function($property) {
-                // Get thumbnail or first image
                 $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
                 $firstImage = $property->images->first();
-
-                // Handle image URL - check if ImageURL exists, otherwise use ImagePath
+                
+                // Handle image URL
                 $imageUrl = null;
                 if ($thumbnailImage) {
                     $imageUrl = $thumbnailImage->ImageURL ?: ($thumbnailImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($thumbnailImage->ImagePath) : null);
@@ -497,20 +515,13 @@ class OwnerController extends Controller
                         'Area' => $property->chiTiet->Area ?? null,
                         'Bedroom' => $property->chiTiet->Bedroom ?? 0,
                         'Bath_WC' => $property->chiTiet->Bath_WC ?? 0
-                    ] : null,
-                    'images' => $property->images->map(function($image) {
-                        $imageUrl = $image->ImageURL ?: ($image->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($image->ImagePath) : null);
-                        return [
-                            'ImageURL' => $imageUrl,
-                            'IsThumbnail' => $image->IsThumbnail ?? 0
-                        ];
-                    })
+                    ] : null
                 ];
             });
 
             return response()->json($propertiesData);
         } catch (\Exception $e) {
-            Log::error('Error in getPropertiesForListing: ' . $e->getMessage());
+            \Log::error('Error in getPropertiesForListing: ' . $e->getMessage());
             return response()->json(['error' => 'Có lỗi xảy ra khi tải dữ liệu'], 500);
         }
     }
