@@ -1,0 +1,46 @@
+// Users Management Styles
+// Variables
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+$warning-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+$danger-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+$card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+$hover-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+
+// Users Page Container
+.users-container {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+// Users Title
+.users-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #19f5c5;
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+// Users Search Input
+.users-search-input {
+    width: 300px;
+    transition: width 0.3s ease;
+
+    &:focus {
+        width: 350px;
+    }
+}
+
+// Users Table Container
+.users-table-container {
+    margin-top: 20px;
+}
+
+// User Modal
+.user-modal-visible {
+    display: block !important;
+}

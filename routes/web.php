@@ -65,16 +65,16 @@ Route::middleware(['auth'])->group(function()
 
             // Route điều hướng đến trang quản lý bất động sản
 
-            Route::get('/property', [SystemController::class, "getProperty"])->name('property');
-            Route::get('/property/search', [SystemController::class, 'SearchProperty'])->name('property.search');
+            Route::get('/property', [SystemController::class, "getProperty"])->name('property'); //admin.property
+            Route::get('/property/search', [SystemController::class, 'SearchProperty'])->name('property.search'); // admin.property.search #
             Route::get('/property/create', [SystemController::class, "createPropertyForm"])->name('property.create');
-            Route::post('/property/create', [SystemController::class, 'createProperty'])->name('property.store');
+            Route::post('/property', [SystemController::class, 'createProperty'])->name('property.store');
             Route::post('/property/update-status', [SystemController::class, 'updatePropertyStatus'])->name('property.updateStatus');
             Route::post('/property/update-batch-status', [SystemController::class, 'updateBatchStatus'])->name('property.updateBatchStatus');
 
             // Routes với pattern cụ thể - phải đặt trước route với tham số động
-            Route::get('/property/type/{type}/{status}', [SystemController::class, "getPropertyByTypeAndStatus"])->name('property.type.status');
-            Route::get('/property/type/{type}', [SystemController::class, "getPropertyByType"])->name('property.type');
+            Route::get('/property/type/{type}', [SystemController::class, "getPropertyByTypeAndStatus"])->name('property.type.status');
+            // Route::get('/property/type/{type}', [SystemController::class, "getPropertyByType"])->name('property.type');
             Route::get('/property/status/{status}', [SystemController::class, "getPropertyByStatus"])->name('property.status');
             Route::get('/property/{id}/edit', [SystemController::class, 'EditPropertyByStatus'])->name('property.edit');
 
@@ -84,9 +84,13 @@ Route::middleware(['auth'])->group(function()
             Route::get('/property/{id}', [SystemController::class, "getPropertyById"])->name('property.id');
 
             // Route cho việc gán và quản lý agent cho bất động sản
-            Route::get('/assign-property', [SystemController::class, 'getAssignProperty'])->name('assign.property');
+            //Route::get('/assign-property', [SystemController::class, 'getAssignProperty'])->name('assign.property');
             Route::post('/assign-property', [SystemController::class, 'assignAgentToProperty'])->name('assign.property.store');
             Route::get('/check-agent-limit/{agentId}', [SystemController::class, 'checkAgentPropertyCount'])->name('check.agent.limit');
+            Route::get('/agent/{id}/properties', [SystemController::class, 'getAgentProperties'])->name('agent.properties');
+            Route::get('/available-properties', [SystemController::class, 'getAvailableProperties'])->name('available.properties');
+            Route::post('/assign/property', [SystemController::class, 'assignProperties'])->name('assign.properties');
+            Route::post('/unassign/property', [SystemController::class, 'unassignProperty'])->name('unassign.property');
 
             // Route điều hướng đến trang quản lý người dùng
 
@@ -104,6 +108,8 @@ Route::middleware(['auth'])->group(function()
 
             Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
             Route::get('/appointment/search-by-date', [SystemController::class, "searchAppointmentByDate"])->name('appointment.search.date');
+            Route::get('/appointment/agent/{agentId}', [SystemController::class, "getAppointmentsByAgent"])->name('appointment.byAgent');
+            Route::get('/appointment/detail/{id}', [SystemController::class, "getAppointmentDetail"])->name('appointment.detail');
             Route::get('/appointment/{id}', [SystemController::class, "getAppointmentById"])->name('appointment.id');
             Route::delete('/appointment/{id}', [SystemController::class, "deleteAppointment"])->name('appointment.delete');
 
@@ -131,7 +137,6 @@ Route::middleware(['auth'])->group(function()
             Route::get('/commission/filter/{status}', [SystemController::class, 'getCommissionByStatus'])->name('commission.filter');
             Route::get('/commission/create', [SystemController::class, "createCommissionForm"])->name('commission.create');
             Route::post('/commission/create', [SystemController::class, 'createCommission'])->name('commission.store');
-            Route::post('/commission/store', [SystemController::class, 'createCommission'])->name('commission.store');
             Route::get('/commission/search', [SystemController::class, 'searchCommission'])->name('commission.search');
             Route::post('/commission/view', [SystemController::class, 'viewCommissionModal'])->name('commission.view');
             Route::get('/commission/{id}', [SystemController::class, 'getCommissionById'])->name('commission.get');
@@ -141,6 +146,10 @@ Route::middleware(['auth'])->group(function()
 
             // Route cho lấy dữ liệu thống kê Dashboard
             Route::get('/dashboard/monthly-stats', [SystemController::class, 'getMonthlyStats'])->name('dashboard.monthlyStats');
+
+            // Routes cho tìm kiếm chủ sở hữu (autocomplete)
+            Route::get('/owners/search', [SystemController::class, 'searchOwners'])->name('owners.search');
+            Route::get('/owners/{id}', [SystemController::class, 'getOwnerDetails'])->name('owners.details');
 
             // Route quản lý chatbot
             Route::prefix('chatbot')->name('chatbot.')->group(function () {

@@ -1,110 +1,340 @@
+// Modern Sidebar Styling
+$sidebar-width: 280px;
+$sidebar-collapsed-width: 70px;
+$primary-gradient: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+$secondary-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+$accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+$text-color: #ffffff;
+$text-muted: rgba(255, 255, 255, 0.8);
+$hover-bg: rgba(255, 255, 255, 0.1);
+$active-bg: rgba(255, 255, 255, 0.2);
+$shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
 .sidebar {
-  width: 220px;
-  background: #2c3e50;
-  border-right: 1px solid #1a2226;
-  height: 100vh;
-  padding: 0.5rem 0.5rem 0 0.5rem;
-  transition: width 0.3s;
-  overflow-x: hidden;
-  position: relative;
+    width: $sidebar-width;
+    background: $primary-gradient;
+    height: 100vh;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    overflow-x: hidden;
+    position: relative;
+    box-shadow: $shadow;
+    backdrop-filter: blur(10px);
 
-  &.collapsed {
-    width: 60px;
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+        pointer-events: none;
+    }
+
+    &.collapsed {
+        width: $sidebar-collapsed-width;
+
+        .menu {
+            ul.tree-menu > li > a {
+                span {
+                    opacity: 0;
+                    visibility: hidden;
+                }
+
+                i.fas {
+                    margin-right: 0;
+                }
+
+                .fa-caret-down {
+                    opacity: 0;
+                }
+            }
+
+            ul.tree-menu > li > ul {
+                display: none;
+            }
+        }
+    }
+
     .menu {
-      ul.tree-menu > li > a span {
-        display: none;
-      }
-      ul.tree-menu > li > a i.fas {
-        margin-right: 0;
-      }
+        ul.tree-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+
+            > li {
+                margin-bottom: 0.5rem;
+                position: relative;
+
+                > a {
+                    display: flex;
+                    align-items: center;
+                    color: $text-color;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: none;
+                    font-weight: 500;
+                    padding: 1rem 1.2rem;
+                    border-radius: 12px;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                    font-size: 0.95rem;
+                    text-align: left;
+                    text-decoration: none;
+                    backdrop-filter: blur(10px);
+                    position: relative;
+                    overflow: hidden;
+
+                    &::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: -100%;
+                        width: 100%;
+                        height: 100%;
+                        background: $secondary-gradient;
+                        transition: left 0.3s ease;
+                        opacity: 0.3;
+                    }
+
+                    i.fas {
+                        margin-right: 12px;
+                        min-width: 20px;
+                        text-align: center;
+                        font-size: 1.1rem;
+                        transition: all 0.3s ease;
+                    }
+
+                    span {
+                        transition: all 0.3s ease;
+                        flex: 1;
+                    }
+
+                    .fa-caret-down {
+                        margin-left: auto;
+                        font-size: 0.9em;
+                        transition: transform 0.3s ease;
+                    }
+
+                    &:hover {
+                        background: $active-bg;
+                        color: $text-color;
+                        transform: translateX(5px);
+                        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+
+                        &::before {
+                            left: 0;
+                        }
+
+                        i.fas {
+                            transform: scale(1.1);
+                        }
+                    }
+
+                    &:focus {
+                        outline: none;
+                        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+                    }
+                }
+
+                ul {
+                    list-style: none;
+                    padding-left: 0;
+                    margin: 0.5rem 0 0 0;
+                    max-height: 0;
+                    overflow: hidden;
+                    transition: max-height 0.4s ease;
+                    background: rgba(0, 0, 0, 0.1);
+                    border-radius: 0 0 12px 12px;
+                    backdrop-filter: blur(5px);
+                }
+
+                &.open {
+                    > a {
+                        background: $active-bg;
+
+                        .fa-caret-down {
+                            transform: rotate(180deg);
+                        }
+                    }
+
+                    > ul {
+                        max-height: 500px;
+                        padding: 0.5rem;
+                        transition: max-height 0.4s ease-in-out;
+                    }
+                }
+
+                &.has-notification {
+                    > a::after {
+                        content: "";
+                        position: absolute;
+                        top: 12px;
+                        right: 12px;
+                        width: 8px;
+                        height: 8px;
+                        background: $accent-gradient;
+                        border-radius: 50%;
+                        animation: pulse 2s infinite;
+                        box-shadow: 0 0 10px rgba(240, 147, 251, 0.5);
+                    }
+                }
+
+                ul li {
+                    margin-bottom: 0.3rem;
+
+                    a {
+                        color: $text-muted;
+                        font-size: 0.9rem;
+                        padding: 0.7rem 1rem;
+                        border-radius: 8px;
+                        background: rgba(255, 255, 255, 0.05);
+                        display: block;
+                        transition: all 0.3s ease;
+                        text-decoration: none;
+                        position: relative;
+                        overflow: hidden;
+
+                        &::before {
+                            content: '';
+                            position: absolute;
+                            left: -100%;
+                            top: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: $secondary-gradient;
+                            transition: left 0.3s ease;
+                            opacity: 0.2;
+                        }
+
+                        &:hover {
+                            background: rgba(255, 255, 255, 0.15);
+                            color: $text-color;
+                            transform: translateX(8px);
+                            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+
+                            &::before {
+                                left: 0;
+                            }
+                        }
+
+                        &:focus {
+                            outline: none;
+                            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+                        }
+
+                        .badge {
+                            float: right;
+                            background: $accent-gradient;
+                            color: white;
+                            border-radius: 12px;
+                            padding: 0.2rem 0.5rem;
+                            font-size: 0.7rem;
+                            font-weight: 600;
+                            margin-left: 0.5rem;
+                        }
+                    }
+                }
+            }
+        }
     }
-  }
 
-  .menu {
-    ul.tree-menu {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    // Sidebar toggle button
+    .sidebar-toggle {
+        position: absolute;
+        top: 20px;
+        right: -15px;
+        width: 30px;
+        height: 30px;
+        background: $primary-gradient;
+        border: none;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        z-index: 1001;
 
-      > li {
-        margin-bottom: 0.5rem;
-        position: relative;
-
-        > a {
-          display: flex;
-          align-items: center;
-          color: #f8fafc;
-          background: #3498db;
-          border: none;
-          font-weight: 500;
-          padding: 0.6rem 1rem;
-          border-radius: 6px;
-          transition: background 0.2s, color 0.2s;
-          cursor: pointer;
-          font-size: 1rem;
-          text-align: left;
-          text-decoration: none;
-          box-shadow: 0 1px 4px rgba(52,152,219,0.08);
-
-          i.fas {
-            margin-right: 10px;
-            min-width: 18px;
-            text-align: center;
-          }
-          .fa-caret-down {
-            margin-left: auto;
-            font-size: 0.9em;
-          }
-          &:hover {
-            background: #5dade2;
-            color: #fff;
-          }
-        }
-        ul {
-          list-style: none;
-          padding-left: 1.2rem;
-          margin: 0.2rem 0 0 0;
-          max-height: 0;
-          overflow: hidden;
-          transition: max-height 0.3s;
-          background: none;
-        }
-        &.open > ul {
-          max-height: 500px;
-          transition: max-height 0.3s ease-in-out;
+        &:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
-        &.has-badge > a::after {
-          content: "";
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          width: 8px;
-          height: 8px;
-          background: #dc3545;
-          border-radius: 50%;
+        &:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
         }
-        ul li a {
-          color: #f8fafc;
-          font-size: 0.97rem;
-          padding: 0.4rem 0.8rem;
-          border-radius: 4px;
-          background: #2980b9;
-          display: block;
-          transition: background 0.2s, color 0.2s;
-          text-decoration: none;
-          margin-bottom: 2px;
-        }
-        ul li a:hover {
-          background: #5dade2;
-          color: #fff;
-        }
-      }
-      > li > a span {
-        margin-left: 5px;
-      }
     }
-  }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 1000;
+
+        &.mobile-open {
+            transform: translateX(0);
+        }
+
+        &.collapsed {
+            width: 100%;
+        }
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+
+        &.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+}
+
+// Scrollbar styling for sidebar
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
 }
 
 // Responsive for small screens

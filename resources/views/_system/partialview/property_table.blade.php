@@ -58,6 +58,28 @@ function rejectProperty(propertyId) {
         PropertyManagement.updatePropertyStatus(propertyId, 'rejected');
     }
 }
+
+// Function để hiển thị thông báo (kết nối với hàm trong property.blade.php)
+function showNotification(type, message) {
+    // Nếu hàm đã tồn tại trong window, sử dụng nó
+    if (window.showNotification) {
+        window.showNotification(type, message);
+    } else {
+        // Tạo thông báo tạm thời nếu hàm chính chưa sẵn sàng
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : type === 'info' ? 'info' : 'danger'} alert-dismissible fade show notification-toast`;
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+    }
+}
 </script>
 
 <div class="table-responsive">
@@ -77,6 +99,7 @@ function rejectProperty(propertyId) {
                 <th class="d-none d-md-table-cell">Địa chỉ</th>
                 <th class="d-none d-lg-table-cell">Ngày đăng</th>
                 <th class="d-none d-lg-table-cell">Chủ sở hữu</th>
+                <th class="d-none d-lg-table-cell">Media</th>
                 <th>Thao tác</th>
             </tr>
         </thead>
@@ -84,20 +107,14 @@ function rejectProperty(propertyId) {
             @foreach ($properties as $property)
                 <tr id="property-row-{{ $property->PropertyID }}"
                     class="property-row {{ isset($status) && $status == 'pending' ? 'pending-property' : '' }}"
+                    data-property-id="{{ $property->PropertyID }}"
                     data-lat="{{ $property->Latitude ?? '' }}"
                     data-lng="{{ $property->Longitude ?? '' }}"
                     data-address="{{ $property->Address ?? '' }}"
                     data-ward="{{ $property->Ward ?? '' }}"
                     data-district="{{ $property->District ?? '' }}"
                     data-province="{{ $property->Province ?? '' }}"
-                    data-full-address="@php
-                        $addressParts = [];
-                        if(!empty($property->Address)) $addressParts[] = $property->Address;
-                        if(!empty($property->Ward)) $addressParts[] = $property->Ward;
-                        if(!empty($property->District)) $addressParts[] = $property->District;
-                        if(!empty($property->Province)) $addressParts[] = $property->Province;
-                        echo implode(', ', $addressParts);
-                    @endphp"
+                    data-full-address="{{ trim(implode(', ', array_filter([$property->Address, $property->Ward, $property->District, $property->Province]))) }}"
                     data-category="{{ optional($property->danhMuc)->CategoryID ?? '' }}"
                     data-price="{{ $property->Price ?? 0 }}"
                     data-date="{{ $property->PostedDate !== '0000-00-00' ? $property->PostedDate : '' }}">
@@ -105,29 +122,34 @@ function rejectProperty(propertyId) {
                     @if(isset($status) && $status == 'pending')
                     <td class="checkbox-column" onclick="event.stopPropagation();">
                         <div class="form-check">
-                            <input class="form-check-input property-checkbox" type="checkbox" data-property-id="{{ $property->PropertyID }}">
+                            <input class="form-check-input property-checkbox" type="checkbox" data-property-id="{{ $property->PropertyID }}" onchange="handlePropertySelection(event, '{{ $property->PropertyID }}')">
                         </div>
                     </td>
                     @endif
 
-                    <td onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '@php
-                        $addressParts = [];
-                        if(!empty($property->Address)) $addressParts[] = $property->Address;
-                        if(!empty($property->Ward)) $addressParts[] = $property->Ward;
-                        if(!empty($property->District)) $addressParts[] = $property->District;
-                        if(!empty($property->Province)) $addressParts[] = $property->Province;
-                        echo implode(', ', $addressParts);
-                    @endphp')">{{ $property->PropertyID }}</td>
-                    <td onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">
+                    <td class="clickable-cell">{{ $property->PropertyID }}</td>
+                    <td class="clickable-cell">
                         <div class="property-title">{{ $property->Title }}</div>
                         <div class="d-block d-md-none">
                             <small class="text-muted">{{ optional($property->danhMuc)->ten_pro ?? 'N/A' }} - {{ $property->Address }}</small>
                         </div>
                     </td>
-                    <td class="d-none d-md-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ optional($property->danhMuc)->ten_pro ?? 'N/A' }}</td>
-                    <td class="d-none d-md-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ $property->Address }}</td>
-                    <td class="d-none d-lg-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ $property->PostedDate === '0000-00-00' ? 'N/A' : date('d/m/Y', strtotime($property->PostedDate)) }}</td>
-                    <td class="d-none d-lg-table-cell" onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ ($property->Address ?? '') . ($property->Ward ? ', ' . $property->Ward : '') . ($property->District ? ', ' . $property->District : '') . ($property->Province ? ', ' . $property->Province : '') }}')">{{ optional($property->chusohuu)->Name ?? 'N/A' }}</td>
+                    <td class="d-none d-md-table-cell clickable-cell">{{ optional($property->danhMuc)->ten_pro ?? 'N/A' }}</td>
+                    <td class="d-none d-md-table-cell clickable-cell"
+                        style="cursor:pointer;color:#0d6efd;text-decoration:underline;"
+                        onclick="selectPropertyOnMap('{{ $property->PropertyID }}', '{{ $property->Latitude ?? '' }}', '{{ $property->Longitude ?? '' }}', '{{ trim(implode(', ', array_filter([$property->Address, $property->Ward, $property->District, $property->Province]))) }}')">
+                        {{ trim(implode(', ', array_filter([$property->Address, $property->Ward, $property->District, $property->Province]))) }}
+                    </td>
+                    <td class="d-none d-lg-table-cell clickable-cell">{{ $property->PostedDate === '0000-00-00' ? 'N/A' : date('d/m/Y', strtotime($property->PostedDate)) }}</td>
+                    <td class="d-none d-lg-table-cell clickable-cell">{{ optional($property->chusohuu)->Name ?? 'N/A' }}</td>
+                    <td class="d-none d-lg-table-cell clickable-cell">
+                        <span class="badge bg-primary" title="Số lượng hình ảnh">
+                            <i class="fas fa-image"></i> {{ count($property->images) }}
+                        </span>
+                        <span class="badge bg-info" title="Số lượng video">
+                            <i class="fas fa-video"></i> {{ count($property->videos) }}
+                        </span>
+                    </td>
                     <td onclick="event.stopPropagation();">
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal{{ $property->PropertyID }}">
@@ -262,6 +284,78 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* Moved the individual approval and rejection functions to global scope */
+
+    // Gán sự kiện click cho các cell có class clickable-cell (trừ cell thao tác/checkbox)
+    const clickableCells = document.querySelectorAll('.clickable-cell');
+    clickableCells.forEach(cell => {
+        cell.addEventListener('click', function(e) {
+            // Lấy dòng chứa cell này
+            const row = cell.closest('.property-row');
+            if (!row) return;
+            const propertyId = row.getAttribute('data-property-id');
+            const lat = row.getAttribute('data-lat');
+            const lng = row.getAttribute('data-lng');
+            const fullAddress = row.getAttribute('data-full-address');
+            // Highlight dòng
+            document.querySelectorAll('.property-row').forEach(r => r.classList.remove('highlighted-row'));
+            row.classList.add('highlighted-row');
+            // Gọi hàm bản đồ
+            if (typeof selectPropertyOnMap === 'function') {
+                selectPropertyOnMap(propertyId, lat, lng, fullAddress);
+            }
+        });
+    });
+
+    // Xử lý khi click vào hàng để hiển thị bất động sản trên bản đồ
+    const propertyRows = document.querySelectorAll('.property-row');
+    propertyRows.forEach(row => {
+        row.addEventListener('click', function() {
+            const propertyId = this.getAttribute('data-property-id');
+            const lat = this.getAttribute('data-lat');
+            const lng = this.getAttribute('data-lng');
+            const fullAddress = this.getAttribute('data-full-address');
+
+            // Thêm highlight cho hàng được chọn
+            document.querySelectorAll('.property-row').forEach(r => r.classList.remove('highlighted-row'));
+            this.classList.add('highlighted-row');
+
+            // Gọi hàm selectPropertyOnMap để hiển thị trên bản đồ
+            if (typeof selectPropertyOnMap === 'function') {
+                selectPropertyOnMap(propertyId, lat, lng, fullAddress);
+            } else {
+                console.error('selectPropertyOnMap function is not defined');
+            }
+        });
+    });
+
+    // Xử lý khi checkbox được chọn
+    function handlePropertySelection(event, propertyId) {
+        // Ngăn sự kiện click không lan ra hàng
+        event.stopPropagation();
+
+        // Nếu checkbox được chọn, hiển thị bất động sản trên bản đồ
+        if (event.target.checked) {
+            const row = document.getElementById('property-row-' + propertyId);
+            if (row) {
+                const lat = row.getAttribute('data-lat');
+                const lng = row.getAttribute('data-lng');
+                const fullAddress = row.getAttribute('data-full-address');
+
+                // Thêm highlight cho hàng được chọn
+                document.querySelectorAll('.property-row').forEach(r => r.classList.remove('highlighted-row'));
+                row.classList.add('highlighted-row');
+
+                if (typeof selectPropertyOnMap === 'function') {
+                    // Hiển thị thông báo đang tìm kiếm nếu không có tọa độ
+                    if ((!lat || lat === '') && (!lng || lng === '') && fullAddress) {
+                        showNotification('info', 'Đang tìm kiếm vị trí của bất động sản...');
+                    }
+
+                    selectPropertyOnMap(propertyId, lat, lng, fullAddress);
+                }
+            }
+        }
+    }
 
     // Update batch property status
     function updateBatchPropertyStatus(propertyIds, status, reason = null) {

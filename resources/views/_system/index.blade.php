@@ -1,27 +1,189 @@
 @extends('_layout._layadmin.app')
 
 @section('dashboard')
-    <div class="container-fluid">
-        <!-- Page Heading -->
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Thống Kê Tổng Quan</h1>
+    <div class="index-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="index-title">Thống Kê Tổng Quan</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                </ol>
+            </nav>
         </div>
 
-        <!-- Content Row -->
-        <div class="row">
-            <!-- Thống kê giao dịch -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Tổng Giao Dịch</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    {{ \App\Models\Transaction::count() }}
-                                </div>
-                            </div>
-                            <div class="col-auto">
+        <!-- Statistics Cards -->
+        <div class="dashboard-stats">
+            <!-- Total Transactions -->
+            <div class="stat-card primary">
+                <div class="stat-icon">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div class="stat-number">{{ \App\Models\Transaction::count() }}</div>
+                <div class="stat-label">Tổng Giao Dịch</div>
+                <div class="stat-trend up">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+12% so với tháng trước</span>
+                </div>
+            </div>
+
+            <!-- Total Properties -->
+            <div class="stat-card success">
+                <div class="stat-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="stat-number">{{ \App\Models\Property::count() }}</div>
+                <div class="stat-label">Tổng Bất Động Sản</div>
+                <div class="stat-trend up">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+8% so với tháng trước</span>
+                </div>
+            </div>
+
+            <!-- Pending Commissions -->
+            <div class="stat-card warning">
+                <div class="stat-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-number">{{ \App\Models\Commission::where('StatusCommission', 'Pending')->count() }}</div>
+                <div class="stat-label">Hoa Hồng Chờ Xử Lý</div>
+                <div class="stat-trend down">
+                    <i class="fas fa-arrow-down"></i>
+                    <span>-3% so với tuần trước</span>
+                </div>
+            </div>
+
+            <!-- Total Users -->
+            <div class="stat-card danger">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number">{{ \App\Models\User::count() }}</div>
+                <div class="stat-label">Tổng Người Dùng</div>
+                <div class="stat-trend up">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+15% so với tháng trước</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="dashboard-grid">
+            <!-- Transaction Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Thống Kê Giao Dịch Theo Loại</h3>
+                    <div class="chart-controls">
+                        <button class="btn btn-outline-primary btn-sm">Tháng</button>
+                        <button class="btn btn-primary btn-sm">Năm</button>
+                    </div>
+                </div>
+                <canvas id="transactionChart"></canvas>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="page-section">
+                <div class="section-header">
+                    <h2>Hoạt Động Gần Đây</h2>
+                </div>
+                <div class="activity-feed">
+                    <div class="activity-item">
+                        <div class="activity-icon success">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Giao dịch được duyệt</div>
+                            <div class="activity-description">Giao dịch #1234 đã được duyệt thành công</div>
+                            <div class="activity-time">5 phút trước</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon warning">
+                            <i class="fas fa-exclamation"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">BĐS cần xem xét</div>
+                            <div class="activity-description">3 bất động sản mới chờ duyệt</div>
+                            <div class="activity-time">1 giờ trước</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon danger">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Người dùng bị khóa</div>
+                            <div class="activity-description">Tài khoản user123 đã bị tạm khóa</div>
+                            <div class="activity-time">2 giờ trước</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Thống Kê Hoa Hồng Theo Trạng Thái</h3>
+                <div class="chart-controls">
+                    <button class="btn btn-outline-primary btn-sm">Tuần</button>
+                    <button class="btn btn-primary btn-sm">Tháng</button>
+                </div>
+            </div>
+            <canvas id="commissionStatusChart"></canvas>
+        </div>
+
+        <!-- Monthly Statistics -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Thống Kê Giao Dịch Theo Tháng</h3>
+                <div class="chart-controls">
+                    <a href="#" class="btn btn-outline-primary btn-sm chart-type" data-type="bar">Cột</a>
+                    <a href="#" class="btn btn-outline-primary btn-sm chart-type" data-type="line">Đường</a>
+                    <a href="#" class="btn btn-primary btn-sm" id="refreshMonthlyChart">Làm mới</a>
+                </div>
+            </div>
+            <canvas id="monthlyTransactionChart"></canvas>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="page-section">
+            <div class="section-header">
+                <h2>Thao Tác Nhanh</h2>
+            </div>
+            <div class="quick-actions">
+                <div class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div class="action-title">Thêm BĐS Mới</div>
+                    <div class="action-description">Tiếp nhận hồ sơ bất động sản mới</div>
+                </div>
+                <div class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="action-title">Thêm Người Dùng</div>
+                    <div class="action-description">Tạo tài khoản mới cho hệ thống</div>
+                </div>
+                <div class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="action-title">Xem Báo Cáo</div>
+                    <div class="action-description">Thống kê chi tiết và báo cáo</div>
+                </div>
+                <div class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="action-title">Cài Đặt</div>
+                    <div class="action-description">Quản lý cấu hình hệ thống</div>
+                </div>
+            </div>
+        </div>
+    </div>
                                 <i class="fas fa-calendar fa-2x text-gray-300"></i>
                             </div>
                         </div>

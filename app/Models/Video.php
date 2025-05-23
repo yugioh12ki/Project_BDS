@@ -14,4 +14,8 @@ class Video extends Model
     protected $primaryKey = 'VideoID';
     public $timestamps = false;
 
+    public function property()
+    {
+        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
+    }
 }

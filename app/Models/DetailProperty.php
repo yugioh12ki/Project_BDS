@@ -12,14 +12,16 @@ class DetailProperty extends Model
     protected $table = 'detail_pro'; // Tên bảng trong cơ sở dữ liệu
     protected $primaryKey = 'IdDetail'; // Khóa chính của bảng
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
+    public $incrementing = true; // Nếu khóa chính không phải là số nguyên tự động tăng
 
+    protected $keyType = 'int'; // Nếu khóa chính là số nguyên
     protected $fillable = [
-        'IdDetail', 'Floor', 'Area', 'Bedroom', 'Bath_WC', 'Road', 'legal', 'Interior', 'WaterPrice', 'PowerPrice', 'Utilities'
+        'IdDetail', 'PropertyID', 'Levelhouse', 'Floor', 'HouseLength', 'HouseWidth', 'TotalLength', 'TotalWidth', 'Bedroom', 'Balcony', 'Bath_WC', 'Road', 'legal', 'view', 'near', 'Interior', 'WaterPrice', 'PowerPrice', 'Utilities'
     ];
 
     public function property()
     {
-        return $this->belongsTo(Property::class, 'IdDetail', 'IdDetail'); // Khóa ngoại trong bảng detail_pro
+        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID'); // Khóa ngoại PropertyID trong bảng detail_pro
     }
 
 }

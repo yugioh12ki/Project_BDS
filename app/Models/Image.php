@@ -14,5 +14,8 @@ class Image extends Model
     protected $primaryKey = 'ImageID';
     public $timestamps = false;
 
-
+    public function property()
+    {
+        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
+    }
 }

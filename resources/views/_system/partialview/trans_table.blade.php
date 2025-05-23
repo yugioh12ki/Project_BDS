@@ -51,7 +51,7 @@
                             {{-- Modal chinh sua --}}
 
                             <div class="modal fade" id="editModal{{ $transaction->TransactionID }}" tabindex="-1" aria-labelledby="editModalLabel{{ $transaction->TransactionID }}" aria-hidden="true">
-                                <div class="modal-dialog modal-lg" style="max-width: 900px;">
+                                <div class="modal-dialog modal-lg transaction-modal">
                                     <div class="modal-content">
 
 
@@ -60,7 +60,7 @@
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <div style="min-width:600px;">
+                                                <div class="transaction-edit-container">
                                                 @include('_system.partialview.edit_trans', [
                                                     'transaction' => $transaction,
                                                     ])

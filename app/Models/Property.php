@@ -24,20 +24,32 @@ class Property extends Model
 
     public function chiTiet()
     {
-        return $this->belongsTo(DetailProperty::class, 'IdDetail', 'IdDetail');
+        return $this->hasOne(DetailProperty::class, 'PropertyID', 'PropertyID');
     }
 
     public function chusohuu()
     {
         return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }
+
     public function moigioi()
     {
         return $this->belongsTo(User::class, 'AgentID', 'UserID');
     }
+
     public function quantri()
     {
         return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(Image::class, 'PropertyID', 'PropertyID');
+    }
+
+    public function videos()
+    {
+        return $this->hasMany(Video::class, 'PropertyID', 'PropertyID');
     }
 
     protected $fillable = [
@@ -55,7 +67,8 @@ class Property extends Model
           'Price',
           'Title',
         'Description',
-        'IdDetail',
         'TypePro',
+        'ContactPhone',
+        'ContactEmail',
     ];
 }

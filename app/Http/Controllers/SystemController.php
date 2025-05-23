@@ -14,6 +14,8 @@ use App\Models\Commission;
 use App\Models\DanhMucBDS;
 use App\Models\detail_transaction;
 use App\Models\Document;
+use App\Models\Image;
+use App\Models\Video;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -180,15 +182,12 @@ class SystemController extends Controller
             'email' => 'required|email|unique:user,Email',
             'birth' => 'required',
             'sex' => 'required',
-            // 'identity_card' => 'required|max:12|regex:/^(\d{9}|\d{12})$/',
-            // 'phone' => 'required|max:10|regex:/^(\d{10})$/',
             'identity_card' => 'required|max:12',
             'phone' => 'required|max:10',
             'address' => 'required|max:255',
             'ward' => 'required|max:255',
             'district' => 'required|max:255',
             'province' => 'required|max:255',
-            'role' => 'required',
             'password' => 'required|min:6|max:30',
         ]);
 
@@ -208,7 +207,7 @@ class SystemController extends Controller
             'Ward' => $validated['ward'],
             'District' => $validated['district'],
             'Province' => $validated['province'],
-            'Role' => $validated['role'],
+            'Role' => 'Customer', // Luôn để mặc định là Customer
             'StatusUser' => 'active',
             'PasswordHash' => $validated['password'],
         ]);
@@ -367,13 +366,22 @@ class SystemController extends Controller
 
         // Nếu có TypePro, lọc theo loại BĐS (Cho thuê hoặc Cho bán)
         if ($typePro) {
-            $properties = Property::where('TypePro', $typePro)->get();
+            $properties = Property::with(['danhMuc', 'images', 'videos'])->where('TypePro', $typePro)->get();
         } else {
-            $properties = Property::all();
+            $properties = Property::with(['danhMuc', 'images', 'videos'])->get();
         }
 
         $owners = User::where('Role', 'Owner')->get();
-        $agents = User::where('Role', 'Agent')->get();
+
+        // Paginate agents to 20 per page and eager load their properties
+        // Sắp xếp agent theo số lượng bất động sản tăng dần (ít nhất lên đầu)
+        $agents = User::where('Role', 'Agent')
+                    ->withCount(['moigioi as active_property_count' => function ($query) {
+                        $query->where('Status', 'active');
+                    }])
+                    ->orderBy('active_property_count', 'asc')
+                    ->paginate(20);
+
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
 
@@ -398,7 +406,7 @@ class SystemController extends Controller
 
         $typePro = isset($typeProMapping[$type]) ? $typeProMapping[$type] : $type;
 
-        $properties = Property::with(['danhMuc'])
+        $properties = Property::with(['danhMuc', 'images', 'videos'])
             ->where('TypePro', $typePro)
             ->paginate(10);
 
@@ -415,7 +423,7 @@ class SystemController extends Controller
         }
     }
 
-    public function getPropertyByTypeAndStatus(Request $request, $type, $status)
+    public function getPropertyByTypeAndStatus(Request $request, $type)
     {
         // Chuyển đổi từ slug tiếng Anh sang giá trị trong CSDL
         $typeProMapping = [
@@ -424,13 +432,23 @@ class SystemController extends Controller
         ];
 
         $typePro = isset($typeProMapping[$type]) ? $typeProMapping[$type] : $type;
+        $status = $request->query('status'); // Lấy status từ query parameter
 
         $columns = Schema::getColumnListing('properties');
 
-        $properties = Property::with(['danhMuc'])
-            ->where('TypePro', $typePro)
-            ->where('Status', $status)
-            ->paginate(10);
+        $query = Property::with(['danhMuc', 'images', 'videos'])
+            ->where('TypePro', $typePro);
+
+        // Chỉ áp dụng điều kiện status nếu nó được cung cấp
+        if ($status) {
+            $query->where('Status', $status);
+        }
+
+        $properties = $query->paginate(10);
+
+        // Đảm bảo truyền biến status vào view để hiển thị đúng
+        // Nếu status là null, gán giá trị mặc định để tránh lỗi trong view
+        $status = $status ?? '';
 
         $owners = User::where('Role', 'Owner')->get();
         $agents = User::where('Role', 'Agent')->get();
@@ -453,7 +471,8 @@ class SystemController extends Controller
 
         if ($columns === null || $properties->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu';
-            return view('_system.property', compact('error', 'type', 'typePro', 'status', 'categories'));
+            // Đảm bảo tất cả các biến cần thiết đều được khởi tạo
+            return view('_system.property', compact('error', 'type', 'typePro', 'status', 'categories', 'agents', 'owners', 'admins','columns','properties'  ));
         } else {
             return view('_system.property', compact('columns', 'properties', 'owners', 'agents', 'admins', 'categories', 'type', 'typePro', 'status', 'propertyCoordinates'));
         }
@@ -589,9 +608,9 @@ class SystemController extends Controller
         $columns = Schema::getColumnListing('properties');
 
         if ($status == 'all') {
-            $properties = Property::with(['danhMuc'])->paginate(10); // Sửa pageinate thành paginate
+            $properties = Property::with(['danhMuc', 'images', 'videos'])->paginate(10); // Sửa pageinate thành paginate
         } else {
-            $properties = Property::with(['danhMuc'])
+            $properties = Property::with(['danhMuc', 'images', 'videos'])
                 ->where('Status', $status)
                 ->paginate(10);
         }
@@ -617,7 +636,7 @@ class SystemController extends Controller
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
 
-        $properties = Property::with(['danhMuc', 'chusohuu', 'moigioi', 'quantri'])
+        $properties = Property::with(['danhMuc', 'chusohuu', 'moigioi', 'quantri', 'images', 'videos'])
                     ->whereRaw('LOWER(Title) LIKE ?', ['%' . strtolower($keyword) . '%'])
                     ->paginate(10);
 
@@ -630,7 +649,7 @@ class SystemController extends Controller
 
     public function getPropertyById($id)
     {
-        $property = Property::with(['chitiet'])->find($id);
+        $property = Property::with(['chitiet', 'images', 'videos'])->find($id);
         if (!$property) {
             return redirect()->back()->withErrors(['error' => 'Bất động sản không tồn tại.'], 404);
         }
@@ -671,10 +690,151 @@ class SystemController extends Controller
         return redirect()->route('admin.property')->with('success', 'Trạng thái bất động sản đã được cập nhật thành công.');
     }
 
+    public function createProperty(Request $request)
+    {
+        try {
+            // Validate main property data
+            $validatedProperty = $request->validate([
+                'Title' => 'required|string|max:255',
+                'TypePro' => 'required|in:Sale,Rent',
+                'Description' => 'required|string',
+                'Price' => 'required|numeric|min:0',
+                'Address' => 'required|string|max:255',
+                'Ward' => 'required|string|max:255',
+                'District' => 'required|string|max:255',
+                'Province' => 'required|string|max:255',
+                'PropertyType' => 'required|exists:danhmuc_pro,Protype_ID',
+                'selectedOwnerId' => 'required|exists:user,UserID',
+                'ContactPhone' => 'nullable|string|max:20',
+                'ContactEmail' => 'nullable|email|max:255',
+            ]);
+
+            // Validate property details
+            $validatedDetails = $request->validate([
+                'LevelHouse' => 'nullable|integer',
+                'Floor' => 'nullable|integer',
+                'HouseLength' => 'nullable|numeric',
+                'HouseWidth' => 'nullable|numeric',
+                'TotalLength' => 'nullable|numeric',
+                'TotalWidth' => 'nullable|numeric',
+                'Bedroom' => 'nullable|integer',
+                'Balcony' => 'nullable|boolean',
+                'Bath_WC' => 'nullable|integer',
+                'Road' => 'nullable|numeric',
+                'legal' => 'nullable|string|max:255',
+                'view' => 'nullable|string',
+                'near' => 'nullable|string|max:255',
+                'Interior' => 'nullable|string',
+                'WaterPrice' => 'nullable|string',
+                'PowerPrice' => 'nullable|string',
+                'Utilities' => 'nullable|string',
+            ]);
+
+            DB::beginTransaction();
+
+            // Lưu property trước để lấy PropertyID
+            $property = new Property();
+            $property->Title = $validatedProperty['Title'];
+            $property->ApprovedDate = null;
+            $property->TypePro = $validatedProperty['TypePro'];
+            $property->Description = $validatedProperty['Description'];
+            $property->Price = $validatedProperty['Price'];
+            $property->Address = $validatedProperty['Address'];
+            $property->Ward = $validatedProperty['Ward'];
+            $property->District = $validatedProperty['District'];
+            $property->Province = $validatedProperty['Province'];
+            $property->PropertyType = $validatedProperty['PropertyType'];
+            $property->OwnerID = $validatedProperty['selectedOwnerId'];
+            $property->ContactPhone = $validatedProperty['ContactPhone'];
+            $property->ContactEmail = $validatedProperty['ContactEmail'];
+            $property->AgentID = null;
+            $property->Status = 'pending'; // New properties are pending by default
+            $property->PostedDate = now();
+            $property->save();
+
+            // Get the PropertyID after save - the database trigger will generate it
+            // Since we use varchar PropertyID with trigger, we need to query it back
+            $savedProperty = Property::where('Title', $validatedProperty['Title'])
+                ->where('OwnerID', $validatedProperty['selectedOwnerId'])
+                ->where('PostedDate', $property->PostedDate)
+                ->orderBy('PostedDate', 'desc')
+                ->first();
+
+            if (!$savedProperty || empty($savedProperty->PropertyID)) {
+                throw new \Exception('Không thể lấy PropertyID sau khi lưu property. Vui lòng kiểm tra database trigger.');
+            }
+
+            $propertyID = $savedProperty->PropertyID;
+            Log::info('PropertyID retrieved: ' . $propertyID);
+
+            // Lưu chi tiết property với PropertyID vừa tạo
+            $propertyDetail = new DetailProperty();
+            $propertyDetail->PropertyID = $propertyID;
+            $propertyDetail->LevelHouse = $validatedDetails['LevelHouse'] ?? null;
+            $propertyDetail->Floor = $validatedDetails['Floor'] ?? null;
+            $propertyDetail->HouseLength = $validatedDetails['HouseLength'] ?? null;
+            $propertyDetail->HouseWidth = $validatedDetails['HouseWidth'] ?? null;
+            $propertyDetail->TotalLength = $validatedDetails['TotalLength'] ?? null;
+            $propertyDetail->TotalWidth = $validatedDetails['TotalWidth'] ?? null;
+            $propertyDetail->Bedroom = $validatedDetails['Bedroom'] ?? null;
+            $propertyDetail->Balcony = $validatedDetails['Balcony'] ?? null;
+            $propertyDetail->Bath_WC = $validatedDetails['Bath_WC'] ?? null;
+            $propertyDetail->Road = $validatedDetails['Road'] ?? null;
+            $propertyDetail->legal = $validatedDetails['legal'] ?? null;
+            $propertyDetail->view = $validatedDetails['view'] ?? null;
+            $propertyDetail->near = $validatedDetails['near'] ?? null;
+            $propertyDetail->Interior = $validatedDetails['Interior'] ?? null;
+            $propertyDetail->WaterPrice = $validatedDetails['WaterPrice'] ?? null;
+            $propertyDetail->PowerPrice = $validatedDetails['PowerPrice'] ?? null;
+            $propertyDetail->Utilities = $validatedDetails['Utilities'] ?? null;
+            $propertyDetail->save();
+
+            // Upload images nếu có
+            if ($request->hasFile('property_images')) {
+                foreach ($request->file('property_images') as $imageFile) {
+                    $path = $imageFile->store('property_images', 'public');
+
+                    $image = new Image();
+                    $image->PropertyID = $propertyID;
+                    $image->ImagePath = $path;
+                    $image->Caption = $request->input('image_caption', null);
+                    $image->UploadedDate = now();
+                    $image->save();
+                }
+            }
+
+            // Upload videos nếu có
+            if ($request->hasFile('property_videos')) {
+                foreach ($request->file('property_videos') as $videoFile) {
+                    $path = $videoFile->store('property_videos', 'public');
+
+                    $video = new Video();
+                    $video->PropertyID = $propertyID;
+                    $video->VideoPath = $path;
+                    $video->Caption = $request->input('video_caption', null);
+                    $video->UploadedDate = now();
+                    $video->save();
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('admin.property')->with('success', 'Bất động sản đã được tạo thành công với ID: ' . $propertyID . '. Đang chờ phê duyệt.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error creating property: ' . $e->getMessage());
+            return redirect()->back()->withInput()->withErrors(['error' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+        }
+    }
+
     public function createPropertyForm()
     {
-        $provinces = $this->fetchProvinces();
-        return view('_system.partialview.create_property', compact('provinces'));
+        $owners = User::where('Role', 'Owner')->get();
+        $property = null; // Initialize the property variable for the view
+        $categories = DanhMucBDS::all(); // Assuming this is your property category model
+
+        return view('_system.tiepnhanhoso', compact('owners', 'categories', 'property'));
     }
 
     //
@@ -696,11 +856,181 @@ class SystemController extends Controller
         }
 
         // Lấy danh sách bất động sản chưa có agent hoặc đang cần phân công lại
-        $properties = Property::with(['chusohuu', 'moigioi'])
+        $properties = Property::with(['chusohuu', 'moigioi', 'images', 'videos'])
                     ->paginate(10);
 
         // Trả về view với dữ liệu
         return view('_system.partialview.assign_property', compact('agents', 'properties'));
+    }
+
+    /**
+     * Lấy danh sách bất động sản của một môi giới
+     */
+    public function getAgentProperties($id)
+    {
+        // Kiểm tra tồn tại của agent
+        $agent = User::where('UserID', $id)
+                     ->where('Role', 'Agent')
+                     ->first();
+
+        if (!$agent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy môi giới'
+            ], 404);
+        }
+
+        // Lấy danh sách bất động sản đã được phân công cho môi giới này
+        $properties = Property::where('AgentID', $id)
+                            ->with(['chusohuu', 'images', 'videos'])
+                            ->get()
+                            ->map(function($property) {
+                                return [
+                                    'PropertyID' => $property->PropertyID,
+                                    'Title' => $property->Title,
+                                    'OwnerName' => $property->chusohuu ? $property->chusohuu->Name : null,
+                                    'District' => $property->District,
+                                    'Province' => $property->Province,
+                                    'Status' => $property->Status,
+                                    'ImageCount' => $property->images->count(),
+                                    'VideoCount' => $property->videos->count()
+                                ];
+                            });
+
+        return response()->json($properties);
+    }
+
+    /**
+     * Hủy phân công một bất động sản khỏi môi giới
+     */
+    public function unassignProperty(Request $request)
+    {
+        $request->validate([
+            'propertyId' => 'required|exists:properties,PropertyID',
+        ]);
+
+        try {
+            $property = Property::find($request->propertyId);
+
+            // Lưu lại agent cũ để trả về trong response
+            $oldAgentId = $property->AgentID;
+
+            // Cập nhật thành null
+            $property->AgentID = null;
+            $property->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã hủy phân công bất động sản thành công',
+                'oldAgentId' => $oldAgentId
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Lấy danh sách bất động sản khả dụng để phân công (AgentID = NULL)
+     */
+    public function getAvailableProperties(Request $request)
+    {
+        // Kiểm tra nếu có parameter status được truyền vào
+        $status = $request->input('status');
+
+        // Tạo query builder
+        $query = Property::whereNull('AgentID');
+
+        // Nếu có status, thêm điều kiện lọc
+        if ($status) {
+            $query->where('Status', $status);
+        }
+
+        // Lấy danh sách bất động sản chưa được phân công cho môi giới nào (AgentID = NULL)
+        $properties = $query->with(['chusohuu', 'images', 'videos'])
+                    ->get()
+                    ->map(function($property) {
+                        return [
+                            'PropertyID' => $property->PropertyID,
+                            'Title' => $property->Title,
+                            'OwnerName' => $property->chusohuu ? $property->chusohuu->Name : null,
+                            'District' => $property->District,
+                            'Province' => $property->Province,
+                            'Status' => $property->Status,
+                            'ImageCount' => $property->images->count(),
+                            'VideoCount' => $property->videos->count()
+                        ];
+                    });
+
+        return response()->json($properties);
+    }
+
+    /**
+     * Phân công một hoặc nhiều bất động sản cho môi giới
+     */
+    public function assignProperties(Request $request)
+    {
+        $request->validate([
+            'agentId' => 'required|exists:user,UserID',
+            'propertyIds' => 'required|array',
+            'propertyIds.*' => 'exists:properties,PropertyID'
+        ]);
+
+        try {
+            // Lấy agent
+            $agent = User::find($request->agentId);
+
+            // Kiểm tra role
+            if ($agent->Role !== 'Agent') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Người dùng được chọn không phải là môi giới'
+                ], 400);
+            }
+
+            // Kiểm tra giới hạn 10 bất động sản active
+            $activeCount = Property::where('AgentID', $request->agentId)
+                            ->where('Status', 'active')
+                            ->count();
+
+            // Chỉ đếm những BĐS active và chưa được phân công (hoặc được phân công cho agent khác)
+            $newActiveCount = Property::whereIn('PropertyID', $request->propertyIds)
+                                ->where('Status', 'active')
+                                ->where(function($query) use ($request) {
+                                    $query->whereNull('AgentID')
+                                          ->orWhere('AgentID', '!=', $request->agentId);
+                                })
+                                ->count();
+
+            if ($activeCount + $newActiveCount > 10) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Môi giới {$agent->Name} đã quản lý {$activeCount} bất động sản active. Không thể thêm {$newActiveCount} bất động sản active nữa (giới hạn 10)."
+                ]);
+            }
+
+            // Phân công cho tất cả bất động sản được chọn
+            foreach ($request->propertyIds as $propertyId) {
+                $property = Property::find($propertyId);
+                if ($property) {
+                    $property->AgentID = $request->agentId;
+                    $property->save();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã phân công ' . count($request->propertyIds) . ' bất động sản cho môi giới thành công',
+                'agentName' => $agent->Name
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function assignAgentToProperty(Request $request)
@@ -766,23 +1096,38 @@ class SystemController extends Controller
     public function getAppointment()
     {
         $columns = Schema::getColumnListing('appointments');
-        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->paginate(10);
+
+        // Get all agents with pagination and property counts
+        // Sắp xếp agent theo số lượng bất động sản tăng dần (ít nhất lên đầu)
+        $agents = User::where('Role', 'Agent')
+                    ->withCount(['moigioi as active_property_count' => function ($query) {
+                        $query->where('Status', 'active');
+                    }])
+                    ->orderBy('active_property_count', 'asc')
+                    ->paginate(20);
+
+        // Get all appointments with relationships
+        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->get();
+
         if ($columns === null || $appointments->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.appointment', compact('error')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.appointment', compact('columns','appointments')); // Đảm bảo biến truyền vào view là $users
+
+        return view('_system.appointment', compact('columns', 'appointments', 'agents')); // Pass data to view
     }
 
     public function getAppointmentById(Request $request, $id)
     {
         $columns = Schema::getColumnListing('appointments');
-        $appointment = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->find($id)->paginate(10);
+        $appointment = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->find($id);
+
         if ($columns === null || $appointment === null) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.appointment', compact('error')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.partialview.checkedit_appoint', compact('columns','appointment')); // Đảm bảo biến truyền vào view là $users
+
+        return view('_system.partialview.checkedit_appoint', compact('columns','appointment')); // Trả về view chỉ để xem
     }
 
     // Xóa Cuộc Hẹn
@@ -816,6 +1161,41 @@ class SystemController extends Controller
         }
 
         return view('_system.appointment', compact('columns', 'appointments'));
+    }
+
+    // Lấy danh sách cuộc hẹn theo agent ID
+    public function getAppointmentsByAgent($agentId)
+    {
+        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])
+                        ->where('AgentID', $agentId)
+                        ->orderBy('AppointmentDateStart', 'desc') // Sắp xếp theo thời gian bắt đầu giảm dần
+                        ->get();
+
+        // Phân loại cuộc hẹn (với khách hàng và với chủ sở hữu)
+        $withCustomers = $appointments->filter(function($appointment) {
+            return !empty($appointment->CusID);
+        })->values();
+
+        $withOwners = $appointments->filter(function($appointment) {
+            return !empty($appointment->OwnerID);
+        })->values();
+
+        return response()->json([
+            'withCustomers' => $withCustomers,
+            'withOwners' => $withOwners
+        ]);
+    }
+
+    // Lấy chi tiết cuộc hẹn theo ID (trả về JSON)
+    public function getAppointmentDetail($id)
+    {
+        $appointment = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->find($id);
+
+        if (!$appointment) {
+            return response()->json(['error' => 'Không tìm thấy cuộc hẹn'], 404);
+        }
+
+        return response()->json(['appointment' => $appointment]);
     }
 
 
@@ -1530,6 +1910,65 @@ class SystemController extends Controller
             Log::error('Error getting monthly stats: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Không thể lấy dữ liệu thống kê theo tháng.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Search owners for autocomplete
+     */
+    public function searchOwners(Request $request)
+    {
+        try {
+            $query = $request->input('query', '');
+
+            if (strlen($query) < 2) {
+                return response()->json([]);
+            }
+
+            $owners = User::where('Role', 'Owner')
+                ->where(function($q) use ($query) {
+                    $q->where('Name', 'LIKE', "%{$query}%")
+                      ->orWhere('Phone', 'LIKE', "%{$query}%")
+                      ->orWhere('Email', 'LIKE', "%{$query}%");
+                })
+                ->select('UserID', 'Name', 'Phone', 'Email', 'Address')
+                ->limit(10)
+                ->get();
+
+            return response()->json($owners);
+        } catch (\Exception $e) {
+            Log::error('Error searching owners: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Không thể tìm kiếm chủ sở hữu.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get owner details by ID
+     */
+    public function getOwnerDetails($id)
+    {
+        try {
+            $owner = User::where('Role', 'Owner')
+                ->where('UserID', $id)
+                ->select('UserID', 'Name', 'Phone', 'Email', 'Address')
+                ->first();
+
+            if (!$owner) {
+                return response()->json([
+                    'error' => 'Không tìm thấy chủ sở hữu.'
+                ], 404);
+            }
+
+            return response()->json($owner);
+        } catch (\Exception $e) {
+            Log::error('Error getting owner details: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Không thể lấy thông tin chủ sở hữu.',
                 'message' => $e->getMessage()
             ], 500);
         }

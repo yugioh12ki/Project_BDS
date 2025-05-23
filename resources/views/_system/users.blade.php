@@ -2,26 +2,23 @@
 
 @section('user')
 
+<div class="users-container">
+    <h1 class="users-title">Danh sách User</h1>
 
-
-
-<h1>Danh sách User</h1>
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-
-    {{-- Ô input và button tìm kiếm --}}
-    <div class="d-flex align-items-center">
-        <form id="search-form" action="{{ route('admin.users.search', ['role' => request()->route('role') ?? (isset($users[0]) ? $users[0]->Role : 'all')]) }}" method="GET" class="d-flex align-items-center w-100">
-            <input type="text" name="keyword" id="search-input" class="form-control" placeholder="Nhập từ khóa tìm kiếm theo tên, email, số điện thoại..." style="width: 300px;" value="{{ request('keyword') }}">
-            <button type="submit" class="btn btn-secondary ms-2" id="search-button">
-                <i class="fa fa-search"></i> Tìm kiếm
-            </button>
-        </form>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        {{-- Ô input và button tìm kiếm --}}
+        <div class="d-flex align-items-center">
+            <form id="search-form" action="{{ route('admin.users.search', ['role' => request()->route('role') ?? (isset($users[0]) ? $users[0]->Role : 'all')]) }}" method="GET" class="d-flex align-items-center w-100">
+                <input type="text" name="keyword" id="search-input" class="form-control users-search-input" placeholder="Nhập từ khóa tìm kiếm theo tên, email, số điện thoại..." value="{{ request('keyword') }}">
+                <button type="submit" class="btn btn-secondary ms-2" id="search-button">
+                    <i class="fa fa-search"></i> Tìm kiếm
+                </button>
+            </form>
+        </div>
     </div>
-</div>
 
-{{-- Button thêm mới --}}
-<div style="margin-top: 20px">
+    {{-- Button thêm mới --}}
+    <div class="users-table-container">
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
         <i class="fa fa-plus"></i> Thêm mới
     </button>
@@ -31,11 +28,11 @@
 
 
 {{-- Modal thêm user --}}
-<div class="modal fade"
+<div class="modal fade {{ session('showModal') ? 'user-modal-visible' : '' }}"
     id="addUserModal"
     aria-hidden="true"
     aria-labelledby="addUserModalLabel"
-    tabindex="-1" style="{{ session('showModal') ? 'display: block;' : '' }}">
+    tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">

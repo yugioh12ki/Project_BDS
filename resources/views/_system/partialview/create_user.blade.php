@@ -31,10 +31,7 @@
     {{-- Role --}}
     <div class="mb-3">
         <label for="userRole" class="form-label">Role</label>
-        <select class="form-control" id="userRole" name="role" required>
-            <option value="Admin">Admin</option>
-            <option value="Agent">Agent</option>
-            <option value="Owner">Owner</option>
+        <select class="form-control" id="userRole" name="role" readonly>
             <option value="Customer">Customer</option>
         </select>
     </div>

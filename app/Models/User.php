@@ -123,4 +123,20 @@ class User extends Authenticatable
         return strtolower($this->StatusUser) === 'active'; // So sánh không phân biệt chữ hoa/thường
     }
 
+    /**
+     * Get the number of active properties assigned to this agent.
+     *
+     * @return int
+     */
+    public function getActivePropertyCountAttribute()
+    {
+        if (strtolower($this->Role) !== 'agent') {
+            return 0;
+        }
+
+        return Property::where('AgentID', $this->UserID)
+                      ->where('Status', 'active')
+                      ->count();
+    }
+
 }

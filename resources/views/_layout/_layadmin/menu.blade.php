@@ -25,8 +25,8 @@
                 use App\Models\Property;
                 $pendingRentalCount = Property::where('TypePro', 'Rent')->where('Status', 'pending')->count();
               @endphp
-              <a href="{{ route('admin.property.type.status', ['type' => 'rent', 'status' => 'pending']) }}">
-                Cho thuê 
+              <a href="{{ route('admin.property.type.status', ['type' => 'rent']) }}?status=pending">
+                Cho thuê
                 @if($pendingRentalCount > 0)
                   <span class="badge bg-danger rounded-pill ms-2">{{ $pendingRentalCount }}</span>
                 @endif
@@ -36,12 +36,15 @@
               @php
                 $pendingSaleCount = Property::where('TypePro', 'Sale')->where('Status', 'pending')->count();
               @endphp
-              <a href="{{ route('admin.property.type.status', ['type' => 'sale', 'status' => 'pending']) }}">
+              <a href="{{ route('admin.property.type.status', ['type' => 'sale']) }}?status=pending">
                 Cho bán
                 @if($pendingSaleCount > 0)
                   <span class="badge bg-danger rounded-pill ms-2">{{ $pendingSaleCount }}</span>
                 @endif
               </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.property.create') }}">Tiếp nhận hồ sơ</a>
             </li>
           </ul>
         </li>

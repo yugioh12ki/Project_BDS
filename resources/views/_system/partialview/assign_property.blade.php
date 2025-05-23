@@ -34,13 +34,13 @@
                                 Khu vực: {{ optional($agent->profile_agent)->AreaAgent ?? 'Chưa có' }}
                             </p>
                             <p class="property-count" id="count-{{ $agent->UserID }}">
-                                Đang quản lý: <span class="{{ $agent->activePropertyCount >= 10 ? 'text-danger' : '' }}">{{ $agent->activePropertyCount }}/10</span>
+                                Đang quản lý: <span class="{{ $agent->active_property_count >= 10 ? 'text-danger' : '' }}">{{ $agent->active_property_count }}/10</span>
                             </p>
                         </div>
                     </div>
                     <button class="select-agent-btn" data-agent-id="{{ $agent->UserID }}"
                             data-agent-name="{{ $agent->Name }}"
-                            data-property-count="{{ $agent->activePropertyCount }}">Chọn</button>
+                            data-property-count="{{ $agent->active_property_count }}">Chọn</button>
                 </div>
                 @endforeach
             </div>

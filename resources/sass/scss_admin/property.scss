@@ -1,0 +1,487 @@
+// Property Management Styles
+// Variables imported from main
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+$warning-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+$danger-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+$card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+
+// Property Page Container
+.property-page-wrapper {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+// Main Property Tabs
+#mainPropertyTabs {
+    margin-top: 0;
+    border-bottom: 2px solid #19f5c5;
+    background: linear-gradient(135deg, #f0f8ff 0%, #e6fffe 100%);
+    padding: 8px 12px 0 12px;
+    border-radius: 8px 8px 0 0;
+}
+
+// Google Map Container
+#googleMap {
+    width: 100%;
+    height: 500px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(25, 245, 197, 0.2);
+    border: 2px solid #e0f2fe;
+}
+
+// Agent Search Input Group
+.agent-search-input {
+    width: 180px;
+}
+
+// Agents Card Body
+.agents-card-body {
+    max-height: 600px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 10px;
+    }
+}
+
+// Agent Item
+.agent-item {
+    cursor: pointer;
+}
+
+// Agent Icon Container
+.agent-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9f5ff;
+    color: #0d6efd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+// Available Properties Container
+.available-properties {
+    display: none;
+    padding: 1rem;
+}
+
+// Display Properties when active
+.show-properties {
+    display: block;
+}
+
+// Enhanced Mint Green Theme for Property Creation
+.card {
+    border: 1px solid #19f5c5;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(25, 245, 197, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+    border-bottom: 1px solid #19f5c5;
+    border-radius: 11px 11px 0 0 !important;
+    color: white;
+    padding: 15px 20px;
+
+    h4 {
+        margin: 0;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.card-body {
+    padding: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+    border-radius: 0 0 11px 11px;
+}
+
+// Navigation Tabs Enhancement
+.nav-tabs {
+    border-bottom: 2px solid #19f5c5;
+    margin-bottom: 0;
+    background: linear-gradient(135deg, #f0f8ff 0%, #e6fffe 100%);
+    border-radius: 8px 8px 0 0;
+    padding: 8px 12px 0 12px;
+
+    .nav-link {
+        border-radius: 8px 8px 0 0;
+        border: 2px solid #e0f2fe;
+        transition: all 0.3s ease;
+        color: #2c3e50;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+        margin-right: 4px;
+        font-weight: 500;
+
+        &:hover {
+            border-color: #19f5c5;
+            background: linear-gradient(135deg, #e6fffe 0%, #ccfff8 100%);
+            color: #2c3e50;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(25, 245, 197, 0.2);
+        }
+
+        &.active {
+            background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+            border-color: #19f5c5;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(25, 245, 197, 0.3);
+        }
+    }
+}
+
+.tab-content {
+    border: 1px solid #e0f2fe;
+    border-top: none;
+    padding: 20px;
+    border-radius: 0 0 8px 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+    box-shadow: 0 2px 8px rgba(25, 245, 197, 0.1);
+    min-height: 500px;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+// Form Controls Enhancement
+.form-control, .form-select {
+    border: 1px solid #e0f2fe;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+
+    &:focus {
+        border-color: #19f5c5;
+        box-shadow: 0 0 0 0.2rem rgba(25, 245, 197, 0.25);
+        background: linear-gradient(135deg, #ffffff 0%, #e6fffe 100%);
+    }
+
+    &:hover {
+        border-color: #3498db;
+    }
+}
+
+.col-form-label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+// Input Groups
+.input-group-text {
+    background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+    border: 1px solid #19f5c5;
+    color: white;
+    font-weight: 500;
+}
+
+// Autocomplete Styles
+.autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+    border: 1px solid #19f5c5;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(25, 245, 197, 0.2);
+    display: none;
+}
+
+.autocomplete-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #e0f2fe;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: linear-gradient(135deg, #e6fffe 0%, #ccfff8 100%);
+        transform: translateX(4px);
+        border-left: 3px solid #19f5c5;
+    }
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &.no-results {
+        color: #6c757d;
+        font-style: italic;
+        cursor: default;
+        text-align: center;
+    }
+
+    &.error {
+        color: #dc3545;
+        cursor: default;
+        text-align: center;
+    }
+}
+
+.owner-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.owner-details {
+    font-size: 0.9em;
+    color: #3498db;
+}
+
+// Alert Styling
+.alert {
+    border-radius: 8px;
+    border: none;
+
+    &-success {
+        background: linear-gradient(135deg, #e6fffe 0%, #ccfff8 100%);
+        border-left: 4px solid #19f5c5;
+        color: #2c3e50;
+    }
+
+    &-info {
+        background: linear-gradient(135deg, #e6f3ff 0%, #cce7ff 100%);
+        border-left: 4px solid #3498db;
+        color: #2c3e50;
+    }
+
+    &-danger {
+        background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+        border-left: 4px solid #dc3545;
+        color: #721c24;
+    }
+
+    &-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-color: #ffc107;
+    }
+}
+
+// Button Enhancements
+.btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border: none;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+
+        &::before {
+            left: 100%;
+        }
+    }
+
+    &-primary {
+        background: linear-gradient(135deg, #3498db 0%, #19f5c5 100%);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #00e5b3 100%);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+    }
+
+    &-success {
+        background: linear-gradient(135deg, #19f5c5 0%, #00d4aa 100%);
+        color: white;
+
+        &:hover {
+            background: linear-gradient(135deg, #00e5b3 0%, #00c299 100%);
+            box-shadow: 0 6px 20px rgba(25, 245, 197, 0.5);
+        }
+    }
+}
+
+// Form Check Styling
+.form-check-input {
+    &:checked {
+        background-color: #19f5c5;
+        border-color: #19f5c5;
+    }
+
+    &:focus {
+        border-color: #19f5c5;
+        box-shadow: 0 0 0 0.2rem rgba(25, 245, 197, 0.25);
+    }
+}
+
+.form-check-label {
+    color: #2c3e50;
+    font-weight: 500;
+
+    i {
+        margin-right: 8px;
+        width: 16px;
+    }
+}
+
+// Property Table Enhancement
+.property-table-header {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+
+    thead th {
+        background-color: #0056b3;
+        color: #ffffff;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        padding: 12px;
+        border-bottom: none;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+}
+
+.property-row {
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background-color: #f1f1f1;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+}
+
+.highlighted-row {
+    background-color: #e9f5ff !important;
+    border-left: 3px solid #0d6efd;
+}
+
+.pending-property {
+    border-left: 3px solid #ffc107;
+}
+
+// Status badges
+.status-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.pending {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+
+    &.approved {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    &.rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+}
+
+// Map styling
+#googleMap {
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    height: 300px !important;
+    margin-top: 20px;
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+    .nav-tabs .nav-link {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+        margin-right: 2px;
+    }
+
+    .card-header {
+        padding: 12px 15px;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    .tab-content {
+        padding: 15px;
+    }
+
+    .col-md-7, .col-md-5 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    #googleMap {
+        height: 250px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-tabs {
+        padding: 4px 8px 0 8px;
+    }
+
+    .nav-tabs .nav-link {
+        font-size: 0.8rem;
+        padding: 6px 8px;
+        margin-right: 1px;
+    }
+}
