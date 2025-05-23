@@ -1,7 +1,7 @@
 @extends('_layout._layowner.app')
 @section('title', 'Chủ Sở Hữu')
 
-@section('content')
+@section('dashboard')
     <div class="dashboard-container">
         <!-- Properties and Appointments Row -->
         <div class="row mb-4">

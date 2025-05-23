@@ -10,6 +10,9 @@
         'resources/sass/appowner.scss',
         'resources/js/header_owner.js',
         'resources/js/sidebar.js',
+        'resources/js/dscactinh.js',
+        'resources/js/dscactinh_edit.js',
+        'resources/js/create_property_listing.js',
         ])
     <title>@yield('title', 'Trang Chủ Sở Hữu')</title>
     
@@ -31,7 +34,11 @@
 
     <!-- Nội dung chính -->
     <div class="content-area">
-        @yield('content')
+        @yield('property')
+        @yield('appointment')
+        @yield('transaction')
+        @yield('show')
+        @yield('dashboard')
     </div>
     
     <!-- Footer -->

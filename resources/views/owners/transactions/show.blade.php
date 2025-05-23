@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('_layout._layowner.app')
 
-@section('content')
+@section('show')
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-8">

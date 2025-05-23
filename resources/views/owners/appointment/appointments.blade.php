@@ -1,6 +1,6 @@
 @extends('_layout._layowner.app')
 
-@section('content')
+@section('appointment')
 <div class="container-fluid">
     <div class="page-header">
         <div class="row">
