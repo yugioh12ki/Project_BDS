@@ -141,6 +141,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions'); // Route cho giao dịch
         Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
         Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');
+        Route::get('/search-properties', [AgentController::class, 'searchProperties']);
+        Route::get('/get-related-customers/{propertyId}', [AgentController::class, 'getRelatedCustomers']);
     });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)

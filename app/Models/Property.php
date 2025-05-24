@@ -26,7 +26,7 @@ class Property extends Model
         return $this->hasOne(DetailProperty::class, 'PropertyID', 'PropertyID');
     }
 
-    public function chusohuu()
+    public function owner()
     {
         return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }

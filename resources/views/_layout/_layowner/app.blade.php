@@ -9,7 +9,6 @@
         'resources/js/app.js',
         'resources/sass/appowner.scss',
         'resources/js/header_owner.js',
-        'resources/js/sidebar.js',
         'resources/js/dscactinh.js',
         'resources/js/dscactinh_edit.js',
         'resources/js/create_property_listing.js',

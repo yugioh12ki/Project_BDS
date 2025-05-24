@@ -2,7 +2,7 @@
 
 @section('title', 'Lịch Hẹn Xem Nhà')
 
-@section('content')
+@section('appointments')
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
@@ -67,7 +67,7 @@
                     <div class="table-responsive">
                         <table class="table appointments-table mb-0">
                             <thead>
-                                <tr>
+                                <tr></tr>
                                     <th>Chủ Sở Hữu</th>
                                     <th>Khách Hàng</th>
                                     <th>Chủ Đề</th>
@@ -82,6 +82,17 @@
                             <tbody>
                                 @forelse($appointments as $appointment)
                                 <tr>
+                                    <td class="customer-info">
+                                        @if($appointment->ownerUser)
+                                            <div class="customer-name">{{ $appointment->ownerUser->Name }}</div>
+                                            <div class="customer-phone">
+                                                <i class="bi bi-telephone"></i>
+                                                {{ $appointment->ownerUser->Phone ?: 'Chưa cập nhật' }}
+                                            </div>
+                                        @else
+                                            <div class="text-muted">Chưa có thông tin chủ sở hữu</div>
+                                        @endif
+                                    </td>
                                     <td class="customer-info">
                                         @if($appointment->cusUser)
                                             <div class="customer-name">{{ $appointment->cusUser->Name }}</div>
@@ -153,25 +164,25 @@
             <div class="modal-body">
                 <form id="appointmentForm" action="{{ route('agent.appointments.create') }}" method="POST">
                     @csrf
-                    <div class="mb-3">
-                        <label class="form-label">Bất động sản <span class="text-danger">*</span></label>
-                        <select class="form-select" name="PropertyID" required>
-                            <option value="">Chọn bất động sản</option>
-                            @foreach($properties as $property)
-                                <option value="{{ $property->PropertyID }}" data-owner="{{ $property->owner->Name }}">
-                                    {{ $property->Title }} ({{ $property->Address }})
-                                </option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted" id="ownerInfo"></small>
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Tiêu đề bất động sản <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="propertySearch" 
+                               placeholder="Nhập tiêu đề bất động sản..." required>
+                        <input type="hidden" name="PropertyID" id="propertyID">
+                        <!-- Owner info container -->
+                        <div id="ownerInfo" class="mt-2" style="display: none;"></div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
-                        <select class="form-select" name="CusID" required>
-                            <option value="">Chọn khách hàng</option>
-                            <!-- Sẽ được populate bằng AJAX -->
-                        </select>
+                        <label class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="CustomerName" required
+                               placeholder="Nhập tên khách hàng">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại khách hàng <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control" name="CustomerPhone" required
+                               placeholder="Nhập số điện thoại khách hàng">
                     </div>
 
                     <div class="mb-3">
@@ -214,43 +225,17 @@
         </div>
     </div>
 </div>
-
 @push('scripts')
 <script>
-$(document).ready(function() {
-    // Hiển thị thông tin chủ nhà khi chọn BĐS
-    $('select[name="PropertyID"]').change(function() {
-        const option = $(this).find(':selected');
-        const ownerName = option.data('owner');
-        if (ownerName) {
-            $('#ownerInfo').text('Chủ sở hữu: ' + ownerName);
-        } else {
-            $('#ownerInfo').text('');
-        }
-    });
-
-    // Combine date and time before submit
-    $('#appointmentForm').submit(function(e) {
-        e.preventDefault();
-        const date = $('input[name="AppointmentDateStart"]').val();
-        const timeStart = $('input[name="AppointmentTimeStart"]').val();
-        const timeEnd = $('input[name="AppointmentTimeEnd"]').val();
-        
-        $('<input>').attr({
-            type: 'hidden',
-            name: 'AppointmentDateStart',
-            value: date + ' ' + timeStart
-        }).appendTo($(this));
-
-        $('<input>').attr({
-            type: 'hidden',
-            name: 'AppointmentDateEnd',
-            value: date + ' ' + timeEnd
-        }).appendTo($(this));
-
-        this.submit();
-    });
-});
+// Truyền dữ liệu properties từ PHP sang JS
+window.propertyList = @json($properties->map(function($property) {
+    return [
+        'id' => $property->PropertyID,
+        'title' => $property->Title,
+        'ownerName' => optional($property->owner)->Name ?? 'Không xác định'
+    ];
+}));
 </script>
+<script src="{{ asset('js/appointments.js') }}"></script>
 @endpush
 @endsection

@@ -49,14 +49,13 @@ class AgentController extends Controller
     {
         $agent = Auth::user();
         
-        // Lấy danh sách cuộc hẹn hiện tại
-        $appointments = Appointment::with(['cusUser', 'property', 'ownerUser'])
+        $appointments = Appointment::with(['cusUser', 'property', 'ownerUser']) // Thêm ownerUser vào eager loading
             ->where('AgentID', $agent->UserID)
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
         // Chỉ lấy những BĐS đang active và được phân công cho agent
-        $properties = Property::with(['owner'])  // Thêm relationship với owner
+        $properties = Property::with('owner')  // Thêm relationship với owner
             ->select('PropertyID', 'Title', 'Address', 'Ward', 'District', 'OwnerID')
             ->where('AgentID', $agent->UserID)
             ->where('Status', 'active')
@@ -134,5 +133,38 @@ class AgentController extends Controller
         $appointment->save();
 
         return back()->with('success', 'Tạo lịch hẹn thành công');
+    }
+
+    public function searchProperties(Request $request) 
+    {
+        $agent = Auth::user();
+        $searchText = $request->query('term');
+        
+        // Tìm chính xác property theo title
+        $property = Property::with('owner')
+            ->where('AgentID', $agent->UserID)
+            ->where('Title', 'LIKE', "%{$searchText}%")
+            ->first();
+
+        if ($property) {
+            return response()->json([
+                'id' => $property->PropertyID,
+                'title' => $property->Title,
+                'ownerName' => $property->owner->Name ?? 'Không xác định'
+            ]);
+        }
+
+        return response()->json(null);
+    }
+
+    public function getRelatedCustomers($propertyId)
+    {
+        $agent = Auth::user();
+        
+        return User::whereHas('appoint_customer', function($query) use ($propertyId) {
+                $query->where('PropertyID', $propertyId);
+            })
+            ->select('UserID', 'Name')
+            ->get();
     }
 }
