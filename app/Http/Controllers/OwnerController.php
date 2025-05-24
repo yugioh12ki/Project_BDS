@@ -52,8 +52,8 @@ class OwnerController extends Controller
         \Log::info('Pending properties count: ' . $ownerProperties->count());
 
         return view('owners.property.index', compact(
-            'properties',       // Tất cả BĐS để hiển thị trong danh sách
-            'ownerProperties', // BĐS pending để tạo listing
+            'properties',       
+            'ownerProperties', 
             'categories',
             'owners'
         ));
