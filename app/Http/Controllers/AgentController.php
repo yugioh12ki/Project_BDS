@@ -43,13 +43,17 @@ class AgentController extends Controller
     {
         $agent = Auth::user();
         
+        // Lấy danh sách appointments của agent
         $appointments = Appointment::with(['cusUser', 'property'])
             ->where('AgentID', $agent->UserID)
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
+        // Chỉ lấy những properties được phân công cho agent này
         $properties = Property::select('PropertyID', 'Title', 'Address', 'Ward', 'District')
-            ->where('Status', 'Active')
+            ->where('AgentID', $agent->UserID)
+            ->where('Status', 'active')
+            ->orderBy('PostedDate', 'desc')
             ->get();
 
         return view('agents.appointments', compact('appointments', 'properties')); 

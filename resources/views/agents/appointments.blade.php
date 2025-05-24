@@ -14,15 +14,35 @@
     <div class="row">
         <!-- Left column - BDS list -->
         <div class="col-md-4">
-            <input type="text" class="form-control mb-3" placeholder="Tìm kiếm bất động sản...">
-            <div class="card mb-3">
-                <div class="list-group list-group-flush">
-                    @foreach($properties as $property)
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <div class="fw-bold">{{ $property->Title }}</div>
-                        <small class="text-muted">{{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}</small>
-                    </a>
-                    @endforeach
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Bất động sản được phân công</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if($properties->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($properties as $property)
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ Str::limit($property->Title, 50) }}</h6>
+                                        <small class="text-muted">
+                                            <i class="bi bi-geo-alt"></i>
+                                            {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ $property->appointments_count ?? 0 }}
+                                    </span>
+                                </div>
+                            </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-3">
+                            <p class="text-muted mb-0">Chưa có bất động sản nào được phân công</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -44,15 +64,15 @@
             <div class="card">
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table mb-0">
+                        <table class="table appointments-table mb-0">
                             <thead>
                                 <tr>
                                     <th>Khách hàng</th>
-                                    <th>Chủ Đề Cuộc Hẹn</th>
-                                    <th>Mô Tả Cuộc Hẹn</th>
+                                    <th>Chủ Đề</th>
+                                    <th>Mô Tả</th>
                                     <th>Ngày hẹn</th>
-                                    <th>Giờ Bắt Đầu Cuộc Hẹn</th>
-                                    <th>Giờ Kết Thúc Cuộc Hẹn</th>
+                                    <th>Bắt đầu</th>
+                                    <th>Kết thúc</th>
                                     <th>Trạng thái</th>
                                     <th>Thao tác</th>
                                 </tr>
@@ -60,23 +80,26 @@
                             <tbody>
                                 @forelse($appointments as $appointment)
                                 <tr>
-                                    <td>
+                                    <td class="customer-info">
                                         @if($appointment->cusUser)
-                                            <div class="fw-bold">{{ $appointment->cusUser->Name }}</div>
-                                            <small class="text-muted">Điện thoại: {{ $appointment->cusUser->Phone ?: 'Chưa cập nhật' }}</small>
+                                            <div class="customer-name">{{ $appointment->cusUser->Name }}</div>
+                                            <div class="customer-phone">
+                                                <i class="bi bi-telephone"></i>
+                                                {{ $appointment->cusUser->Phone ?: 'Chưa cập nhật' }}
+                                            </div>
                                         @else
                                             <div class="text-muted">Chưa có thông tin</div>
                                         @endif
                                     </td>
-                                    <td>{{ $appointment->TitleAppoint }}</td>
-                                    <td>{{ $appointment->DescAppoint }}</td>
-                                    <td>{{ date('d/m/Y', strtotime($appointment->AppointmentDateStart)) }}</td>
-                                    <td>{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</td>
-                                    <td>{{ date('H:i', strtotime($appointment->AppointmentDateEnd)) }}</td>
-                                    <td>
+                                    <td>{{ Str::limit($appointment->TitleAppoint, 30) }}</td>
+                                    <td>{{ Str::limit($appointment->DescAppoint, 50) }}</td>
+                                    <td class="text-center">{{ date('d/m/Y', strtotime($appointment->AppointmentDateStart)) }}</td>
+                                    <td class="text-center">{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</td>
+                                    <td class="text-center">{{ date('H:i', strtotime($appointment->AppointmentDateEnd)) }}</td>
+                                    <td class="status-cell">
                                         @switch($appointment->Status)
                                             @case('Chờ xử lý')
-                                                <span class="badge bg-warning">Chờ xử lý</span>
+                                                <span class="badge bg-warning text-dark">Chờ xử lý</span>
                                                 @break
                                             @case('Thành công')
                                                 <span class="badge bg-success">Thành công</span>
@@ -88,16 +111,16 @@
                                                 <span class="badge bg-secondary">{{ $appointment->Status }}</span>
                                         @endswitch
                                     </td>
-                                    <td>
+                                    <td class="actions-cell">
                                         @if($appointment->Status == 'Khởi tạo')
-                                            <button class="btn btn-sm btn-success me-1" title="Hoàn thành">
+                                            <button class="btn btn-sm btn-success" title="Hoàn thành">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                             <button class="btn btn-sm btn-danger" title="Hủy">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
                                         @else
-                                            <button class="btn btn-sm btn-primary" title="Xem chi tiết">
+                                            <button class="btn btn-sm btn-info" title="Xem chi tiết">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                         @endif
@@ -105,7 +128,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-3">Không có lịch hẹn nào</td>
+                                    <td colspan="8" class="text-center py-3">Không có lịch hẹn nào</td>
                                 </tr>
                                 @endforelse
                             </tbody>

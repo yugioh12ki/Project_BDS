@@ -8,8 +8,8 @@
     <div class="header-nav">
         <ul>
             <li><a href="{{ route('agent.dashboard') }}" class="header-nav-link"><i class="bi bi-house-fill"></i> Trang Chủ</a></li>
-            <li><a href="{{ route('agent.brokers') }}" class="header-nav-link"><i class="bi bi-list-task"></i>Danh Sách Phân Công Môi Giới</a></li>
-            <li><a href="{{ route('agent.appointments') }}" class="header-nav-link"><i class="bi bi-calendar2-event-fill"></i>Tạo Lịch Hẹn Xem Nhà</a></li>
+            <li><a href="{{ route('agent.brokers') }}" class="header-nav-link"><i class="bi bi-list-task"></i>Bảng Phân Công</a></li>
+            <li><a href="{{ route('agent.appointments') }}" class="header-nav-link"><i class="bi bi-calendar2-event-fill"></i>Quản Lý Lịch Hẹn</a></li>
             <li><a href="{{ route('agent.appointments') }}" class="header-nav-link"><i class="bi bi-cash-stack"></i>Lịch Sử Giao Dịch</a></li>
         </ul>
     </div>
