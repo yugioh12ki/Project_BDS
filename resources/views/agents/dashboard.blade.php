@@ -33,7 +33,7 @@
                         </div>
                     </div>
                     <div class="mt-4">
-                        <a href="#" class="text-primary text-decoration-none">
+                        <a href="{{ route('agent.brokers') }}" class="text-primary text-decoration-none">
                             Xem chi tiết <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
@@ -66,7 +66,7 @@
                         </div>
                     </div>
                     <div class="mt-4">
-                        <a href="#" class="text-primary text-decoration-none">
+                        <a href="{{ route('agent.appointments') }}" class="text-primary text-decoration-none">
                             Xem chi tiết <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
@@ -99,7 +99,7 @@
                         </div>
                     </div>
                     <div class="mt-4">
-                        <a href="#" class="text-primary text-decoration-none">
+                        <a href="{{ route('agent.transactions') }}" class="text-primary text-decoration-none">
                             Xem chi tiết <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
@@ -120,7 +120,7 @@
                     </div>
                     
                     <div class="mt-3">
-                        <a href="#" class="text-primary text-decoration-none">
+                        <a href="{{ route('agent.appointments') }}" class="text-primary text-decoration-none">
                             Xem tất cả lịch hẹn <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
@@ -129,4 +129,4 @@
         </div>
     </div>
 </div>
-@endsection 
+@endsection

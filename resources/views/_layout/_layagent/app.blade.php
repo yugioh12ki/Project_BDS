@@ -21,7 +21,7 @@
     <!-- Nội dung chính -->
     <div class="content-area">
         @yield('content')
-        @yield('listings')
+        @yield('brokers')
         @yield('appointments')
     </div>
     

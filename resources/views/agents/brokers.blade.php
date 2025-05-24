@@ -2,7 +2,7 @@
 
 @section('title', 'Danh Sách Phân Công Môi Giới')
 
-@section('listings')
+@section('brokers')
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">

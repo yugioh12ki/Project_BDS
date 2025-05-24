@@ -29,10 +29,10 @@ class AgentController extends Controller
     /**
      * Display listings managed by this agent
      */
-    public function listings()
+    public function brokers()
     {
         $properties = []; // Replace with actual properties query
-        return view('agents.listings', compact('properties'));
+        return view('agents.brokers', compact('properties'));
     }
     
     /**

@@ -132,19 +132,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/change-password', [OwnerController::class, 'changePassword'])->name('change-password.update');
     });
 
-    // Giả sử thêm 2 quyền nữa (ví dụ: Agent và Customer)
+    // Agent routes
     Route::middleware(['checkRole:Agent'])->prefix('agent')->name('agent.')->group(function () {
         Route::get('/', [AgentController::class, 'dashboard'])->name('dashboard');
-        Route::get('/listings', [AgentController::class, 'listings'])->name('listings');
-        Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments');
+        Route::get('/brokers', [AgentController::class, 'brokers'])->name('brokers');  // Route cho phân công môi giới
+        Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments'); // Route cho lịch hẹn
+        Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions'); // Route cho giao dịch
         Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
         Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');
     });
-
-    // Route::middleware(['checkrole:customer'])->prefix('customer')->name('customer.')->group(function () {
-    //     Route::get('/', [CustomerController::class, 'dashboard'])->name('dashboard');
-    //     // các route khác của customer...
-    // });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)
     Route::post('/logout', function () {
