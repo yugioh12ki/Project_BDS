@@ -31,16 +31,17 @@
                                             {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}
                                         </small>
                                     </div>
-                                    <span class="badge bg-primary rounded-pill">
-                                        {{ $property->appointments_count ?? 0 }}
-                                    </span>
+                                    <div class="badge bg-info">
+                                        {{ $property->appointments->count() }} lịch hẹn
+                                    </div>
                                 </div>
                             </a>
                             @endforeach
                         </div>
                     @else
-                        <div class="text-center py-3">
-                            <p class="text-muted mb-0">Chưa có bất động sản nào được phân công</p>
+                        <div class="alert alert-info m-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Chưa có bất động sản nào được phân công hoặc có lịch hẹn
                         </div>
                     @endif
                 </div>
@@ -152,11 +153,13 @@
                 <form>
                     <div class="mb-3">
                         <label class="form-label">Bất động sản</label>
-                        <select class="form-select">
+                        <select class="form-select" required>
                             <option value="">Chọn bất động sản</option>
-                            <option>Chung cư cao cấp The Sun Avenue</option>
-                            <option>Biệt thự Vinhomes Central Park</option>
-                            <option>Nhà phố Thảo Điền</option>
+                            @foreach($properties as $property)
+                                <option value="{{ $property->PropertyID }}">
+                                    {{ $property->Title }} - {{ $property->Address }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="row">

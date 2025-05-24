@@ -49,6 +49,11 @@ class Property extends Model
         return $this->hasMany(Video::class, 'PropertyID', 'PropertyID');
     }
 
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class, 'PropertyID', 'PropertyID');
+    }
+
     protected $fillable = [
          'OwnerID',
          'AgentID',

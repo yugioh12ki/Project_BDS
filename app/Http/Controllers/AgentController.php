@@ -32,7 +32,13 @@ class AgentController extends Controller
      */
     public function brokers()
     {
-        $properties = []; // Replace with actual properties query
+        $agent = Auth::user();
+    
+        $properties = Property::where('AgentID', $agent->UserID)
+            ->where('Status', 'active')
+            ->orderBy('PostedDate', 'desc')
+            ->get();
+
         return view('agents.brokers', compact('properties'));
     }
     
@@ -43,13 +49,13 @@ class AgentController extends Controller
     {
         $agent = Auth::user();
         
-        // Lấy danh sách appointments của agent
+        // Sửa lại query để đơn giản và chắc chắn
         $appointments = Appointment::with(['cusUser', 'property'])
             ->where('AgentID', $agent->UserID)
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
-        // Chỉ lấy những properties được phân công cho agent này
+        // Lấy danh sách BĐS được phân công
         $properties = Property::select('PropertyID', 'Title', 'Address', 'Ward', 'District')
             ->where('AgentID', $agent->UserID)
             ->where('Status', 'active')

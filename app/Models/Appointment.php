@@ -75,7 +75,8 @@ class Appointment extends Model
 
     public function property()
     {
-        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
+        return $this->belongsTo(Property::class, 'ProID', 'PropertyID');
+        // Thay 'ProID' bằng tên cột thật trong bảng appointments của bạn
     }
 
     public function user()
