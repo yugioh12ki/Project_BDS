@@ -6,10 +6,12 @@
                 <li><a href="{{ route('home') }}">Trang chủ</a></li>
                 <li><a href="#">Giới thiệu</a></li>
                 <li><a href="#">Mua</a></li>
-                <li><a href="#">Bán</a></li>
+                <li><a href="#">Cho Thuê</a></li>
+                <li><a href="#">Lịch hẹn</a></li>
                 <li><a href="#">Ý kiến khách hàng</a></li>
                 <li><a href="#">Liên hệ</a></li>
                 <li><a href="#">Danh bạ</a></li>
+                <li><a href="#">Lịch sử giao dịch</a></li>
             </ul>
         </div>
         <div class="navbar__right">

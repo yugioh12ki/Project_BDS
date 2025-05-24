@@ -197,26 +197,33 @@ class CustomerController extends Controller
 
     public function propertyDetail($id)
     {
-        // Tìm property theo ID
-        $property = Property::with(['danhMuc', 'chiTiet', 'chusohuu', 'moigioi'])
-            ->where('PropertyID', $id)
-            ->where('Status', 1) // Chỉ lấy BĐS đã được duyệt
-            ->firstOrFail();
-        
-        // Lấy các BĐS liên quan (cùng loại, cùng khu vực)
-        $relatedProperties = Property::where('Status', 1)
-            ->where('PropertyID', '!=', $id)
-            ->where(function($query) use ($property) {
-                $query->where('PropertyType', $property->PropertyType)
-                    ->orWhere('District', $property->District);
-            })
-            ->with(['danhMuc', 'chiTiet'])
-            ->limit(3)
-            ->get();
-        
-        return view('trangchu.property-detail', [
-            'property' => $property,
-            'relatedProperties' => $relatedProperties,
-        ]);
+        try {
+            // Debug
+            \Log::info('Accessing property detail with ID: ' . $id);
+            
+            // Tìm property theo ID và đảm bảo load các relationships
+            $property = Property::with(['danhMuc', 'chiTiet', 'chusohuu', 'moigioi', 'images'])
+                ->where('PropertyID', $id)
+                ->where('Status', 'active')
+                ->firstOrFail();
+
+            \Log::info('Found property: ' . $property->Title);
+
+            // Lấy các BĐS liên quan
+            $relatedProperties = Property::where('Status', 'active')
+                ->where('PropertyID', '!=', $id)
+                ->where(function($query) use ($property) {
+                    $query->where('PropertyType', $property->PropertyType)
+                        ->orWhere('District', $property->District);
+                })
+                ->with(['danhMuc', 'chiTiet', 'images'])
+                ->limit(3)
+                ->get();
+
+            return view('trangchu.property-detail', compact('property', 'relatedProperties'));
+        } catch (\Exception $e) {
+            \Log::error('Error in propertyDetail: ' . $e->getMessage());
+            return redirect()->route('home')->with('error', 'Không tìm thấy bất động sản này');
+        }
     }
 }

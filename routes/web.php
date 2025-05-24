@@ -27,8 +27,12 @@ use App\Http\Controllers\CustomerController;
 //     return view('welcome');
 // });
 
-//Trang chủ
-Route::get('/',[HomeController::class,"index"])->name('home');
+// Public routes - đặt trước middleware auth
+Route::get('/search', [CustomerController::class, 'search'])->name('customer.search');
+Route::get('/property/{id}', [CustomerController::class, 'propertyDetail'])->name('property.detail');
+
+// Đặt các route này ở đầu file, sau route trang chủ
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 //Đăng Nhập
 Route::get('/login',[LoginController::class,"login"])->name('login');
@@ -99,10 +103,6 @@ Route::get('/property-cards-demo', function () {
     return view('owners.property.index', compact('properties', 'categories', 'owners'));
 });
 
-// Public routes - không cần đăng nhập
-Route::get('/search', [CustomerController::class, 'search'])->name('customer.search');
-Route::get('/property/{id}', [CustomerController::class, 'propertyDetail'])->name('property.detail');
-
 Route::middleware(['auth'])->group(function () {
 
     // Admin routes
@@ -163,78 +163,5 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('login');
     })->name('logout');
 
-    // Transaction Route trong OwnerController
-    Route::get('/transaction/{id}', [OwnerController::class, 'showTransaction'])->name('transaction.view');
-    Route::get('/transaction/{id}/print', [OwnerController::class, 'printInvoice'])->name('transaction.print');
-    Route::get('/export/transactions', [OwnerController::class, 'exportTransactions'])->name('export.transactions');
-
-    // Test route để kiểm tra API
-    Route::get('/test-properties-api', function() {
-        try {
-            $ownerId = Auth::user()->UserID;
-            echo "<h2>Test API Get Properties for Listing</h2>";
-            echo "<p><strong>Current User ID:</strong> " . $ownerId . "</p>";
-            echo "<p><strong>Current User Role:</strong> " . Auth::user()->Role . "</p>";
-
-            // Test query trực tiếp
-            $ownerProperties = \App\Models\Property::with(['danhMuc', 'chiTiet', 'images'])
-                ->where('OwnerID', $ownerId)
-                ->get();
-
-            echo "<p><strong>Properties found:</strong> " . $ownerProperties->count() . "</p>";
-
-            if ($ownerProperties->count() > 0) {
-                echo "<h3>Properties Details:</h3>";
-                foreach ($ownerProperties as $property) {
-                    echo "<div style='border: 1px solid #ccc; padding: 10px; margin: 10px 0;'>";
-                    echo "<p><strong>ID:</strong> " . $property->PropertyID . "</p>";
-                    echo "<p><strong>Title:</strong> " . $property->Title . "</p>";
-                    echo "<p><strong>Owner ID:</strong> " . $property->OwnerID . "</p>";
-                    echo "<p><strong>Type:</strong> " . $property->TypePro . "</p>";
-                    echo "<p><strong>Price:</strong> " . number_format($property->Price) . "</p>";
-                    echo "<p><strong>Address:</strong> " . $property->Address . "</p>";
-                    echo "<p><strong>Images count:</strong> " . $property->images->count() . "</p>";
-                    echo "</div>";
-                }
-            } else {
-                echo "<p style='color: red;'>Không tìm thấy bất động sản nào cho Owner ID: " . $ownerId . "</p>";
-
-                // Kiểm tra tất cả properties
-                $allProperties = \App\Models\Property::all();
-                echo "<p><strong>Total properties in system:</strong> " . $allProperties->count() . "</p>";
-
-                if ($allProperties->count() > 0) {
-                    echo "<h3>All Properties Owner IDs:</h3>";
-                    foreach ($allProperties as $prop) {
-                        echo "<p>Property " . $prop->PropertyID . " - Owner: " . $prop->OwnerID . "</p>";
-                    }
-                }
-            }
-
-            echo "<hr>";
-            echo "<h3>Test API Endpoint:</h3>";
-            echo "<button onclick='testAPI()'>Test Get Properties API</button>";
-            echo "<div id='api-result'></div>";
-
-            echo "<script>
-                async function testAPI() {
-                    try {
-                        const response = await fetch('/owner/property/get-for-listing', {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        const data = await response.json();
-                        document.getElementById('api-result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-                    } catch (error) {
-                        document.getElementById('api-result').innerHTML = '<p style=\"color: red;\">Error: ' + error.message + '</p>';
-                    }
-                }
-            </script>";
-
-        } catch (\Exception $e) {
-            echo "<p style='color: red;'>Error: " . $e->getMessage() . "</p>";
-        }
-    })->name('test.properties.api');
+    
 });

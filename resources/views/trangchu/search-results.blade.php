@@ -95,7 +95,7 @@
                         </div>
                         
                         <div class="text-center mt-3">
-                            <a href="{{ route('property.detail', $property->PropertyID) }}" class="property-detail-btn">Xem chi tiết</a>
+                            <a href="{{ route('property.detail', ['id' => $property->PropertyID]) }}" class="btn-view">Xem chi tiết</a>
                         </div>
                     </div>
                 </div>

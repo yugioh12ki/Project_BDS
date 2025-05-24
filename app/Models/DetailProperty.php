@@ -67,13 +67,17 @@ class DetailProperty extends Model
     // Giá điện
     public function getGiaDienText()
     {
-        return $this->PowerPrice ? number_format($this->PowerPrice, 0, ',', '.') . ' đ/kWh' : '0 đ/kWh';
+        // Cast to float before formatting
+        $price = floatval($this->PowerPrice);
+        return $price > 0 ? number_format($price, 0, ',', '.') . ' đ/kWh' : '0 đ/kWh';
     }
 
     // Giá nước
     public function getGiaNuocText()
     {
-        return $this->WaterPrice ? number_format($this->WaterPrice, 0, ',', '.') . ' đ/m³' : '0 đ/m³';
+        // Cast to float before formatting
+        $price = floatval($this->WaterPrice);
+        return $price > 0 ? number_format($price, 0, ',', '.') . ' đ/m³' : '0 đ/m³';
     }
 
     // Tiện ích
