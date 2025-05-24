@@ -1,6 +1,6 @@
 @extends('_layout._layagent.app')
 
-@section('title', 'Trang quản lý Agent')
+@section('title', 'Người Môi Giới')
 
 @section('content')
 <div class="container-fluid py-4">
