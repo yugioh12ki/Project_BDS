@@ -7,7 +7,11 @@
                 <li><a href="#">Giới thiệu</a></li>
                 <li><a href="#">Mua</a></li>
                 <li><a href="#">Cho Thuê</a></li>
-                <li><a href="#">Lịch hẹn</a></li>
+                @auth
+                    <li><a href="{{ route('customer.appointments.index') }}">Lịch hẹn</a></li>
+                @else
+                    <li><a href="{{ route('login') }}">Lịch hẹn</a></li>
+                @endauth
                 <li><a href="#">Ý kiến khách hàng</a></li>
                 <li><a href="#">Liên hệ</a></li>
                 <li><a href="#">Danh bạ</a></li>
@@ -17,7 +21,7 @@
         <div class="navbar__right">
             <div class="navbar__call">
                 <i class="bi bi-telephone"></i>
-                <span>0123456789</span>
+                <span>19001881</span>
             </div>
             @if(Auth::check() && Auth::user()->Role == 'Customer')
                 <div class="user-dropdown">

@@ -311,7 +311,7 @@
                             </div>
                             
                             <div class="contact-details mt-3">
-                                <p><i class="bi bi-telephone-fill"></i> {{ $property->moigioi->phone }}</p>
+                                <p><i class="bi bi-telephone-fill"></i> {{ substr($property->moigioi->phone, 0, 7) . '***' }}</p>
                                 <p><i class="bi bi-envelope-fill"></i> {{ $property->moigioi->email }}</p>
                                 <p><i class="bi bi-geo-alt-fill"></i> {{ $property->moigioi->address ?? 'Không có thông tin địa chỉ' }}</p>
                             </div>
@@ -319,6 +319,7 @@
                             <p>Không có thông tin môi giới.</p>
                         @endif
                         
+                        @auth
                         <div class="contact-form mt-4">
                             <h4>Liên hệ ngay</h4>
                             <form>
@@ -344,6 +345,10 @@
                                 </div>
                             </form>
                         </div>
+                        @else
+                            <p>Vui lòng đăng nhập để liên hệ với môi giới.</p>
+                            <a href="{{ route('login') }}" class="btn btn-primary">Đăng nhập</a>
+                        @endauth
                     </div>
                 </div>
             </div>
@@ -414,4 +419,4 @@
         });
     }
 </script>
-@endsection 
+@endsection

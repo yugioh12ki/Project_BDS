@@ -155,6 +155,7 @@ Route::middleware(['auth'])->group(function () {
         // Change password routes
         Route::get('/change-password', [CustomerController::class, 'showChangePasswordForm'])->name('change-password');
         Route::post('/change-password', [CustomerController::class, 'changePassword'])->name('password.change');
+        Route::get('/appointments', [CustomerController::class, 'showAppointments'])->name('appointments.index');
     });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)

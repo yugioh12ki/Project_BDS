@@ -9,6 +9,7 @@ use Illuminate\Validation\Rules\Password;
 use App\Models\Property;
 use App\Models\DanhMucBDS;
 use App\Models\DetailProperty;
+use App\Models\Appointment;
 
 class CustomerController extends Controller
 {
@@ -215,15 +216,25 @@ class CustomerController extends Controller
                 ->where(function($query) use ($property) {
                     $query->where('PropertyType', $property->PropertyType)
                         ->orWhere('District', $property->District);
-                })
-                ->with(['danhMuc', 'chiTiet', 'images'])
-                ->limit(3)
-                ->get();
+            })
+            ->with(['danhMuc', 'chiTiet', 'images'])
+            ->limit(3)
+            ->get();
 
             return view('trangchu.property-detail', compact('property', 'relatedProperties'));
         } catch (\Exception $e) {
             \Log::error('Error in propertyDetail: ' . $e->getMessage());
             return redirect()->route('home')->with('error', 'Không tìm thấy bất động sản này');
         }
+    }
+
+    public function showAppointments()
+    {
+        $appointments = Appointment::with(['property', 'agent'])
+            ->where('CusID', Auth::id())  // Sửa từ UserID thành CusID
+            ->orderBy('AppointmentDateStart', 'desc')  // Sửa thành AppointmentDateStart
+            ->get();
+
+        return view('customer.appointments.show', compact('appointments'));
     }
 }
