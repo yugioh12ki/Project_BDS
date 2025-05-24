@@ -68,7 +68,8 @@
                         <table class="table appointments-table mb-0">
                             <thead>
                                 <tr>
-                                    <th>Khách hàng</th>
+                                    <th>Chủ Sở Hữu</th>
+                                    <th>Khách Hàng</th>
                                     <th>Chủ Đề</th>
                                     <th>Mô Tả</th>
                                     <th>Ngày hẹn</th>
@@ -150,43 +151,106 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form id="appointmentForm" action="{{ route('agent.appointments.create') }}" method="POST">
+                    @csrf
                     <div class="mb-3">
-                        <label class="form-label">Bất động sản</label>
-                        <select class="form-select" required>
+                        <label class="form-label">Bất động sản <span class="text-danger">*</span></label>
+                        <select class="form-select" name="PropertyID" required>
                             <option value="">Chọn bất động sản</option>
                             @foreach($properties as $property)
-                                <option value="{{ $property->PropertyID }}">
-                                    {{ $property->Title }} - {{ $property->Address }}
+                                <option value="{{ $property->PropertyID }}" data-owner="{{ $property->owner->Name }}">
+                                    {{ $property->Title }} ({{ $property->Address }})
                                 </option>
                             @endforeach
                         </select>
+                        <small class="text-muted" id="ownerInfo"></small>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                        <select class="form-select" name="CusID" required>
+                            <option value="">Chọn khách hàng</option>
+                            <!-- Sẽ được populate bằng AJAX -->
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tiêu đề cuộc hẹn <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="TitleAppoint" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả chi tiết <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="DescAppoint" rows="3" required></textarea>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Ngày hẹn</label>
-                                <input type="date" class="form-control">
+                                <label class="form-label">Ngày hẹn <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="AppointmentDateStart" required 
+                                       min="{{ date('Y-m-d') }}">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="mb-3">
-                                <label class="form-label">Giờ hẹn</label>
-                                <input type="time" class="form-control">
+                                <label class="form-label">Giờ bắt đầu <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" name="AppointmentTimeStart" required>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ghi chú</label>
-                        <textarea class="form-control" rows="3"></textarea>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Giờ kết thúc <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" name="AppointmentTimeEnd" required>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary">Tạo lịch hẹn</button>
+                <button type="submit" form="appointmentForm" class="btn btn-primary">Tạo lịch hẹn</button>
             </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // Hiển thị thông tin chủ nhà khi chọn BĐS
+    $('select[name="PropertyID"]').change(function() {
+        const option = $(this).find(':selected');
+        const ownerName = option.data('owner');
+        if (ownerName) {
+            $('#ownerInfo').text('Chủ sở hữu: ' + ownerName);
+        } else {
+            $('#ownerInfo').text('');
+        }
+    });
+
+    // Combine date and time before submit
+    $('#appointmentForm').submit(function(e) {
+        e.preventDefault();
+        const date = $('input[name="AppointmentDateStart"]').val();
+        const timeStart = $('input[name="AppointmentTimeStart"]').val();
+        const timeEnd = $('input[name="AppointmentTimeEnd"]').val();
+        
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'AppointmentDateStart',
+            value: date + ' ' + timeStart
+        }).appendTo($(this));
+
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'AppointmentDateEnd',
+            value: date + ' ' + timeEnd
+        }).appendTo($(this));
+
+        this.submit();
+    });
+});
+</script>
+@endpush
 @endsection

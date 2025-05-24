@@ -49,14 +49,15 @@ class AgentController extends Controller
     {
         $agent = Auth::user();
         
-        // Sửa lại query để đơn giản và chắc chắn
-        $appointments = Appointment::with(['cusUser', 'property'])
+        // Lấy danh sách cuộc hẹn hiện tại
+        $appointments = Appointment::with(['cusUser', 'property', 'ownerUser'])
             ->where('AgentID', $agent->UserID)
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
-        // Lấy danh sách BĐS được phân công
-        $properties = Property::select('PropertyID', 'Title', 'Address', 'Ward', 'District')
+        // Chỉ lấy những BĐS đang active và được phân công cho agent
+        $properties = Property::with(['owner'])  // Thêm relationship với owner
+            ->select('PropertyID', 'Title', 'Address', 'Ward', 'District', 'OwnerID')
             ->where('AgentID', $agent->UserID)
             ->where('Status', 'active')
             ->orderBy('PostedDate', 'desc')
@@ -97,5 +98,41 @@ class AgentController extends Controller
         }
         
         return redirect()->back()->with('success', 'Profile updated successfully');
+    }
+
+    // Thêm method tạo lịch hẹn mới
+    public function createAppointment(Request $request)
+    {
+        $request->validate([
+            'PropertyID' => 'required|exists:properties,PropertyID',
+            'CusID' => 'required|exists:user,UserID',
+            'TitleAppoint' => 'required|string|max:255',
+            'DescAppoint' => 'required|string',
+            'AppointmentDateStart' => 'required|date',
+            'AppointmentDateEnd' => 'required|date|after:AppointmentDateStart',
+        ]);
+
+        $agent = Auth::user();
+        $property = Property::findOrFail($request->PropertyID);
+
+        // Kiểm tra xem agent có được phân công cho BĐS này không
+        if ($property->AgentID !== $agent->UserID) {
+            return back()->with('error', 'Bạn không được phân công cho bất động sản này');
+        }
+
+        $appointment = new Appointment();
+        $appointment->PropertyID = $request->PropertyID;
+        $appointment->AgentID = $agent->UserID;
+        $appointment->CusID = $request->CusID;
+        $appointment->OwnerID = $property->OwnerID;
+        $appointment->TitleAppoint = $request->TitleAppoint;
+        $appointment->DescAppoint = $request->DescAppoint;
+        $appointment->AppointmentDateStart = $request->AppointmentDateStart;
+        $appointment->AppointmentDateEnd = $request->AppointmentDateEnd;
+        $appointment->Status = 'Chờ xử lý';
+
+        $appointment->save();
+
+        return back()->with('success', 'Tạo lịch hẹn thành công');
     }
 }

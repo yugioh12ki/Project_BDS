@@ -137,6 +137,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [AgentController::class, 'dashboard'])->name('dashboard');
         Route::get('/brokers', [AgentController::class, 'brokers'])->name('brokers');  // Route cho phân công môi giới
         Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments'); // Route cho lịch hẹn
+        Route::post('/appointments/create', [AgentController::class, 'createAppointment'])->name('appointments.create');
         Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions'); // Route cho giao dịch
         Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
         Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');
