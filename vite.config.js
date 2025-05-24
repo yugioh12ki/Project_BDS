@@ -7,6 +7,8 @@ export default defineConfig({
             input: [
                 'resources/sass/app.scss',
                 'resources/js/app.js',
+                'resources/js/dscactinh.js',
+                'resources/js/dscactinh_edit.js',
                 'resources/js/google-maps.js',
                 'resources/js/property-management.js'
             ],
@@ -16,6 +18,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': '/resources',
+            'jQuery': 'jquery'
         },
     },
 });

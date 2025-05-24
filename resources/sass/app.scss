@@ -1,12 +1,23 @@
+// 1. Framework CSS (luôn đầu tiên)
 @import "bootstrap/scss/bootstrap";
+
+// 2. Layout chính và base styles
+@import 'scss_admin/main';
 @import 'scss_admin/header';
 @import 'scss_admin/menu';
-@import 'scss_admin/main';
+
+// 3. Utility components
 @import 'scss_admin/badge';
+
+// 4. Page-specific styles (theo độ ưu tiên)
 @import 'scss_admin/dashboard';
-@import 'scss_admin/property';
-@import 'scss_admin/transaction';
-@import 'scss_admin/transaction_layout';
-@import 'scss_admin/users';
-@import 'scss_admin/appointment';
 @import 'scss_admin/index';
+
+// 5. Feature-specific styles
+@import 'scss_admin/users';
+@import 'scss_admin/property';
+@import 'scss_admin/appointment';
+
+// 6. Complex components (cuối cùng để override)
+@import 'scss_admin/transaction_layout';
+@import 'scss_admin/transaction';
