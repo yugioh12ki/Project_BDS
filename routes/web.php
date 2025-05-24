@@ -4,11 +4,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\OwnerController;
+use App\Http\Controllers\AgentController;
 use App\Http\Controllers\RegisterController;
-use App\Http\Controllers\CustomerController;
 use PHPUnit\Event\Telemetry\System;
 use App\Http\Controllers\SystemController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,59 +37,71 @@ Route::post('/login', [LoginController::class, "authenticate"])->name('login.aut
 //Đăng Ký
 Route::get('/register',[RegisterController::class,"register"])->name('register');
 
-// Route::prefix('admin')->group(
-//     function () {
-//         Route::get('/dashboard', [SystemController::class, "admin"])->name('admin.dashboard');
-//         Route::get('/property', [SystemController::class, "getProperty"])->name('property');
-//         Route::get('/user', [SystemController::class, "getUser"])->name('users');
-//         Route::get('/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('users.byRole');
-//         Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
-//         Route::get('/transaction', [SystemController::class, "getTransaction"])->name('transaction');
-//         Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');
-//         Route::get('/commission', [SystemController::class, "getCommission"])->name('commission');
-//     }
-// );
+// Demo route - không cần auth
+Route::get('/property-cards-demo', function () {
+    // Tạo dữ liệu mẫu cho card BĐS
+    $properties = collect([
+        (object)[
+            'PropertyID' => 'P001',
+            'Title' => 'Căn hộ cao cấp, Trung tâm',
+            'Address' => '123 Nguyễn Huệ',
+            'Ward' => 'Quận 1',
+            'District' => 'Quận 1',
+            'Province' => 'TP.HCM',
+            'Price' => 5200000000,
+            'TypePro' => 'Sale',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Căn hộ'],
+            'chiTiet' => (object)['Area' => 85, 'Bedroom' => 2, 'Bath_WC' => 2]
+        ],
+        (object)[
+            'PropertyID' => 'P002',
+            'Title' => 'Nhà phố liền kề',
+            'Address' => '456 Lê Văn Lương',
+            'Ward' => 'Quận 7',
+            'District' => 'Quận 7',
+            'Province' => 'TP.HCM',
+            'Price' => 35000000,
+            'TypePro' => 'Rent',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Nhà phố'],
+            'chiTiet' => (object)['Area' => 120, 'Bedroom' => 3, 'Bath_WC' => 3]
+        ],
+        (object)[
+            'PropertyID' => 'P003',
+            'Title' => 'Biệt thự view sông',
+            'Address' => '789 Nguyễn Văn Linh',
+            'Ward' => 'Quận 7',
+            'District' => 'Quận 7',
+            'Province' => 'TP.HCM',
+            'Price' => 25000000000,
+            'TypePro' => 'Sale',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Biệt thự'],
+            'chiTiet' => (object)['Area' => 350, 'Bedroom' => 5, 'Bath_WC' => 6]
+        ]
+    ]);
 
-// Route::middleware(['auth'])->group(function()
-// {
+    $categories = collect([
+        (object)['Protype_ID' => 1, 'ten_pro' => 'Căn hộ'],
+        (object)['Protype_ID' => 2, 'ten_pro' => 'Nhà phố'],
+        (object)['Protype_ID' => 3, 'ten_pro' => 'Biệt thự']
+    ]);
 
-//     Route::get('/admin', [SystemController::class, 'admin'])->name('admin.dashboard');
+    $owners = collect([]);
 
-//     // Route điều hướng đến trang quản lý bất động sản
+    return view('owners.property.index', compact('properties', 'categories', 'owners'));
+});
 
-//     Route::get('/admin/property', [SystemController::class, "getProperty"])->name('admin.property');
-//     Route::get('/admin/property/type/{type}', [SystemController::class, "getPropertyByType"])->name('admin.property.type');
-//     Route::get('/admin/property/create', [SystemController::class, "createPropertyForm"])->name('admin.property.create');
-//     Route::post('/admin/property/create', [SystemController::class, 'createProperty'])->name('admin.property.store');
-//     Route::delete('/admin/property/{id}',[SystemController::class, 'deleteProperty'])->name('admin.property.delete');
-//     Route::get('/admin/property/{id}/edit', [SystemController::class, 'EditProperty'])->name('admin.property.edit');
-//     Route::put('/admin/property/{id}', [SystemController::class, 'EditProperty'])->name('admin.property.update');
-//     Route::get('/admin/property/search', [SystemController::class, 'SearchProperty'])->name('admin.property.search');
-
-//     // Route điều hướng đến trang quản lý người dùng
-
-//     Route::get('/admin/user', [SystemController::class, "getUser"])->name('admin.users');
-//     Route::get('/admin/user/create', [SystemController::class, "createUserForm"])->name('admin.users.create');
-//     Route::post('/admin/user/create', [SystemController::class, 'createUser'])->name('admin.users.store');
-//     Route::delete('/admin/user/{id}',[SystemController::class, 'deleteUser'])->name('admin.users.delete');
-//     Route::get('/admin/user/{id}/edit', [SystemController::class, 'EditUser'])->name('admin.users.edit');
-//     Route::put('/admin/user/{id}', [SystemController::class, 'EditUser'])->name('admin.users.update');
-//     Route::get('/admin/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('admin.users.byRole');
-//     Route::get('/admin/user/search', [SystemController::class, 'SearchUser'])->name('admin.users.search');
-
-//     // Route điều hướng đến trang quản lý lịch hẹn
-
-//     Route::get('/admin/appointment', [SystemController::class, "getAppointment"])->name('admin.appointment');
-//     Route::get('/admin/transaction', [SystemController::class, "getTransaction"])->name('admin.transaction');
-//     Route::get('/admin/feedback', [SystemController::class, "getFeedback"])->name('admin.feedback');
-//     Route::get('/admin/commission', [SystemController::class, "getCommission"])->name('admin.commission');
-
-//     // Route đăng xuất
-//     Route::post('/logout', function () {
-//         Auth::logout(); // Đăng xuất người dùng
-//         return redirect()->route('login'); // Chuyển hướng về trang chủ
-//     })->name('logout');
-// });
+// Public routes - không cần đăng nhập
+Route::get('/search', [CustomerController::class, 'search'])->name('customer.search');
+Route::get('/property/{id}', [CustomerController::class, 'propertyDetail'])->name('property.detail');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -107,20 +121,32 @@ Route::middleware(['auth'])->group(function () {
 
     // Owner routes
     // Route::middleware(['checkRole:Owner'])->prefix('owner')->name('owner.')->group(function () {
-    //     Route::get('/', [OwnerController::class, 'dashboard'])->name('dashboard');
+    //     Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('dashboard');
     //     Route::get('/property', [OwnerController::class, 'listProperty'])->name('property.index');
-    //     Route::get('/property/create', [OwnerController::class, 'createProperty'])->name('property.create');
-    //     Route::post('/property', [OwnerController::class, 'storeProperty'])->name('property.store');
+    //     Route::get('/property/create', [OwnerController::class, 'createPropertyForm'])->name('property.create');
+    //     Route::post('/property', [OwnerController::class, 'createProperty'])->name('property.store');
+    //     Route::get('/property/get-for-listing', [OwnerController::class, 'getPropertiesForListing'])->name('owner.property.get-for-listing');
+    //     Route::post('/property/listings', [OwnerController::class, 'storePropertyListing'])->name('property.listings.store');
     //     Route::get('/appointments', [OwnerController::class, 'appointments'])->name('appointments.index');
     //     Route::get('/transactions', [OwnerController::class, 'transactions'])->name('transactions.index');
+
+    //     // Profile and Password routes
+    //     Route::get('/profile', [OwnerController::class, 'showProfile'])->name('profile');
+    //     Route::post('/profile', [OwnerController::class, 'updateProfile'])->name('profile.update');
+    //     Route::get('/change-password', [OwnerController::class, 'showChangePasswordForm'])->name('change-password');
+    //     Route::post('/change-password', [OwnerController::class, 'changePassword'])->name('change-password.update');
     // });
 
     // Giả sử thêm 2 quyền nữa (ví dụ: Agent và Customer)
     // Route::middleware(['checkRole:Agent'])->prefix('agent')->name('agent.')->group(function () {
     //     Route::get('/', [AgentController::class, 'dashboard'])->name('dashboard');
-    //     // các route khác của agent...
+    //     Route::get('/listings', [AgentController::class, 'listings'])->name('listings');
+    //     Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments');
+    //     Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
+    //     Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');
     // });
 
+    // Customer routes
     Route::middleware(['checkRole:Customer'])->prefix('customer')->name('customer.')->group(function () {
         Route::get('/', [CustomerController::class, 'index'])->name('home');
         // Profile routes
@@ -129,8 +155,6 @@ Route::middleware(['auth'])->group(function () {
         // Change password routes
         Route::get('/change-password', [CustomerController::class, 'showChangePasswordForm'])->name('change-password');
         Route::post('/change-password', [CustomerController::class, 'changePassword'])->name('password.change');
-
-        
     });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)
@@ -139,10 +163,78 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('login');
     })->name('logout');
 
+    // Transaction Route trong OwnerController
+    Route::get('/transaction/{id}', [OwnerController::class, 'showTransaction'])->name('transaction.view');
+    Route::get('/transaction/{id}/print', [OwnerController::class, 'printInvoice'])->name('transaction.print');
+    Route::get('/export/transactions', [OwnerController::class, 'exportTransactions'])->name('export.transactions');
+
+    // Test route để kiểm tra API
+    Route::get('/test-properties-api', function() {
+        try {
+            $ownerId = Auth::user()->UserID;
+            echo "<h2>Test API Get Properties for Listing</h2>";
+            echo "<p><strong>Current User ID:</strong> " . $ownerId . "</p>";
+            echo "<p><strong>Current User Role:</strong> " . Auth::user()->Role . "</p>";
+
+            // Test query trực tiếp
+            $ownerProperties = \App\Models\Property::with(['danhMuc', 'chiTiet', 'images'])
+                ->where('OwnerID', $ownerId)
+                ->get();
+
+            echo "<p><strong>Properties found:</strong> " . $ownerProperties->count() . "</p>";
+
+            if ($ownerProperties->count() > 0) {
+                echo "<h3>Properties Details:</h3>";
+                foreach ($ownerProperties as $property) {
+                    echo "<div style='border: 1px solid #ccc; padding: 10px; margin: 10px 0;'>";
+                    echo "<p><strong>ID:</strong> " . $property->PropertyID . "</p>";
+                    echo "<p><strong>Title:</strong> " . $property->Title . "</p>";
+                    echo "<p><strong>Owner ID:</strong> " . $property->OwnerID . "</p>";
+                    echo "<p><strong>Type:</strong> " . $property->TypePro . "</p>";
+                    echo "<p><strong>Price:</strong> " . number_format($property->Price) . "</p>";
+                    echo "<p><strong>Address:</strong> " . $property->Address . "</p>";
+                    echo "<p><strong>Images count:</strong> " . $property->images->count() . "</p>";
+                    echo "</div>";
+                }
+            } else {
+                echo "<p style='color: red;'>Không tìm thấy bất động sản nào cho Owner ID: " . $ownerId . "</p>";
+
+                // Kiểm tra tất cả properties
+                $allProperties = \App\Models\Property::all();
+                echo "<p><strong>Total properties in system:</strong> " . $allProperties->count() . "</p>";
+
+                if ($allProperties->count() > 0) {
+                    echo "<h3>All Properties Owner IDs:</h3>";
+                    foreach ($allProperties as $prop) {
+                        echo "<p>Property " . $prop->PropertyID . " - Owner: " . $prop->OwnerID . "</p>";
+                    }
+                }
+            }
+
+            echo "<hr>";
+            echo "<h3>Test API Endpoint:</h3>";
+            echo "<button onclick='testAPI()'>Test Get Properties API</button>";
+            echo "<div id='api-result'></div>";
+
+            echo "<script>
+                async function testAPI() {
+                    try {
+                        const response = await fetch('/owner/property/get-for-listing', {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const data = await response.json();
+                        document.getElementById('api-result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    } catch (error) {
+                        document.getElementById('api-result').innerHTML = '<p style=\"color: red;\">Error: ' + error.message + '</p>';
+                    }
+                }
+            </script>";
+
+        } catch (\Exception $e) {
+            echo "<p style='color: red;'>Error: " . $e->getMessage() . "</p>";
+        }
+    })->name('test.properties.api');
 });
-
-// Route tìm kiếm bất động sản
-Route::get('/search', [App\Http\Controllers\CustomerController::class, 'search'])->name('customer.search');
-
-// Route chi tiết bất động sản
-Route::get('/property/{id}', [App\Http\Controllers\CustomerController::class, 'propertyDetail'])->name('property.detail');

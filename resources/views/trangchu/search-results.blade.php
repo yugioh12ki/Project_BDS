@@ -57,34 +57,35 @@
     </div>
 
     @if($properties->count() > 0)
-        <div class="search-results-container">
+        <div class="row">
             @foreach($properties as $property)
-                <div class="property-result-card">
-                    <div class="property-image">
-                        @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
-                            <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
-                        @elseif(file_exists(public_path('storage/properties/' . $property->PropertyID . '.jpg')))
-                            <img src="{{ asset('storage/properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
-                        @else
-                            <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
-                        @endif
-                        <div class="property-badge">Bán</div>
-                    </div>
-                    <div class="property-info">
-                        <h3 class="property-title text-center">{{ $property->Title }}</h3>
-                        
-                        <div class="property-address">
-                            <i class="bi bi-geo-alt-fill"></i>
-                            {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
+                <div class="col-md-4 mb-4">
+                    <div class="property-card">
+                        <div class="property-image">
+                            @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
+                                <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
+                            @elseif(file_exists(public_path('storage/properties/' . $property->PropertyID . '.jpg')))
+                                <img src="{{ asset('storage/properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
+                            @else
+                                <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
+                            @endif
+                            <div class="property-badge">Bán</div>
                         </div>
-                        
-                        <div class="property-price text-center">
-                            {{ number_format($property->Price, 0, ',', '.') }} VND
-                        </div>
-                        
-                        <div class="property-metadata">
-                            <div class="property-type">
-                                {{ $property->danhMuc->ten_pro ?? 'N/A' }}
+                        <div class="property-info">
+                            <h3 class="property-title text-center">{{ $property->Title }}</h3>
+                            
+                            <div class="property-address">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
+                            </div>
+                            
+                            <div class="property-price text-center">
+                                {{ number_format($property->Price, 0, ',', '.') }} VND
+                            </div>
+                            
+                            <div class="property-metadata">
+                                <div class="property-type">
+                                    {{ $property->danhMuc->ten_pro ?? 'N/A' }}
                             </div>
                             
                             <div class="property-date">
@@ -106,11 +107,11 @@
             {{ $properties->appends(request()->query())->links() }}
         </div>
     @else
-        <div class="no-results">
-            <i class="bi bi-search"></i>
-            <p>Không tìm thấy bất động sản nào phù hợp với yêu cầu của bạn.</p>
+        <div class="no-results text-center">
+            <i class="bi bi-search" style="font-size: 3rem;"></i>
+            <p class="mt-3">Không tìm thấy bất động sản nào phù hợp với yêu cầu của bạn.</p>
             <p>Vui lòng thử lại với các tiêu chí khác.</p>
         </div>
     @endif
 </div>
-@endsection 
+@endsection

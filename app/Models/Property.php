@@ -24,7 +24,7 @@ class Property extends Model
 
     public function chiTiet()
     {
-        return $this->hasMany(DetailProperty::class, 'IdDetail', 'IdDetail');
+        return $this->hasOne(DetailProperty::class, 'PropertyID', 'PropertyID');
     }
 
     public function chusohuu()
@@ -53,19 +53,20 @@ class Property extends Model
     }
 
     protected $fillable = [
-         'OwnerID',
-         'AgentID',
-         'PostedDate',
-         'ApprovedBy',
-         'ApprovedDate',
-         'Status',
-         'Province',
-         'District',
-         'Ward',
-         'Address',
-         'PropertyType',
-          'Price',
-          'Title',
+        'PropertyID',
+        'OwnerID',
+        'AgentID',
+        'PostedDate',
+        'ApprovedBy',
+        'ApprovedDate',
+        'Status',
+        'Province',
+        'District', 
+        'Ward',
+        'Address',
+        'PropertyType',
+        'Price',
+        'Title',
         'Description',
         'IdDetail',
         'TypePro',

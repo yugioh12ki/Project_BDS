@@ -53,54 +53,49 @@
     </form>
 </div>
 
-  <section class="properties">
+<section class="properties">
     <h2>Bất động sản dành cho bạn</h2>
     <div class="property-list">
-      <div class="property-card">
-        <h3>Căn hộ cao cấp Sunrise</h3>
-        <p>Quận 7, TP.HCM</p>
-        <span>2.5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Biệt thự vườn The Manor</h3>
-        <p>Quận 2, TP.HCM</p>
-        <span>5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Nhà phố Palm Residence</h3>
-        <p>Quận 9, TP.HCM</p>
-        <span>8.5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Penthouse Vinhomes Central</h3>
-        <p>Quận 1, TP.HCM</p>
-        <span>20 tỷ</span>
-      </div>
+        @foreach($recentProperties as $property)
+            <div class="property-card">
+                <div class="property-image">
+                    @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
+                        <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
+                    @else
+                        <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
+                    @endif
+                </div>
+                <h3>{{ $property->Title }}</h3>
+                <p>{{ $property->District }}, {{ $property->Province }}</p>
+                <span>{{ number_format($property->Price, 0, ',', '.') }} VND</span>
+                <a href="{{ route('property.detail', $property->PropertyID) }}" class="btn-view">Xem chi tiết</a>
+            </div>
+        @endforeach
     </div>
-  </section>
+</section>
 
-  <section class="featured-properties">
+<section class="featured-properties">
     <h2>Bất động sản nổi bật</h2>
     <div class="property-list">
-      <div class="property-card">
-        <h3>Empire City Luxury</h3>
-        <p>3 phòng ngủ · 150m²</p>
-        <span>12.5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Palm Paradise Villa</h3>
-        <p>4 phòng ngủ · 300m²</p>
-        <span>25 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Sky Garden Penthouse</h3>
-        <p>5 phòng ngủ · 400m²</p>
-        <span>35 tỷ</span>
-      </div>
+        @foreach($featuredProperties as $property)
+            <div class="property-card">
+                <div class="property-image">
+                    @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
+                        <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
+                    @else
+                        <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
+                    @endif
+                </div>
+                <h3>{{ $property->Title }}</h3>
+                <p>{{ $property->chiTiet->first()->Bedroom ?? 0 }} phòng ngủ · {{ $property->chiTiet->first()->Area ?? 0 }}m²</p>
+                <span>{{ number_format($property->Price, 0, ',', '.') }} VND</span>
+                <a href="{{ route('property.detail', $property->PropertyID) }}" class="btn-view">Xem chi tiết</a>
+            </div>
+        @endforeach
     </div>
-  </section>
+</section>
 
-  <section class="utilities">
+<section class="utilities">
     <h2>Hỗ trợ tiện ích</h2>
     <div class="utility-list">
       <div class="utility-card">
