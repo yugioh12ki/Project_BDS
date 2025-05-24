@@ -15,21 +15,14 @@
         <!-- Left column - BDS list -->
         <div class="col-md-4">
             <input type="text" class="form-control mb-3" placeholder="Tìm kiếm bất động sản...">
-
             <div class="card mb-3">
                 <div class="list-group list-group-flush">
+                    @foreach($properties as $property)
                     <a href="#" class="list-group-item list-group-item-action">
-                        <div class="fw-bold">Chung cư cao cấp The Sun Avenue</div>
-                        <small class="text-muted">28 Mai Chí Thọ, An Phú, Quận 2</small>
+                        <div class="fw-bold">{{ $property->Title }}</div>
+                        <small class="text-muted">{{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}</small>
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <div class="fw-bold">Biệt thự Vinhomes Central Park</div>
-                        <small class="text-muted">720A Điện Biên Phủ, Quận Bình Thạnh</small>
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <div class="fw-bold">Nhà phố Thảo Điền</div>
-                        <small class="text-muted">25 Xuân Thủy, Thảo Điền, Quận 2</small>
-                    </a>
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -54,63 +47,67 @@
                         <table class="table mb-0">
                             <thead>
                                 <tr>
-                                    <th>Mã</th>
                                     <th>Khách hàng</th>
+                                    <th>Chủ Đề Cuộc Hẹn</th>
+                                    <th>Mô Tả Cuộc Hẹn</th>
                                     <th>Ngày hẹn</th>
-                                    <th>Giờ hẹn</th>
+                                    <th>Giờ Bắt Đầu Cuộc Hẹn</th>
+                                    <th>Giờ Kết Thúc Cuộc Hẹn</th>
                                     <th>Trạng thái</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @forelse($appointments as $appointment)
                                 <tr>
-                                    <td>APP001</td>
                                     <td>
-                                        <div>Võ Anh Tuấn</div>
-                                        <small class="text-muted">0901234567</small>
+                                        @if($appointment->cusUser)
+                                            <div class="fw-bold">{{ $appointment->cusUser->Name }}</div>
+                                            <small class="text-muted">Điện thoại: {{ $appointment->cusUser->Phone ?: 'Chưa cập nhật' }}</small>
+                                        @else
+                                            <div class="text-muted">Chưa có thông tin</div>
+                                        @endif
                                     </td>
-                                    <td>2025-06-05</td>
-                                    <td>09:00</td>
-                                    <td><span class="badge bg-warning">Chờ xử lý</span></td>
+                                    <td>{{ $appointment->TitleAppoint }}</td>
+                                    <td>{{ $appointment->DescAppoint }}</td>
+                                    <td>{{ date('d/m/Y', strtotime($appointment->AppointmentDateStart)) }}</td>
+                                    <td>{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</td>
+                                    <td>{{ date('H:i', strtotime($appointment->AppointmentDateEnd)) }}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-success me-1" title="Hoàn thành">
-                                            <i class="bi bi-check-lg"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" title="Hủy">
-                                            <i class="bi bi-x-lg"></i>
-                                        </button>
+                                        @switch($appointment->Status)
+                                            @case('Chờ xử lý')
+                                                <span class="badge bg-warning">Chờ xử lý</span>
+                                                @break
+                                            @case('Thành công')
+                                                <span class="badge bg-success">Thành công</span>
+                                                @break
+                                            @case('Đã hủy')
+                                                <span class="badge bg-danger">Đã hủy</span>
+                                                @break
+                                            @default
+                                                <span class="badge bg-secondary">{{ $appointment->Status }}</span>
+                                        @endswitch
+                                    </td>
+                                    <td>
+                                        @if($appointment->Status == 'Khởi tạo')
+                                            <button class="btn btn-sm btn-success me-1" title="Hoàn thành">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" title="Hủy">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        @else
+                                            <button class="btn btn-sm btn-primary" title="Xem chi tiết">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
+                                @empty
                                 <tr>
-                                    <td>APP002</td>
-                                    <td>
-                                        <div>Ngô Thị Hương</div>
-                                        <small class="text-muted">0909876543</small>
-                                    </td>
-                                    <td>2025-06-06</td>
-                                    <td>14:00</td>
-                                    <td><span class="badge bg-success">Thành công</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary" title="Xem chi tiết">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </td>
+                                    <td colspan="5" class="text-center py-3">Không có lịch hẹn nào</td>
                                 </tr>
-                                <tr>
-                                    <td>APP003</td>
-                                    <td>
-                                        <div>Đặng Minh Khôi</div>
-                                        <small class="text-muted">0908765432</small>
-                                    </td>
-                                    <td>2025-06-07</td>
-                                    <td>10:30</td>
-                                    <td><span class="badge bg-danger">Đã hủy</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary" title="Xem chi tiết">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </td>
-                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>

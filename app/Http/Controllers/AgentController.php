@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Property;
 use App\Models\profile_agent;
+use App\Models\Appointment;
 use Illuminate\Support\Facades\Auth;
 
 class AgentController extends Controller
@@ -40,8 +41,18 @@ class AgentController extends Controller
      */
     public function appointments()
     {
-        $appointments = []; // Replace with actual appointments query
-        return view('agents.appointments', compact('appointments'));
+        $agent = Auth::user();
+        
+        $appointments = Appointment::with(['cusUser', 'property'])
+            ->where('AgentID', $agent->UserID)
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->get();
+
+        $properties = Property::select('PropertyID', 'Title', 'Address', 'Ward', 'District')
+            ->where('Status', 'Active')
+            ->get();
+
+        return view('agents.appointments', compact('appointments', 'properties')); 
     }
     
     /**

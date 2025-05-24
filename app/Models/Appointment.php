@@ -17,15 +17,9 @@ class Appointment extends Model
 
     // Fillable attributes
     protected $fillable = [
-        'OwnerID',
-        'AgentID',
-        'CustomerID',
-        'PropertyID',
-        'TitleAppoint',
-        'DescAppoint',
-        'AppointmentDateStart',
-        'AppointmentDateEnd',
-        'Status'
+        'PropertyID', 'AgentID', 'CusID', 'OwnerID',
+        'TitleAppoint', 'DescAppoint', 'AppointmentDateStart', 
+        'AppointmentDateEnd', 'Status'
     ];
 
     // Cast attributes
@@ -82,5 +76,36 @@ class Appointment extends Model
     public function property()
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'UserID', 'UserID');
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(User::class, 'CustomerID', 'UserID');
+    }
+
+    // Quan hệ với người dùng (Chủ nhà)
+    public function ownerUser()
+    {
+        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
+    }
+
+    // Quan hệ với người dùng (Khách xem nhà)
+    public function cusUser()
+    {
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
+    }
+
+    public function khachHang() {
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
     }
 }
