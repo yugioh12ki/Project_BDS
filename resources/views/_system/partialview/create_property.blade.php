@@ -8,9 +8,6 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="details-info-tab" data-bs-toggle="tab" data-bs-target="#details-info-add" type="button" role="tab">Chi tiết</button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="media-tab" data-bs-toggle="tab" data-bs-target="#media-add" type="button" role="tab">Hình ảnh & Video</button>
-            </li>
         </ul>
 
         <div class="tab-content" id="propertyAddTabsContent">
@@ -184,35 +181,11 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Hình ảnh & Video -->
-            <div class="tab-pane fade" id="media-add" role="tabpanel">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Vui lòng tải lên hình ảnh và video để admin có thể xem xét và phê duyệt bất động sản của bạn.
-                </div>
-                <div class="mb-4">
-                    <h6 class="mb-3">Hình ảnh bất động sản</h6>
-                    <div class="mb-3">
-                        <label for="property_images" class="form-label">Tải lên hình ảnh (tối đa 10 hình)</label>
-                        <input class="form-control" type="file" id="property_images" name="property_images[]" multiple accept="image/*">
-                        <small class="text-muted">PNG, JPG, WEBP tối đa 10MB mỗi hình</small>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <h6 class="mb-3">Video giới thiệu</h6>
-                    <div class="mb-3">
-                        <label for="property_video" class="form-label">Tải lên video</label>
-                        <input class="form-control" type="file" id="property_video" name="property_video" accept="video/*">
-                        <small class="text-muted">MP4, AVI, MOV tối đa 50MB</small>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-        <button type="submit" class="btn btn-primary">Lưu</button>
+        <button type="submit" class="btn btn-primary">Thêm</button>
     </div>
 </form>
