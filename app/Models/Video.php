@@ -14,6 +14,13 @@ class Video extends Model
     protected $primaryKey = 'VideoID';
     public $timestamps = false;
 
+    protected $fillable = [
+        'PropertyID',
+        'VideoPath',
+        'Caption',
+        'UploadedDate'
+    ];
+
     public function property()
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');

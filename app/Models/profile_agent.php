@@ -19,4 +19,11 @@ class profile_agent extends Model
     {
         return $this->belongsTo(User::class, 'UserID', 'UserID');
     }
+
+    protected $fillable = [
+        'ContactAgent',
+        'Certificate',
+        'AreaAgent',
+        'NumberCardAgent'
+    ];
 }

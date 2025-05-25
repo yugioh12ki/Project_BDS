@@ -373,9 +373,10 @@ class SystemController extends Controller
 
         $owners = User::where('Role', 'Owner')->get();
 
-        // Paginate agents to 20 per page and eager load their properties
+        // Paginate agents to 20 per page and eager load their properties and profile_agent
         // Sắp xếp agent theo số lượng bất động sản tăng dần (ít nhất lên đầu)
         $agents = User::where('Role', 'Agent')
+                    ->with('profile_agent')
                     ->withCount(['moigioi as active_property_count' => function ($query) {
                         $query->where('Status', 'active');
                     }])
@@ -411,7 +412,7 @@ class SystemController extends Controller
             ->paginate(10);
 
         $owners = User::where('Role', 'Owner')->get();
-        $agents = User::where('Role', 'Agent')->get();
+        $agents = User::where('Role', 'Agent')->with('profile_agent')->get();
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
 
@@ -451,7 +452,7 @@ class SystemController extends Controller
         $status = $status ?? '';
 
         $owners = User::where('Role', 'Owner')->get();
-        $agents = User::where('Role', 'Agent')->get();
+        $agents = User::where('Role', 'Agent')->with('profile_agent')->get();
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
 
@@ -494,7 +495,7 @@ class SystemController extends Controller
             // Update property status based on action
             if ($request->status == 'approved') {
                 // When approved, set status to 'inactive'
-                $property->Status = 'inactive';
+                $property->Status = 'active';
                 $property->ApprovedDate = now();
                 $property->ApprovedBy = auth()->id();
             } else if ($request->status == 'rejected') {
@@ -616,7 +617,7 @@ class SystemController extends Controller
         }
 
         $owners = User::where('Role', 'Owner')->get();
-        $agents = User::where('Role', 'Agent')->get();
+        $agents = User::where('Role', 'Agent')->with('profile_agent')->get();
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
         if ($columns === null || $properties->isEmpty()) {
@@ -632,7 +633,7 @@ class SystemController extends Controller
 
         $columns = Schema::getColumnListing('properties');
         $owners = User::where('Role', 'Owner')->get();
-        $agents = User::where('Role', 'Agent')->get();
+        $agents = User::where('Role', 'Agent')->with('profile_agent')->get();
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
 
@@ -655,7 +656,7 @@ class SystemController extends Controller
         }
         $columns = Schema::getColumnListing('properties');
         $owners = User::where('Role', 'Owner')->get();
-        $agents = User::where('Role', 'Agent')->get();
+        $agents = User::where('Role', 'Agent')->with('profile_agent')->get();
         $admins = User::where('Role', 'Admin')->get();
         $categories = DanhMucBDS::all();
         return view('_system.partialview.info_property', compact('property','columns','owners','agents','admins','categories'));
@@ -705,8 +706,7 @@ class SystemController extends Controller
                 'Province' => 'required|string|max:255',
                 'PropertyType' => 'required|exists:danhmuc_pro,Protype_ID',
                 'selectedOwnerId' => 'required|exists:user,UserID',
-                'ContactPhone' => 'nullable|string|max:20',
-                'ContactEmail' => 'nullable|email|max:255',
+
             ]);
 
             // Validate property details
@@ -732,10 +732,14 @@ class SystemController extends Controller
 
             DB::beginTransaction();
 
-            // Lưu property trước để lấy PropertyID
+            // Lưu property - để trigger database tự động tạo PropertyID
             $property = new Property();
+
+            $propertyDetail = new DetailProperty();
+
+
             $property->Title = $validatedProperty['Title'];
-            $property->ApprovedDate = null;
+            // Không set ApprovedDate vì property mới chưa được duyệt
             $property->TypePro = $validatedProperty['TypePro'];
             $property->Description = $validatedProperty['Description'];
             $property->Price = $validatedProperty['Price'];
@@ -745,19 +749,25 @@ class SystemController extends Controller
             $property->Province = $validatedProperty['Province'];
             $property->PropertyType = $validatedProperty['PropertyType'];
             $property->OwnerID = $validatedProperty['selectedOwnerId'];
-            $property->ContactPhone = $validatedProperty['ContactPhone'];
-            $property->ContactEmail = $validatedProperty['ContactEmail'];
-            $property->AgentID = null;
+            $property->AgentID = null; // Có thể để null
             $property->Status = 'pending'; // New properties are pending by default
             $property->PostedDate = now();
+            $property->ApprovedDate = null; // Có thể để null vì chưa được duyệt
+            $property->UserCreate = Auth::id(); // Người tạo property
             $property->save();
 
             // Get the PropertyID after save - the database trigger will generate it
             // Since we use varchar PropertyID with trigger, we need to query it back
+            // $savedProperty = Property::where('Title', $validatedProperty['Title'])
+            //     ->where('OwnerID', $validatedProperty['selectedOwnerId'])
+            //     ->where('PostedDate', $property->PostedDate)
+            //     ->orderBy('PostedDate', 'desc')
+            //     ->first();
+
+            // Get the PropertyID after save - use a more specific identifier
             $savedProperty = Property::where('Title', $validatedProperty['Title'])
-                ->where('OwnerID', $validatedProperty['selectedOwnerId'])
-                ->where('PostedDate', $property->PostedDate)
-                ->orderBy('PostedDate', 'desc')
+                ->where('UserCreate', Auth::id())
+                ->latest('PostedDate')
                 ->first();
 
             if (!$savedProperty || empty($savedProperty->PropertyID)) {
@@ -765,11 +775,9 @@ class SystemController extends Controller
             }
 
             $propertyID = $savedProperty->PropertyID;
-            Log::info('PropertyID retrieved: ' . $propertyID);
 
-            // Lưu chi tiết property với PropertyID vừa tạo
-            $propertyDetail = new DetailProperty();
-            $propertyDetail->PropertyID = $propertyID;
+
+            $propertyDetail->PropertyID = $propertyID ;
             $propertyDetail->LevelHouse = $validatedDetails['LevelHouse'] ?? null;
             $propertyDetail->Floor = $validatedDetails['Floor'] ?? null;
             $propertyDetail->HouseLength = $validatedDetails['HouseLength'] ?? null;
@@ -790,36 +798,46 @@ class SystemController extends Controller
             $propertyDetail->save();
 
             // Upload images nếu có
-            if ($request->hasFile('property_images')) {
-                foreach ($request->file('property_images') as $imageFile) {
-                    $path = $imageFile->store('property_images', 'public');
+        if ($request->hasFile('property_images')) {
+            foreach ($request->file('property_images') as $imageFile) {
+                // Tạo thư mục theo PropertyID
+                $propertyFolder = "properties/{$propertyID}";
+                $path = $imageFile->store($propertyFolder, 'public');
 
-                    $image = new Image();
-                    $image->PropertyID = $propertyID;
-                    $image->ImagePath = $path;
-                    $image->Caption = $request->input('image_caption', null);
-                    $image->UploadedDate = now();
-                    $image->save();
-                }
+                $image = new Image();
+                $image->PropertyID = $propertyID;
+                $image->ImagePath = $path; // Lưu đường dẫn relative: properties/BDS123/image.jpg
+                $image->Caption = $request->input('image_caption', null);
+                $image->UploadedDate = now();
+                $image->save();
+
+                // Log để debug
+                Log::info("Image saved: {$path} for PropertyID: {$propertyID}");
             }
+        }
 
-            // Upload videos nếu có
-            if ($request->hasFile('property_videos')) {
-                foreach ($request->file('property_videos') as $videoFile) {
-                    $path = $videoFile->store('property_videos', 'public');
+        // Upload videos nếu có
+        if ($request->hasFile('property_videos')) {
+            foreach ($request->file('property_videos') as $videoFile) {
+                // Tạo thư mục theo PropertyID
+                $propertyFolder = "properties/{$propertyID}";
+                $path = $videoFile->store($propertyFolder, 'public');
 
-                    $video = new Video();
-                    $video->PropertyID = $propertyID;
-                    $video->VideoPath = $path;
-                    $video->Caption = $request->input('video_caption', null);
-                    $video->UploadedDate = now();
-                    $video->save();
-                }
+                $video = new Video();
+                $video->PropertyID = $propertyID;
+                $video->VideoPath = $path; // Lưu đường dẫn relative: properties/BDS123/video.mp4
+                $video->Caption = $request->input('video_caption', null);
+                $video->UploadedDate = now();
+                $video->save();
+
+                // Log để debug
+                Log::info("Video saved: {$path} for PropertyID: {$propertyID}");
             }
+        }
 
             DB::commit();
 
-            return redirect()->route('admin.property')->with('success', 'Bất động sản đã được tạo thành công với ID: ' . $propertyID . '. Đang chờ phê duyệt.');
+            return redirect()->route('admin.property.create')->with('success', 'Bất động sản đã được tạo thành công với ID: ' . $propertyID . '. Đang chờ phê duyệt.');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -845,15 +863,13 @@ class SystemController extends Controller
     public function getAssignProperty()
     {
         // Get columns from both user and profile_agent tables
-        // Lấy danh sách agent
-        $agents = User::where('Role', 'Agent')->get();
-
-        // Lấy danh sách bất động sản chưa có agent hoặc đang cần phân công lại
-        foreach ($agents as $agent) {
-        $agent->activePropertyCount = Property::where('AgentID', $agent->UserID)
-                                    ->where('Status', 'active')
-                                    ->count();
-        }
+        // Lấy danh sách agent với eager loading profile_agent và đếm properties
+        $agents = User::where('Role', 'Agent')
+                    ->with('profile_agent')
+                    ->withCount(['moigioi as active_property_count' => function ($query) {
+                        $query->where('Status', 'active');
+                    }])
+                    ->get();
 
         // Lấy danh sách bất động sản chưa có agent hoặc đang cần phân công lại
         $properties = Property::with(['chusohuu', 'moigioi', 'images', 'videos'])
@@ -880,14 +896,24 @@ class SystemController extends Controller
             ], 404);
         }
 
-        // Lấy danh sách bất động sản đã được phân công cho môi giới này
-        $properties = Property::where('AgentID', $id)
-                            ->with(['chusohuu', 'images', 'videos'])
+        // Lấy typePro từ request (nếu có)
+        $typePro = request()->input('typePro');
+
+        // Tạo query để lấy danh sách bất động sản đã được phân công cho môi giới này
+        $query = Property::where('AgentID', $id);
+
+        // Nếu có typePro, thêm điều kiện lọc theo loại bất động sản
+        if ($typePro) {
+            $query->where('TypePro', $typePro);
+        }
+
+        $properties = $query->with(['chusohuu', 'images', 'videos'])
                             ->get()
                             ->map(function($property) {
                                 return [
                                     'PropertyID' => $property->PropertyID,
                                     'Title' => $property->Title,
+                                    'TypePro' => $property->TypePro,
                                     'OwnerName' => $property->chusohuu ? $property->chusohuu->Name : null,
                                     'District' => $property->District,
                                     'Province' => $property->Province,
@@ -939,6 +965,7 @@ class SystemController extends Controller
     {
         // Kiểm tra nếu có parameter status được truyền vào
         $status = $request->input('status');
+        $typePro = $request->input('typePro');
 
         // Tạo query builder
         $query = Property::whereNull('AgentID');
@@ -948,6 +975,11 @@ class SystemController extends Controller
             $query->where('Status', $status);
         }
 
+        // Nếu có typePro, thêm điều kiện lọc theo loại bất động sản
+        if ($typePro) {
+            $query->where('TypePro', $typePro);
+        }
+
         // Lấy danh sách bất động sản chưa được phân công cho môi giới nào (AgentID = NULL)
         $properties = $query->with(['chusohuu', 'images', 'videos'])
                     ->get()
@@ -955,6 +987,7 @@ class SystemController extends Controller
                         return [
                             'PropertyID' => $property->PropertyID,
                             'Title' => $property->Title,
+                            'TypePro' => $property->TypePro,
                             'OwnerName' => $property->chusohuu ? $property->chusohuu->Name : null,
                             'District' => $property->District,
                             'Province' => $property->Province,
@@ -1100,6 +1133,7 @@ class SystemController extends Controller
         // Get all agents with pagination and property counts
         // Sắp xếp agent theo số lượng bất động sản tăng dần (ít nhất lên đầu)
         $agents = User::where('Role', 'Agent')
+                    ->with('profile_agent')
                     ->withCount(['moigioi as active_property_count' => function ($query) {
                         $query->where('Status', 'active');
                     }])

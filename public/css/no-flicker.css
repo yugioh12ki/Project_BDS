@@ -1,0 +1,42 @@
+.modal.fade {
+    transition: none !important;
+    opacity: 1 !important;
+}
+
+.modal-backdrop.fade {
+    transition: none !important;
+    opacity: 0.5 !important;
+}
+
+.tab-pane.fade {
+    transition: none !important;
+    opacity: 1 !important;
+    animation: none !important;
+}
+
+/* Tối ưu hiệu suất render */
+.table-responsive {
+    contain: layout style;
+}
+
+.property-row {
+    will-change: transform;
+}
+
+/* Đảm bảo modal hiển thị ngay lập tức */
+.modal.fade .modal-dialog {
+    transform: none !important;
+    transition: none !important;
+}
+
+/* Tăng tốc độ hiển thị ảnh */
+.media-gallery img {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Hiệu ứng highlight row mượt mà */
+.property-row.highlighted-row {
+    background-color: rgba(0, 123, 255, 0.1);
+    transition: background-color 0.2s linear;
+}

@@ -79,6 +79,10 @@ table tr:hover {
     z-index: 1055 ; /* Đảm bảo modal nằm trên các phần tử khác */
 }
 
+.modal.fade {
+    transition: none !important;
+}
+
 .modal-backdrop {
     z-index: 1050 ;
 }

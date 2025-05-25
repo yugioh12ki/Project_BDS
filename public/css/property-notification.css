@@ -1,0 +1,437 @@
+/* Property Notification Styles */
+/* Tách riêng để dễ quản lý và tùy chỉnh */
+
+/* =================================================================
+   PROPERTY NOTIFICATION CONTAINER
+   ================================================================= */
+
+.property-notification-card {
+    border: 2px solid #19f5c5 !important;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(25, 245, 197, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+    overflow: hidden;
+    position: relative;
+    animation: slideInRight 0.5s ease-out;
+}
+
+.property-notification-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+}
+
+.property-notification-card.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Header của notification */
+.property-notification-header {
+    background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+    color: white;
+    padding: 15px 20px;
+    margin: -1px -1px 15px -1px;
+    position: relative;
+}
+
+.property-notification-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.property-notification-header .property-id-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+/* Body của notification */
+.property-notification-body {
+    padding: 0 20px 20px 20px;
+}
+
+/* Property details section */
+.property-detail-section {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: rgba(25, 245, 197, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #19f5c5;
+}
+
+.property-detail-section h6 {
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.property-detail-section h6 i {
+    margin-right: 8px;
+    color: #19f5c5;
+    width: 16px;
+}
+
+.property-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(25, 245, 197, 0.1);
+}
+
+.property-detail-item:last-child {
+    border-bottom: none;
+}
+
+.property-detail-label {
+    font-weight: 500;
+    color: #5a6c7d;
+    flex: 0 0 30%;
+}
+
+.property-detail-value {
+    color: #2c3e50;
+    flex: 1;
+    text-align: right;
+    font-weight: 500;
+}
+
+/* Status badges trong notification */
+.notification-status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.notification-status-badge i {
+    margin-right: 5px;
+}
+
+.notification-status-badge.status-pending {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    color: #2d3436;
+}
+
+.notification-status-badge.status-active {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+}
+
+.notification-status-badge.status-approved {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+}
+
+.notification-status-badge.status-rejected {
+    background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+    color: white;
+}
+
+/* Action buttons trong notification */
+.notification-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(25, 245, 197, 0.2);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.notification-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.notification-btn:hover::before {
+    left: 100%;
+}
+
+.notification-btn-approve {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+}
+
+.notification-btn-approve:hover {
+    background: linear-gradient(135deg, #00a085 0%, #00b7b8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+}
+
+.notification-btn-reject {
+    background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+    color: white;
+}
+
+.notification-btn-reject:hover {
+    background: linear-gradient(135deg, #d35442 0%, #c92a2a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(225, 112, 85, 0.3);
+}
+
+.notification-btn-view {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+}
+
+.notification-btn-view:hover {
+    background: linear-gradient(135deg, #5ca7ff 0%, #0770c4 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(116, 185, 255, 0.3);
+}
+
+.notification-btn-close {
+    background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+    color: white;
+    margin-left: auto;
+}
+
+.notification-btn-close:hover {
+    background: linear-gradient(135deg, #555c60 0%, #1e2124 100%);
+    transform: translateY(-1px);
+}
+
+/* Price formatting */
+.property-price {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e17055;
+}
+
+/* Address formatting */
+.property-address {
+    font-style: italic;
+    color: #74b9ff;
+    line-height: 1.4;
+}
+
+/* Owner info */
+.owner-info {
+    background: rgba(116, 185, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #74b9ff;
+}
+
+.owner-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.owner-contact {
+    font-size: 0.9rem;
+    color: #636e72;
+    margin-top: 4px;
+}
+
+/* =================================================================
+   FLOATING NOTIFICATION (FALLBACK)
+   ================================================================= */
+
+.property-notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 450px;
+    max-width: 90vw;
+    z-index: 1055;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    border: 2px solid #19f5c5;
+    animation: slideInRight 0.5s ease-out;
+}
+
+.property-notification-toast .alert {
+    margin: 0;
+    border-radius: 10px;
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN
+   ================================================================= */
+
+@media (max-width: 768px) {
+    .property-notification-card {
+        margin: 0 -15px;
+        border-radius: 8px;
+        animation: slideInLeft 0.5s ease-out;
+    }
+
+    .property-notification-header {
+        padding: 12px 15px;
+        margin: -1px -1px 12px -1px;
+    }
+
+    .property-notification-body {
+        padding: 0 15px 15px 15px;
+    }
+
+    .property-detail-section {
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+
+    .property-detail-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .property-detail-label {
+        flex: none;
+        margin-bottom: 2px;
+        font-size: 0.9rem;
+    }
+
+    .property-detail-value {
+        flex: none;
+        text-align: left;
+        font-size: 0.95rem;
+    }
+
+    .notification-actions {
+        flex-direction: column;
+    }
+
+    .notification-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .property-notification-toast {
+        width: 95vw;
+        right: 2.5vw;
+        top: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .property-notification-header h5 {
+        font-size: 1rem;
+    }
+
+    .property-notification-header .property-id-badge {
+        display: block;
+        margin: 5px 0 0 0;
+        width: fit-content;
+    }
+
+    .property-detail-section h6 {
+        font-size: 0.9rem;
+    }
+
+    .notification-btn {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+}
+
+/* =================================================================
+   DARK MODE SUPPORT (OPTIONAL)
+   ================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    .property-notification-card {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        border-color: #19f5c5;
+    }
+
+    .property-detail-section {
+        background: rgba(25, 245, 197, 0.1);
+    }
+
+    .property-detail-label {
+        color: #bdc3c7;
+    }
+
+    .property-detail-value {
+        color: #ecf0f1;
+    }
+
+    .owner-info {
+        background: rgba(116, 185, 255, 0.15);
+    }
+
+    .owner-name {
+        color: #ecf0f1;
+    }
+}
+
+/* =================================================================
+   ANIMATION REFINEMENTS
+   ================================================================= */
+
+/* Hover effects cho notification card */
+.property-notification-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(25, 245, 197, 0.2);
+    transition: all 0.3s ease;
+}
+
+/* Loading state */
+.property-notification-loading {
+    opacity: 0.7;
+    pointer-events: none;
+    position: relative;
+}
+
+.property-notification-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* Success/Error feedback animations */
+.notification-success {
+    border-color: #00b894 !important;
+    animation: pulse 0.5s ease-in-out;
+}
+
+.notification-error {
+    border-color: #e17055 !important;
+    animation: shake 0.5s ease-in-out;
+}

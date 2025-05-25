@@ -236,10 +236,10 @@
               // Thay thế dấu gạch chéo ngược bằng dấu gạch chéo
               $imagePath = str_replace('\\', '/', $imagePath);
             @endphp
-            <div class="media-item image-item" data-image="{{ asset($imagePath) }}">
-              <img src="{{ asset($imagePath) }}" alt="Hình ảnh BĐS" class="img-fluid">
+            <div class="media-item image-item" data-image="{{ asset('storage/' . $imagePath) }}">
+              <img src="{{ asset('storage/' . $imagePath) }}" alt="Hình ảnh BĐS" class="img-fluid">
               <div class="overlay">
-                <button type="button" class="btn-view view-image" data-src="{{ asset($imagePath) }}">
+                <button type="button" class="btn-view view-image" data-src="{{ asset('storage/' . $imagePath) }}">
                   <i class="fas fa-search-plus"></i>
                 </button>
               </div>
@@ -286,7 +286,13 @@
                 <iframe width="100%" height="200" src="https://www.youtube.com/embed/{{ $videoId }}" frameborder="0" allowfullscreen></iframe>
               @else
                 <!-- Direct video file -->
-                <video src="{{ asset($videoPath) }}" controls style="width: 100%; max-height: 200px;"></video>
+                <video src="{{ asset('storage/' . $videoPath) }}" controls style="width: 100%; max-height: 200px;"></video>
+              @endif
+
+              @if(!empty($video->Caption))
+                <div class="video-caption" style="font-size: 0.8rem; color: #6c757d; margin-top: 5px; padding: 5px; background-color: #f8f9fa; border-radius: 4px;">
+                  <i class="fas fa-quote-left" style="font-size: 0.7rem;"></i> {{ $video->Caption }}
+                </div>
               @endif
             </div>
           @endforeach
@@ -323,34 +329,34 @@
       if (typeof bootstrap !== 'undefined') {
         // Lấy tất cả các nút xem ảnh trong tab này
         const viewButtons = document.querySelectorAll('#media{{ $modalId }} .view-image');
-        
+
         // Lấy tham chiếu đến modal
         const modalElement = document.getElementById('imageViewerModal{{ $modalId }}');
-        
+
         // Nếu tìm thấy modal, khởi tạo đối tượng Modal của Bootstrap
         if (modalElement) {
           const modal = new bootstrap.Modal(modalElement);
-          
+
           // Thêm sự kiện click cho mỗi nút xem ảnh
           viewButtons.forEach(function(button) {
             button.addEventListener('click', function(e) {
               e.preventDefault();
               e.stopPropagation();
-              
+
               // Lấy đường dẫn ảnh từ thuộc tính data-src
               const imageSrc = this.getAttribute('data-src');
-              
+
               // Cập nhật src của ảnh trong modal
               const modalImage = document.getElementById('fullImage{{ $modalId }}');
               if (modalImage) {
                 modalImage.src = imageSrc;
               }
-              
+
               // Hiển thị modal
               modal.show();
             });
           });
-          
+
           // Thêm sự kiện đóng modal khi nhấn nút đóng
           const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
           closeButtons.forEach(function(button) {

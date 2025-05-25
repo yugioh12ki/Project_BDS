@@ -34,10 +34,15 @@
                 </div>
             </div>
 
+            <!-- Row 1: Property Table -->
             <div class="row">
-                <!-- Left column - Property list -->
-                <div class="col-lg-7 property-list-column">
-                    <div class="card">
+                <div class="col-12">
+                    <div class="card property-table-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-list"></i> Danh sách bất động sản
+                            </h6>
+                        </div>
                         <div class="card-body">
                             @if(isset($properties))
                                 @include('_system.partialview.property_table', ['properties' => $properties, 'columns' => $columns])
@@ -47,12 +52,36 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Right column - Google Map -->
-                <div class="col-lg-5 map-column">
-                    <div class="card">
+            <!-- Row 2: Property Details (left) and Map (right) -->
+            <div class="row mt-4">
+                <!-- Left column - Property details -->
+                <div class="col-lg-6">
+                    <div class="card property-details-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Thông tin chi tiết bất động sản
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-hand-pointer"></i> Nhấn vào nút "Xem" trong bảng để hiển thị thông tin chi tiết bất động sản tại đây
+                            </div>
+                            <div id="property-notifications-area">
+                                <!-- Khu vực hiển thị thông tin chi tiết sẽ xuất hiện ở đây -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column - Map -->
+                <div class="col-lg-6">
+                    <div class="card map-card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">Vị trí trên bản đồ</h6>
+                            <h6 class="mb-0">
+                                <i class="fas fa-map-marked-alt"></i> Vị trí trên bản đồ
+                            </h6>
                             <div class="map-controls">
                                 <button class="btn btn-sm btn-outline-primary" id="fitAllMarkersBtn" title="Hiển thị tất cả vị trí">
                                     <i class="fas fa-compress-arrows-alt"></i>
@@ -70,40 +99,100 @@
             </div>
         </div>
         <div class="tab-pane fade" id="assign-content">
-            <h5>Phân Công Môi Giới {{ isset($typePro) ? '- ' . $typePro : '' }}</h5>
-            <div class="row">
-                <!-- Danh sách môi giới bên trái -->
-                <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Danh sách môi giới</h6>
-                                <div class="input-group agent-search-input">
-                                    <input type="text" class="form-control form-control-sm" id="agentSearch" placeholder="Tìm kiếm...">
-                                    <button class="btn btn-sm btn-outline-secondary" type="button">
-                                        <i class="fas fa-search"></i>
-                                    </button>
+            <!-- Header với thống kê tổng quan -->
+            <div class="assignment-header mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h4 class="mb-0"><i class="fas fa-users-cog text-primary me-2"></i>Phân Công Môi Giới</h4>
+                        <p class="text-muted mb-0">Quản lý phân công bất động sản cho môi giới</p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="stat-card">
+                                    <div class="stat-number text-primary">{{ $agents->count() }}</div>
+                                    <div class="stat-label">Môi giới</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-card">
+                                    <div class="stat-number text-success">
+                                        {{ $properties->where('Status', 'active')->whereNotNull('AgentID')->count() }}
+                                    </div>
+                                    <div class="stat-label">Đã phân công</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-card">
+                                    <div class="stat-number text-warning">
+                                        {{ $properties->where('Status', 'active')->whereNull('AgentID')->count() }}
+                                    </div>
+                                    <div class="stat-label">Chưa phân công</div>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body p-0 agents-card-body">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Panel môi giới bên trái -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Danh sách môi giới</h6>
+                                <span class="badge bg-secondary">{{ $agents->count() }} người</span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" id="agentSearch" placeholder="Tìm kiếm môi giới...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0 agents-card-body" style="max-height: 600px; overflow-y: auto;">
                             <div class="list-group list-group-flush" id="agentsList">
                                 @foreach($agents as $agent)
-                                <div class="list-group-item agent-item d-flex align-items-start p-3"
+                                <div class="list-group-item agent-item p-3 border-0 position-relative"
                                      data-agent-id="{{ $agent->UserID }}"
-                                     class="agent-item">
-                                    <div class="me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 50%; background-color: #e9f5ff; color: #0d6efd;">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between">
-                                            <h6 class="mb-0">{{ $agent->Name }}</h6>
-                                            <span class="badge bg-{{ $agent->active_property_count >= 10 ? 'danger' : 'primary' }} rounded-pill">
-                                                {{ $agent->active_property_count }}/10
-                                            </span>
+                                     style="cursor: pointer; transition: all 0.2s ease;">
+                                    <div class="d-flex align-items-start">
+                                        <div class="agent-avatar me-3">
+                                            <div class="d-flex align-items-center justify-content-center rounded-circle"
+                                                 style="width: 45px; height: 45px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold;">
+                                                {{ substr($agent->Name, 0, 1) }}
+                                            </div>
                                         </div>
-                                        <small class="text-muted">{{ $agent->Email }}</small>
-                                        <div class="small">{{ $agent->Phone ?? 'Không có SĐT' }}</div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1 fw-bold">{{ $agent->Name }}</h6>
+                                                    <div class="text-muted small mb-1">
+                                                        <i class="fas fa-envelope me-1"></i>{{ $agent->Email }}
+                                                    </div>
+                                                    <div class="text-muted small mb-1">
+                                                        <i class="fas fa-phone me-1"></i>{{ $agent->Phone ?? 'Chưa có SĐT' }}
+                                                    </div>
+                                                    <div class="text-muted small">
+                                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                                        <span class="fw-medium">{{ $agent->profile_agent->AreaAgent ?? 'Chưa cơ sở' }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-{{ $agent->active_property_count >= 10 ? 'danger' : ($agent->active_property_count >= 7 ? 'warning' : 'success') }} mb-1">
+                                                        {{ $agent->active_property_count }}/10
+                                                    </span>
+                                                    <div class="progress" style="height: 4px; width: 60px;">
+                                                        <div class="progress-bar bg-{{ $agent->active_property_count >= 10 ? 'danger' : ($agent->active_property_count >= 7 ? 'warning' : 'success') }}"
+                                                             style="width: {{ ($agent->active_property_count / 10) * 100 }}%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="selection-indicator position-absolute top-0 end-0 p-2" style="display: none;">
+                                        <i class="fas fa-check-circle text-success"></i>
                                     </div>
                                 </div>
                                 @endforeach
@@ -111,97 +200,114 @@
                         </div>
                     </div>
                 </div>
-                <!-- Khu vực phân công bất động sản bên phải -->
+                <!-- Panel quản lý bất động sản bên phải -->
                 <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">Bất động sản của <span id="selectedAgentName" class="text-primary">Chưa chọn môi giới</span></h6>
-                                <div>
-                                    <div class="btn-group" role="group" aria-label="Basic example">
-                                        <button type="button" class="btn btn-sm btn-outline-primary" id="showAssignedBtn">
-                                            Đã phân công
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="showAvailableBtn">
-                                            Sẵn sàng phân công
-                                        </button>
-                                    </div>
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <div class="mb-2 mb-md-0">
+                                    <h6 class="mb-1">
+                                        <i class="fas fa-building me-2"></i>Quản lý bất động sản
+                                        @if(isset($typePro) && $typePro)
+                                            <span class="badge {{ $typePro === 'Rent' ? 'bg-info' : 'bg-warning' }} ms-2">
+                                                {{ $typePro === 'Rent' ? 'Thuê' : 'Bán' }}
+                                            </span>
+                                        @endif
+                                    </h6>
+                                    <small class="text-muted">Môi giới: <span id="selectedAgentName" class="fw-bold text-primary">Chưa chọn</span></small>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary active" id="showAssignedBtn">
+                                        <i class="fas fa-check-circle me-1"></i>Đã phân công
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="showAvailableBtn">
+                                        <i class="fas fa-plus-circle me-1"></i>Có thể phân công
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <div class="card-body p-0">
-                            <!-- Hiển thị bất động sản đã phân công -->
-                            <div id="assignedProperties" class="p-3">
-                                <div id="loadingAssigned" class="text-center p-4">
-                                    <div class="spinner-border text-primary" role="status">
+                            <!-- Tab hiển thị bất động sản đã phân công -->
+                            <div id="assignedProperties" class="property-section">
+                                <div id="loadingAssigned" class="text-center p-5">
+                                    <div class="spinner-border text-primary mb-3" role="status">
                                         <span class="visually-hidden">Đang tải...</span>
                                     </div>
-                                    <p class="mt-2">Vui lòng chọn môi giới để xem danh sách bất động sản</p>
+                                    <h6 class="text-muted">Vui lòng chọn môi giới</h6>
+                                    <p class="small text-muted mb-0">Chọn một môi giới từ danh sách bên trái để xem các bất động sản đã được phân công</p>
                                 </div>
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-hover align-middle mb-0" id="assignedPropertiesTable">
-                                        <thead>
+                                <div class="table-responsive" style="display: none;">
+                                    <table class="table table-hover align-middle mb-0" id="assignedPropertiesTable">
+                                        <thead class="table-light">
                                             <tr>
-                                                <th width="40">ID</th>
-                                                <th>Tiêu đề</th>
-                                                <th>Chủ sở hữu</th>
-                                                <th>Khu vực</th>
-                                                <th>Trạng thái</th>
-                                                <th width="100">Thao tác</th>
+                                                <th width="60" class="text-center">ID</th>
+                                                <th>Thông tin bất động sản</th>
+                                                <th width="120">Khu vực</th>
+                                                <th width="100" class="text-center">Trạng thái</th>
+                                                <th width="100" class="text-center">Thao tác</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <!-- Sẽ được điền bởi JavaScript -->
+                                            <!-- Được điền bởi JavaScript -->
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
 
-                            <!-- Hiển thị bất động sản có thể phân công -->
-                            <div id="availableProperties" class="p-3 available-properties">
-                                <div id="loadingAvailable" class="text-center p-4">
-                                    <div class="spinner-border text-primary" role="status">
+                            <!-- Tab hiển thị bất động sản có thể phân công -->
+                            <div id="availableProperties" class="property-section" style="display: none;">
+                                <div id="loadingAvailable" class="text-center p-5" style="display: none;">
+                                    <div class="spinner-border text-primary mb-3" role="status">
                                         <span class="visually-hidden">Đang tải...</span>
                                     </div>
-                                    <p class="mt-2">Đang tải danh sách bất động sản khả dụng...</p>
+                                    <h6 class="text-muted">Đang tải dữ liệu...</h6>
+                                    <p class="small text-muted mb-0">Vui lòng chờ trong giây lát</p>
                                 </div>
 
-                                <div class="mb-3">
-                                    <div class="alert alert-info">
-                                        Chọn bất động sản để phân công cho môi giới <strong id="assignAgentName"></strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="selectAllProperties">
-                                            <label class="form-check-label" for="selectAllProperties">
-                                                Chọn tất cả
-                                            </label>
+                                <!-- Công cụ phân công -->
+                                <div class="assignment-tools p-3 bg-light border-bottom">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <div class="alert alert-info mb-0 py-2">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <small>Chọn BĐS để phân công cho <strong id="assignAgentName" class="text-primary">Môi giới</strong></small>
+                                            </div>
                                         </div>
-                                        <button type="button" class="btn btn-primary btn-sm" id="assignSelectedBtn" disabled>
-                                            Phân công (<span id="selectedCount">0</span>)
-                                        </button>
+                                        <div class="col-md-6 text-end">
+                                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="selectAllProperties">
+                                                    <label class="form-check-label small" for="selectAllProperties">
+                                                        Chọn tất cả
+                                                    </label>
+                                                </div>
+                                                <button type="button" class="btn btn-primary btn-sm" id="assignSelectedBtn" disabled>
+                                                    <i class="fas fa-check me-1"></i>Phân công (<span id="selectedCount">0</span>)
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-hover align-middle mb-0" id="availablePropertiesTable">
-                                        <thead>
+                                    <table class="table table-hover align-middle mb-0" id="availablePropertiesTable">
+                                        <thead class="table-light">
                                             <tr>
-                                                <th width="40">
+                                                <th width="40" class="text-center">
                                                     <div class="form-check">
                                                         <input class="form-check-input" type="checkbox" id="headerCheckbox">
                                                     </div>
                                                 </th>
-                                                <th width="40">ID</th>
-                                                <th>Tiêu đề</th>
-                                                <th>Chủ sở hữu</th>
-                                                <th>Khu vực</th>
-                                                <th>Trạng thái</th>
+                                                <th width="60" class="text-center">ID</th>
+                                                <th>Thông tin bất động sản</th>
+                                                <th width="120">Khu vực</th>
+                                                <th width="100" class="text-center">Trạng thái</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($properties->where('Status', 'active')->whereNull('AgentID') as $property)
                                             <tr class="property-row" data-property-id="{{ $property->PropertyID }}">
-                                                <td>
+                                                <td class="text-center">
                                                     <div class="form-check">
                                                         <input class="form-check-input property-checkbox"
                                                                type="checkbox"
@@ -209,11 +315,27 @@
                                                                data-property-id="{{ $property->PropertyID }}">
                                                     </div>
                                                 </td>
-                                                <td>{{ $property->PropertyID }}</td>
-                                                <td>{{ $property->Title }}</td>
-                                                <td>{{ optional($property->chusohuu)->Name ?? 'Không có' }}</td>
-                                                <td>{{ $property->District }}, {{ $property->Province }}</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-light text-dark">{{ $property->PropertyID }}</span>
+                                                </td>
                                                 <td>
+                                                    <div class="property-info">
+                                                        <h6 class="mb-1 text-truncate" style="max-width: 250px;" title="{{ $property->Title }}">
+                                                            {{ $property->Title }}
+                                                        </h6>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-user me-1"></i>
+                                                            {{ optional($property->chusohuu)->Name ?? 'Không có chủ sở hữu' }}
+                                                        </small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        {{ $property->District }}<br>
+                                                        {{ $property->Province }}
+                                                    </small>
+                                                </td>
+                                                <td class="text-center">
                                                     <span class="badge bg-success">{{ $property->Status }}</span>
                                                 </td>
                                             </tr>
@@ -227,20 +349,192 @@
                 </div>
             </div>
 
+            <style>
+            /* Assignment page styles */
+            .assignment-header {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 0.5rem;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .stat-card {
+                padding: 0.5rem;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+                font-weight: bold;
+                line-height: 1;
+            }
+
+            .stat-label {
+                font-size: 0.75rem;
+                color: #6c757d;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .agent-item {
+                transition: all 0.3s ease;
+                border-left: 3px solid transparent;
+            }
+
+            .agent-item:hover {
+                background-color: #f8f9fa;
+                border-left-color: #007bff;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+
+            .agent-item.active {
+                background-color: #e3f2fd !important;
+                border-left-color: #007bff !important;
+                box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+            }
+
+            .agent-item.active .selection-indicator {
+                display: block !important;
+            }
+
+            .agent-avatar {
+                position: relative;
+            }
+
+            .agent-avatar::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                right: -2px;
+                width: 12px;
+                height: 12px;
+                background-color: #28a745;
+                border: 2px solid white;
+                border-radius: 50%;
+            }
+
+            .property-section {
+                min-height: 400px;
+            }
+
+            .assignment-tools {
+                border-bottom: 1px solid #dee2e6;
+            }
+
+            .property-info h6 {
+                color: #495057;
+            }
+
+            .property-row {
+                transition: all 0.2s ease;
+            }
+
+            .property-row:hover {
+                background-color: #f8f9fa;
+            }
+
+            .property-checkbox:checked {
+                background-color: #007bff;
+                border-color: #007bff;
+            }
+
+            .table-responsive {
+                border-radius: 0.375rem;
+            }
+
+            .table th {
+                font-weight: 600;
+                font-size: 0.875rem;
+                color: #495057;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            .btn-group .btn {
+                border-radius: 0.375rem;
+            }
+
+            .btn-group .btn.active {
+                background-color: #007bff;
+                border-color: #007bff;
+                color: white;
+            }
+
+            /* Responsive improvements */
+            @media (max-width: 991.98px) {
+                .assignment-header .col-md-6:first-child {
+                    margin-bottom: 1rem;
+                }
+
+                .stat-card {
+                    margin-bottom: 0.5rem;
+                }
+
+                .assignment-tools .col-md-6:first-child {
+                    margin-bottom: 1rem;
+                }
+            }
+
+            @media (max-width: 767.98px) {
+                .agents-card-body {
+                    max-height: 300px !important;
+                }
+
+                .property-info h6 {
+                    font-size: 0.875rem;
+                }
+
+                .table-responsive {
+                    font-size: 0.875rem;
+                }
+            }
+            </style>
+
             <script>
+            // Global function để refresh thống kê
+            function refreshStatistics() {
+                const totalAgents = document.querySelectorAll('.agent-item').length;
+                const assignedCount = document.querySelector('.stat-number.text-success');
+                const unassignedCount = document.querySelector('.stat-number.text-warning');
+
+                // Calculate current assigned properties from agent badges
+                let currentAssigned = 0;
+                document.querySelectorAll('.agent-item').forEach(item => {
+                    const badge = item.querySelector('.badge');
+                    if (badge) {
+                        const agentCount = parseInt(badge.textContent.split('/')[0]);
+                        currentAssigned += agentCount;
+                    }
+                });
+
+                // Calculate unassigned properties by counting properties in available tab
+                let currentUnassigned = 0;
+                const availablePropertiesTable = document.querySelector('#availableProperties table tbody');
+                if (availablePropertiesTable) {
+                    const rows = availablePropertiesTable.querySelectorAll('tr');
+                    // Chỉ đếm những row thực sự có dữ liệu (không phải empty message)
+                    rows.forEach(row => {
+                        if (!row.querySelector('td[colspan]')) {
+                            currentUnassigned++;
+                        }
+                    });
+                }
+
+                // Update statistics display if they exist
+                if (assignedCount) {
+                    assignedCount.textContent = currentAssigned;
+                }
+                if (unassignedCount) {
+                    unassignedCount.textContent = currentUnassigned;
+                }
+            }
+
             document.addEventListener('DOMContentLoaded', function() {
                 let selectedAgentId = null;
                 let selectedAgentName = null;
                 let selectedAgentCount = 0;
 
-                // Debug - kiểm tra các phần tử DOM chính
-                console.log('DOM Loading check:');
-                console.log('assignedProperties:', document.getElementById('assignedProperties'));
-                console.log('availableProperties:', document.getElementById('availableProperties'));
-                console.log('assignedPropertiesTable:', document.getElementById('assignedPropertiesTable'));
-                console.log('availablePropertiesTable:', document.getElementById('availablePropertiesTable'));
-                console.log('showAssignedBtn:', document.getElementById('showAssignedBtn'));
-                console.log('showAvailableBtn:', document.getElementById('showAvailableBtn'));
+                // Lấy loại bất động sản hiện tại từ Blade (nếu có)
+                const currentTypePro = @json($typePro ?? '');
 
                 // Xử lý khi click vào môi giới
                 const agentItems = document.querySelectorAll('.agent-item');
@@ -248,28 +542,31 @@
                     item.addEventListener('click', function() {
                         // Loại bỏ trạng thái đã chọn từ tất cả các item
                         agentItems.forEach(agentItem => {
-                            agentItem.classList.remove('active', 'bg-light');
+                            agentItem.classList.remove('active');
                         });
 
                         // Đánh dấu item hiện tại là đã chọn
-                        this.classList.add('active', 'bg-light');
+                        this.classList.add('active');
 
                         // Lưu thông tin môi giới được chọn
                         selectedAgentId = this.getAttribute('data-agent-id');
-                        selectedAgentName = this.querySelector('h6').textContent;
-                        selectedAgentCount = parseInt(this.querySelector('.badge').textContent);
+                        selectedAgentName = this.querySelector('h6').textContent.trim();
+                        selectedAgentCount = parseInt(this.querySelector('.badge').textContent.split('/')[0]);
 
                         // Cập nhật tên môi giới trong các phần hiển thị
                         document.getElementById('selectedAgentName').textContent = selectedAgentName;
                         document.getElementById('assignAgentName').textContent = selectedAgentName;
 
-                        console.log('Selected agent:', { id: selectedAgentId, name: selectedAgentName, count: selectedAgentCount }); // Debug info
+                        console.log('Selected agent:', { id: selectedAgentId, name: selectedAgentName, count: selectedAgentCount });
 
-                        // Hiển thị bất động sản đã phân công
+                        // Hiển thị bất động sản đã phân công và kích hoạt tab "Đã phân công"
+                        showAssignedTab();
                         loadAssignedProperties(selectedAgentId);
 
-                        // Hiển thị tab đã phân công
-                        document.getElementById('showAssignedBtn').click();
+                        // Tự động hiển thị tab đã phân công sau khi chọn môi giới
+                        setTimeout(() => {
+                            showAssignedTab();
+                        }, 100);
                     });
                 });
 
@@ -294,37 +591,47 @@
                 const assignedProperties = document.getElementById('assignedProperties');
                 const availableProperties = document.getElementById('availableProperties');
 
-                document.getElementById('showAssignedBtn').addEventListener('click', function() {
-                    if (!selectedAgentId) {
-                        alert('Vui lòng chọn môi giới trước');
-                        return;
-                    }
-                    showAssignedBtn.classList.add('btn-outline-primary');
+                // Helper functions for tab management
+                function showAssignedTab() {
                     showAssignedBtn.classList.remove('btn-outline-secondary');
+                    showAssignedBtn.classList.add('btn-outline-primary', 'active');
+                    showAvailableBtn.classList.remove('btn-outline-primary', 'active');
                     showAvailableBtn.classList.add('btn-outline-secondary');
-                    showAvailableBtn.classList.remove('btn-outline-primary');
                     assignedProperties.style.display = '';
                     availableProperties.style.display = 'none';
 
                     // Đảm bảo bảng và dữ liệu hiển thị đúng
                     const tableDiv = document.querySelector('#assignedProperties .table-responsive');
                     if (tableDiv) tableDiv.style.display = 'block';
-                });
+                }
 
-                showAvailableBtn.addEventListener('click', function() {
-                    if (!selectedAgentId) {
-                        alert('Vui lòng chọn môi giới trước');
-                        return;
-                    }
-                    showAvailableBtn.classList.add('btn-outline-primary');
+                function showAvailableTab() {
                     showAvailableBtn.classList.remove('btn-outline-secondary');
+                    showAvailableBtn.classList.add('btn-outline-primary', 'active');
+                    showAssignedBtn.classList.remove('btn-outline-primary', 'active');
                     showAssignedBtn.classList.add('btn-outline-secondary');
-                    showAssignedBtn.classList.remove('btn-outline-primary');
                     assignedProperties.style.display = 'none';
                     availableProperties.style.display = '';
 
                     // Tải bất động sản khả dụng (không có AgentID)
                     loadAvailableProperties();
+                }
+
+                document.getElementById('showAssignedBtn').addEventListener('click', function() {
+                    if (!selectedAgentId) {
+                        showNotification('warning', 'Vui lòng chọn môi giới trước');
+                        return;
+                    }
+                    showAssignedTab();
+                    loadAssignedProperties(selectedAgentId);
+                });
+
+                showAvailableBtn.addEventListener('click', function() {
+                    if (!selectedAgentId) {
+                        showNotification('warning', 'Vui lòng chọn môi giới trước');
+                        return;
+                    }
+                    showAvailableTab();
                 });
 
                 // Chọn tất cả các bất động sản
@@ -371,6 +678,12 @@
 
                     // Xác nhận phân công
                     if (confirm(`Xác nhận phân công ${selectedProperties.length} bất động sản cho môi giới ${selectedAgentName}?`)) {
+                        // Show loading state
+                        const assignBtn = document.getElementById('assignSelectedBtn');
+                        const originalHTML = assignBtn.innerHTML;
+                        assignBtn.disabled = true;
+                        assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang phân công...';
+
                         // Tạo form data
                         const formData = new FormData();
                         formData.append('agentId', selectedAgentId);
@@ -392,11 +705,17 @@
 
                                 // Cập nhật số lượng bất động sản của môi giới
                                 const badge = document.querySelector(`.agent-item[data-agent-id="${selectedAgentId}"] .badge`);
-                                const newCount = parseInt(badge.textContent) + selectedProperties.length;
+                                const progressBar = document.querySelector(`.agent-item[data-agent-id="${selectedAgentId}"] .progress-bar`);
+                                const newCount = parseInt(badge.textContent.split('/')[0]) + selectedProperties.length;
                                 badge.textContent = `${newCount}/10`;
-                                if (newCount >= 10) {
-                                    badge.classList.remove('bg-primary');
-                                    badge.classList.add('bg-danger');
+
+                                // Cập nhật màu badge
+                                badge.className = `badge ${newCount >= 10 ? 'bg-danger' : (newCount >= 7 ? 'bg-warning' : 'bg-success')} mb-1`;
+
+                                // Cập nhật progress bar
+                                if (progressBar) {
+                                    progressBar.style.width = `${(newCount / 10) * 100}%`;
+                                    progressBar.className = `progress-bar ${newCount >= 10 ? 'bg-danger' : (newCount >= 7 ? 'bg-warning' : 'bg-success')}`;
                                 }
 
                                 // Cập nhật biến toàn cục
@@ -406,17 +725,21 @@
                                 selectedProperties.forEach(propId => {
                                     const row = document.querySelector(`.property-row[data-property-id="${propId}"]`);
                                     if (row) row.remove();
-                                });                                    // Reset các checkbox
-                                    if (headerCheckbox) {
-                                        headerCheckbox.checked = false;
-                                    }
-                                    updateSelectedCount();
+                                });
 
-                                    // Hiển thị lại tab đã phân công và cập nhật danh sách
-                                    if (showAssignedBtn) {
-                                        showAssignedBtn.click();
-                                    }
-                                    loadAssignedProperties(selectedAgentId);
+                                // Reset các checkbox
+                                const headerCheckbox = document.getElementById('headerCheckbox');
+                                const selectAllProperties = document.getElementById('selectAllProperties');
+                                if (headerCheckbox) headerCheckbox.checked = false;
+                                if (selectAllProperties) selectAllProperties.checked = false;
+                                updateSelectedCount();
+
+                                // Cập nhật thống kê
+                                refreshStatistics();
+
+                                // Hiển thị lại tab đã phân công và cập nhật danh sách
+                                showAssignedTab();
+                                loadAssignedProperties(selectedAgentId);
                             } else {
                                 showNotification('error', data.message || 'Có lỗi xảy ra khi phân công');
                             }
@@ -424,6 +747,13 @@
                         .catch(error => {
                             console.error(error);
                             showNotification('error', 'Có lỗi xảy ra khi phân công');
+                        })
+                        .finally(() => {
+                            // Restore button state
+                            const assignBtn = document.getElementById('assignSelectedBtn');
+                            assignBtn.disabled = false;
+                            assignBtn.innerHTML = '<i class="fas fa-check me-1"></i>Phân công (<span id="selectedCount">0</span>)';
+                            updateSelectedCount(); // Update the count
                         });
                     }
                 });
@@ -453,10 +783,16 @@
                     }
 
                     // Gọi API lấy bất động sản đã phân công
-                    console.log('Fetching properties for agent ID:', agentId);
+                    console.log('Fetching properties for agent ID:', agentId, 'with TypePro:', currentTypePro);
+
+                    // Tạo URL với tham số TypePro nếu có
+                    let assignedUrl = `{{ url('/admin/agent') }}/${agentId}/properties`;
+                    if (currentTypePro) {
+                        assignedUrl += `?typePro=${encodeURIComponent(currentTypePro)}`;
+                    }
 
                     // Gọi API lấy bất động sản đã phân công - FIX: Sửa URL để đảm bảo đúng định dạng ID của agent
-                    fetch(`{{ url('/admin/agent') }}/${agentId}/properties`)
+                    fetch(assignedUrl)
                         .then(response => {
                             console.log('API Response status:', response.status);
 
@@ -483,16 +819,40 @@
                                 `;
                             } else {
                                 tableBody.innerHTML = data.map(property => `
-                                    <tr>
-                                        <td>${property.PropertyID}</td>
-                                        <td>${property.Title}</td>
-                                        <td>${property.OwnerName || 'Không có'}</td>
-                                        <td>${property.District}, ${property.Province}</td>
-                                        <td><span class="badge bg-${getBadgeColor(property.Status)}">${property.Status}</span></td>
+                                    <tr class="property-row" data-property-id="${property.PropertyID}">
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-dark">${property.PropertyID}</span>
+                                        </td>
                                         <td>
+                                            <div class="property-info">
+                                                <h6 class="mb-1 text-truncate" style="max-width: 250px;" title="${property.Title}">
+                                                    ${property.Title}
+                                                </h6>
+                                                <div class="d-flex align-items-center">
+                                                    <small class="text-muted me-2">
+                                                        <i class="fas fa-user me-1"></i>
+                                                        ${property.OwnerName || 'Không có chủ sở hữu'}
+                                                    </small>
+                                                    <span class="badge ${property.TypePro === 'Rent' ? 'bg-info' : 'bg-warning'} text-white">
+                                                        ${property.TypePro === 'Rent' ? 'Thuê' : 'Bán'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                ${property.District}<br>
+                                                ${property.Province}
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-${getBadgeColor(property.Status)}">${property.Status}</span>
+                                        </td>
+                                        <td class="text-center">
                                             <button class="btn btn-sm btn-outline-danger unassign-btn"
-                                                    data-property-id="${property.PropertyID}">
-                                                <i class="fas fa-times"></i> Hủy
+                                                    data-property-id="${property.PropertyID}"
+                                                    title="Hủy phân công">
+                                                <i class="fas fa-times"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -520,15 +880,24 @@
 
                                                     // Cập nhật số lượng
                                                     const badge = document.querySelector(`.agent-item[data-agent-id="${selectedAgentId}"] .badge`);
-                                                    const newCount = parseInt(badge.textContent) - 1;
+                                                    const progressBar = document.querySelector(`.agent-item[data-agent-id="${selectedAgentId}"] .progress-bar`);
+                                                    const newCount = parseInt(badge.textContent.split('/')[0]) - 1;
                                                     badge.textContent = `${newCount}/10`;
-                                                    if (newCount < 10) {
-                                                        badge.classList.remove('bg-danger');
-                                                        badge.classList.add('bg-primary');
+
+                                                    // Cập nhật màu badge
+                                                    badge.className = `badge ${newCount >= 10 ? 'bg-danger' : (newCount >= 7 ? 'bg-warning' : 'bg-success')} mb-1`;
+
+                                                    // Cập nhật progress bar
+                                                    if (progressBar) {
+                                                        progressBar.style.width = `${(newCount / 10) * 100}%`;
+                                                        progressBar.className = `progress-bar ${newCount >= 10 ? 'bg-danger' : (newCount >= 7 ? 'bg-warning' : 'bg-success')}`;
                                                     }
 
                                                     // Cập nhật biến toàn cục
                                                     selectedAgentCount = newCount;
+
+                                                    // Cập nhật thống kê
+                                                    refreshStatistics();
 
                                                     // Xóa dòng khỏi bảng
                                                     this.closest('tr').remove();
@@ -537,7 +906,7 @@
                                                     if (tableBody.children.length === 0) {
                                                         tableBody.innerHTML = `
                                                             <tr>
-                                                                <td colspan="6" class="text-center py-3">
+                                                                <td colspan="5" class="text-center py-3">
                                                                     <i class="fas fa-info-circle text-info me-2"></i>
                                                                     Không có bất động sản nào được phân công cho môi giới này
                                                                 </td>
@@ -601,10 +970,16 @@
                     if (tableDiv) tableDiv.style.display = 'none';
                     if (tableBody) tableBody.innerHTML = '';
 
-                    console.log('Fetching available properties with status=active');
+                    console.log('Fetching available properties with status=active and TypePro:', currentTypePro);
+
+                    // Tạo URL với tham số status và TypePro
+                    let availableUrl = '{{ route("admin.available.properties") }}?status=active';
+                    if (currentTypePro) {
+                        availableUrl += `&typePro=${encodeURIComponent(currentTypePro)}`;
+                    }
 
                     // Gọi API lấy bất động sản khả dụng (chỉ lấy status="active" và AgentID=null hoặc AgentID="")
-                    fetch('{{ route("admin.available.properties") }}?status=active')
+                    fetch(availableUrl)
                         .then(response => {
                             console.log('API Response status for available properties:', response.status);
                             // Kiểm tra nếu response không thành công
@@ -633,16 +1008,42 @@
                             } else {
                                 tableBody.innerHTML = data.map(property => `
                                     <tr class="property-row" data-property-id="${property.PropertyID}">
-                                        <td>
+                                        <td class="text-center">
                                             <div class="form-check">
-                                                <input class="form-check-input property-checkbox" type="checkbox" value="${property.PropertyID}">
+                                                <input class="form-check-input property-checkbox"
+                                                       type="checkbox"
+                                                       value="${property.PropertyID}"
+                                                       data-property-id="${property.PropertyID}">
                                             </div>
                                         </td>
-                                        <td>${property.PropertyID}</td>
-                                        <td>${property.Title}</td>
-                                        <td>${property.OwnerName || 'Không có'}</td>
-                                        <td>${property.District}, ${property.Province}</td>
-                                        <td><span class="badge bg-${getBadgeColor(property.Status)}">${property.Status}</span></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-dark">${property.PropertyID}</span>
+                                        </td>
+                                        <td>
+                                            <div class="property-info">
+                                                <h6 class="mb-1 text-truncate" style="max-width: 250px;" title="${property.Title}">
+                                                    ${property.Title}
+                                                </h6>
+                                                <div class="d-flex align-items-center">
+                                                    <small class="text-muted me-2">
+                                                        <i class="fas fa-user me-1"></i>
+                                                        ${property.OwnerName || 'Không có chủ sở hữu'}
+                                                    </small>
+                                                    <span class="badge ${property.TypePro === 'Rent' ? 'bg-info' : 'bg-warning'} text-white">
+                                                        ${property.TypePro === 'Rent' ? 'Thuê' : 'Bán'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                ${property.District}<br>
+                                                ${property.Province}
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-${getBadgeColor(property.Status)}">${property.Status}</span>
+                                        </td>
                                     </tr>
                                 `).join('');
 
@@ -685,6 +1086,9 @@
                                     });
                                 }
                             }
+
+                            // Cập nhật thống kê sau khi load xong
+                            refreshStatistics();
                         })
                         .catch(error => {
                             console.error('Error fetching available properties:', error);
@@ -713,14 +1117,209 @@
                         default: return 'info';
                     }
                 }
+
+                // Auto-refresh statistics every 30 seconds
+                setInterval(refreshStatistics, 30000); // Every 30 seconds
+
+                // Add loading state management
+                function setLoadingState(element, isLoading) {
+                    if (isLoading) {
+                        element.disabled = true;
+                        element.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                    } else {
+                        element.disabled = false;
+                        element.innerHTML = '<i class="fas fa-check me-1"></i>Phân công (<span id="selectedCount">0</span>)';
+                    }
+                }
+
+                // Enhanced features for better UX
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', function(e) {
+                    // Ctrl + A to select all available properties
+                    if (e.ctrlKey && e.key === 'a' && document.getElementById('availableProperties').style.display !== 'none') {
+                        e.preventDefault();
+                        const selectAllCheckbox = document.getElementById('selectAllProperties');
+                        if (selectAllCheckbox) {
+                            selectAllCheckbox.checked = !selectAllCheckbox.checked;
+                            selectAllCheckbox.dispatchEvent(new Event('change'));
+                        }
+                    }
+
+                    // Enter to assign selected properties
+                    if (e.key === 'Enter' && document.activeElement === document.getElementById('assignSelectedBtn')) {
+                        e.preventDefault();
+                        document.getElementById('assignSelectedBtn').click();
+                    }
+                });
+
+                // Initialize tooltips for better guidance
+                function initializeTooltips() {
+                    const tooltipElements = document.querySelectorAll('[title]');
+                    tooltipElements.forEach(element => {
+                        element.setAttribute('data-bs-toggle', 'tooltip');
+                        element.setAttribute('data-bs-placement', 'top');
+                    });
+
+                    // Initialize Bootstrap tooltips if available
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                        new bootstrap.Tooltip(document.body, {
+                            selector: '[data-bs-toggle="tooltip"]'
+                        });
+                    }
+                }
+
+                // Call on DOM ready
+                initializeTooltips();
+
+                // Enhanced error handling with retry mechanism
+                function fetchWithRetry(url, options, retries = 3) {
+                    return fetch(url, options)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            }
+                            return response.json();
+                        })
+                        .catch(error => {
+                            if (retries > 0) {
+                                console.warn(`Request failed, retrying... (${retries} attempts left)`);
+                                return new Promise(resolve => {
+                                    setTimeout(() => {
+                                        resolve(fetchWithRetry(url, options, retries - 1));
+                                    }, 1000);
+                                });
+                            }
+                            throw error;
+                        });
+                }
+
+                // Smooth scroll to selected agent
+                function scrollToSelectedAgent(agentId) {
+                    const agentElement = document.querySelector(`.agent-item[data-agent-id="${agentId}"]`);
+                    if (agentElement) {
+                        agentElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                }
+
+                // Auto-save draft selections to localStorage
+                function saveDraftSelections() {
+                    const selectedProps = Array.from(document.querySelectorAll('.property-checkbox:checked')).map(cb => cb.value);
+                    if (selectedAgentId && selectedProps.length > 0) {
+                        localStorage.setItem('draft_assignment', JSON.stringify({
+                            agentId: selectedAgentId,
+                            agentName: selectedAgentName,
+                            properties: selectedProps,
+                            timestamp: Date.now()
+                        }));
+                    } else {
+                        localStorage.removeItem('draft_assignment');
+                    }
+                }
+
+                // Restore draft selections on page load
+                function restoreDraftSelections() {
+                    const draft = localStorage.getItem('draft_assignment');
+                    if (draft) {
+                        try {
+                            const draftData = JSON.parse(draft);
+                            const hourAgo = Date.now() - (60 * 60 * 1000); // 1 hour
+
+                            if (draftData.timestamp > hourAgo) {
+                                showNotification('info', `Khôi phục lựa chọn cho môi giới ${draftData.agentName} (${draftData.properties.length} bất động sản)`);
+
+                                // Select the agent
+                                const agentElement = document.querySelector(`.agent-item[data-agent-id="${draftData.agentId}"]`);
+                                if (agentElement) {
+                                    agentElement.click();
+
+                                    // Wait a bit then select properties
+                                    setTimeout(() => {
+                                        showAvailableTab();
+                                        setTimeout(() => {
+                                            draftData.properties.forEach(propId => {
+                                                const checkbox = document.querySelector(`.property-checkbox[value="${propId}"]`);
+                                                if (checkbox) checkbox.checked = true;
+                                            });
+                                            updateSelectedCount();
+                                        }, 500);
+                                    }, 200);
+                                }
+                            } else {
+                                localStorage.removeItem('draft_assignment');
+                            }
+                        } catch (e) {
+                            console.error('Error restoring draft selections:', e);
+                            localStorage.removeItem('draft_assignment');
+                        }
+                    }
+                }
+
+                // Save draft on property selection change
+                document.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('property-checkbox')) {
+                        saveDraftSelections();
+                    }
+                });
+
+                // Restore draft selections on page load
+                setTimeout(restoreDraftSelections, 1000);
+
+                // Add visual feedback for agent workload
+                function updateAgentWorkloadDisplay() {
+                    document.querySelectorAll('.agent-item').forEach(item => {
+                        const badge = item.querySelector('.badge');
+                        const count = parseInt(badge.textContent.split('/')[0]);
+                        const workloadIndicator = item.querySelector('.workload-indicator');
+
+                        // Add workload indicator if it doesn't exist
+                        if (!workloadIndicator) {
+                            const indicator = document.createElement('div');
+                            indicator.className = 'workload-indicator position-absolute';
+                            indicator.style.cssText = `
+                                top: 5px;
+                                left: 5px;
+                                width: 8px;
+                                height: 8px;
+                                border-radius: 50%;
+                                z-index: 10;
+                            `;
+                            item.style.position = 'relative';
+                            item.appendChild(indicator);
+                        }
+
+                        const indicator = item.querySelector('.workload-indicator');
+                        if (count >= 9) {
+                            indicator.style.backgroundColor = '#dc3545'; // red
+                        } else if (count >= 7) {
+                            indicator.style.backgroundColor = '#ffc107'; // yellow
+                        } else if (count >= 5) {
+                            indicator.style.backgroundColor = '#fd7e14'; // orange
+                        } else {
+                            indicator.style.backgroundColor = '#28a745'; // green
+                        }
+                    });
+                }
+
+                // Update workload display on page load
+                updateAgentWorkloadDisplay();
+
+                // Gọi refresh statistics khi load trang để có dữ liệu ban đầu chính xác
+                setTimeout(() => {
+                    refreshStatistics();
+                }, 500);
+
+                // ...existing code...
             });
             </script>
         </div>
     </div>
 </div>
 
-<!-- Load app.js with PropertyManagement module first -->
-<script src="{{ mix('js/app.js') }}"></script>
+
 
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -1140,6 +1739,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
                     target.classList.add('show', 'active');
+
+                    // Nếu là tab assignment, cập nhật thống kê
+                    if (this.getAttribute('href') === '#assign-content') {
+                        // Gọi refreshStatistics sau một khoảng thời gian ngắn để đảm bảo DOM đã được render
+                        setTimeout(() => {
+                            if (typeof refreshStatistics === 'function') {
+                                refreshStatistics();
+                            }
+                        }, 100);
+                    }
                 }
             });
         });

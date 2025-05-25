@@ -161,11 +161,6 @@ $card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     animation: fadeIn 0.3s ease-in-out;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 // Form Controls Enhancement
 .form-control, .form-select {
     border: 1px solid #e0f2fe;
@@ -483,5 +478,323 @@ $card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         font-size: 0.8rem;
         padding: 6px 8px;
         margin-right: 1px;
+    }
+}
+
+// =================================================================
+// HIỆU ỨNG VÀ ANIMATIONS CHUNG
+// =================================================================
+
+// Fade-in animation cho notifications và modals
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Slide-in từ phải
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+// Slide-in từ trái
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+// Bounce effect
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    40%, 43% {
+        transform: translate3d(0, -15px, 0);
+    }
+    70% {
+        transform: translate3d(0, -7px, 0);
+    }
+    90% {
+        transform: translate3d(0, -2px, 0);
+    }
+}
+
+// Pulse effect
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(25, 245, 197, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(25, 245, 197, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(25, 245, 197, 0);
+    }
+}
+
+// Shake effect cho lỗi
+@keyframes shake {
+    10%, 90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+    20%, 80% {
+        transform: translate3d(2px, 0, 0);
+    }
+    30%, 50%, 70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+    40%, 60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+// Glow effect
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(25, 245, 197, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(25, 245, 197, 0.6);
+    }
+}
+
+// Loading spinner
+@keyframes spinner {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+// =================================================================
+// UTILITY CLASSES CHO HIỆU ỨNG
+// =================================================================
+
+// Fade-in effect classes
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.fade-in-slow {
+    animation: fadeIn 1s ease-in-out;
+}
+
+.fade-in-fast {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+// Slide effects
+.slide-in-right {
+    animation: slideInRight 0.5s ease-out;
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.5s ease-out;
+}
+
+// Interactive effects
+.hover-pulse {
+    transition: all 0.3s ease;
+
+    &:hover {
+        animation: pulse 1s infinite;
+    }
+}
+
+.hover-bounce {
+    transition: all 0.3s ease;
+
+    &:hover {
+        animation: bounce 1s;
+    }
+}
+
+.hover-glow {
+    transition: all 0.3s ease;
+
+    &:hover {
+        animation: glow 2s infinite;
+    }
+}
+
+// Error states
+.shake-error {
+    animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+// Loading states
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(25, 245, 197, 0.3);
+    border-radius: 50%;
+    border-top-color: #19f5c5;
+    animation: spinner 1s ease-in-out infinite;
+}
+
+.loading-dots {
+    &::after {
+        content: '';
+        animation: dots 1.5s steps(5, end) infinite;
+    }
+}
+
+@keyframes dots {
+    0%, 20% {
+        content: '.';
+    }
+    40% {
+        content: '..';
+    }
+    60% {
+        content: '...';
+    }
+    80%, 100% {
+        content: '';
+    }
+}
+
+// =================================================================
+// TRANSITION UTILITIES
+// =================================================================
+
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.transition-fast {
+    transition: all 0.15s ease;
+}
+
+.transition-slow {
+    transition: all 0.6s ease;
+}
+
+// Transform utilities
+.transform-hover {
+    transition: transform 0.3s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+    }
+}
+
+.scale-hover {
+    transition: transform 0.3s ease;
+
+    &:hover {
+        transform: scale(1.05);
+    }
+}
+
+// =================================================================
+// OVERLAY VÀ BACKDROP EFFECTS
+// =================================================================
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.show {
+        opacity: 1;
+    }
+}
+
+.backdrop-blur {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+// =================================================================
+// SCROLL EFFECTS
+// =================================================================
+
+.smooth-scroll {
+    scroll-behavior: smooth;
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #19f5c5 #f1f1f1;
+
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+        border-radius: 4px;
+
+        &:hover {
+            background: linear-gradient(135deg, #00e5b3 0%, #2980b9 100%);
+        }
+    }
+}
+
+// =================================================================
+// RESPONSIVE ANIMATION CONTROLS
+// =================================================================
+
+// Tắt animations trên thiết bị di động để tối ưu hiệu suất
+@media (max-width: 768px) {
+    .fade-in,
+    .slide-in-right,
+    .slide-in-left,
+    .hover-pulse,
+    .hover-bounce,
+    .hover-glow {
+        animation: none !important;
+    }
+
+    .transform-hover:hover,
+    .scale-hover:hover {
+        transform: none !important;
+    }
+}
+
+// Tôn trọng preferences của user về reduced motion
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

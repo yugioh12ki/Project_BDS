@@ -55,6 +55,7 @@ class Property extends Model
     protected $fillable = [
          'OwnerID',
          'AgentID',
+         'UserCreated',
          'PostedDate',
          'ApprovedBy',
          'ApprovedDate',

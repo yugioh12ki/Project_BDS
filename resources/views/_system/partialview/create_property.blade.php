@@ -1,3 +1,11 @@
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <strong>Thành công!</strong> {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 
 
 <style>
@@ -527,7 +535,9 @@
                                                 <div class="form-group row mb-3">
                                                     <label class="col-sm-6 col-form-label">Phường/Xã <span class="text-danger">*</span></label>
                                                     <div class="col-sm-6">
-                                                        <input type="text" name="Ward" class="form-control" value="{{ old('Ward') }}" required>
+                                                        <select name="Ward" id="ward" class="form-control" required>
+                                                            <option value="">Chọn phường/xã</option>
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </div>
@@ -535,7 +545,9 @@
                                                 <div class="form-group row mb-3">
                                                     <label class="col-sm-6 col-form-label">Quận/Huyện <span class="text-danger">*</span></label>
                                                     <div class="col-sm-6">
-                                                        <input type="text" name="District" class="form-control" value="{{ old('District') }}" required>
+                                                        <select name="District" id="district" class="form-control" required>
+                                                            <option value="">Chọn quận/huyện</option>
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </div>
@@ -544,7 +556,9 @@
                                         <div class="form-group row mb-3">
                                             <label class="col-sm-3 col-form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
                                             <div class="col-sm-9">
-                                                <input type="text" name="Province" class="form-control" value="{{ old('Province') }}" required>
+                                                <select name="Province" id="province" class="form-control" required>
+                                                    <option value="">Chọn tỉnh/thành phố</option>
+                                                </select>
                                             </div>
                                         </div>
 
@@ -555,33 +569,14 @@
                                             </div>
                                         </div>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group row mb-3">
-                                                    <label class="col-sm-6 col-form-label">Số điện thoại liên hệ</label>
-                                                    <div class="col-sm-6">
-                                                        <input type="tel" name="ContactPhone" class="form-control" value="{{ old('ContactPhone') }}" placeholder="Số điện thoại">
-                                                        <small class="text-muted">Được tự động điền từ thông tin chủ sở hữu</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group row mb-3">
-                                                    <label class="col-sm-6 col-form-label">Email liên hệ</label>
-                                                    <div class="col-sm-6">
-                                                        <input type="email" name="ContactEmail" class="form-control" value="{{ old('ContactEmail') }}" placeholder="Email liên hệ">
-                                                        <small class="text-muted">Được tự động điền từ thông tin chủ sở hữu</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+
                                     </div>
                                     <div class="col-md-4">
                                         <div class="alert alert-warning">
                                             <h6><i class="fas fa-exclamation-triangle"></i> Lưu ý</h6>
-                                            <p class="mb-1">• Tiêu đề phải rõ ràng, hấp dẫn</p>
+                                            <p class="mb-1">• Tiêu đề phải rõ ràng, hấp dẫn với loại bán, thuê </p>
                                             <p class="mb-1">• Giá cả phải chính xác</p>
-                                            <p class="mb-1">• Địa chỉ phải đầy đủ và chính xác</p>
+                                            <p class="mb-1">• Địa chỉ phải đầy đủ và chính xác tránh ghi sai</p>
                                             <p class="mb-0">• Mô tả chi tiết sẽ thu hút khách hàng</p>
                                         </div>
                                     </div>
@@ -606,14 +601,16 @@
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
-                                                    <label class="form-label">Số tầng</label>
-                                                    <input type="number" name="LevelHouse" class="form-control" value="{{ old('LevelHouse') }}" placeholder="0">
+                                                    <label class="form-label">Số tầng / Nhà Cấp</label>
+                                                    <input type="number" name="LevelHouse" class="form-control" value="{{ old('LevelHouse') }}"  min="0" max="5">
+                                                    <small> Chỉ có nhà, văn phòng, shophouse, kho mới điền, nếu khác bỏ trống</small>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
-                                                    <label class="form-label">Tầng số</label>
-                                                    <input type="number" name="Floor" class="form-control" value="{{ old('Floor') }}" placeholder="0">
+                                                    <label class="form-label">Lầu</label>
+                                                    <input type="number" name="Floor" class="form-control" value="{{ old('Floor') }}" min="0">
+                                                    <small> Chỉ có chung cư mới điền, nếu khác bỏ trống</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -622,13 +619,13 @@
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều dài nhà (m)</label>
-                                                    <input type="number" name="HouseLength" class="form-control" value="{{ old('HouseLength') }}" placeholder="0">
+                                                    <input type="number" name="HouseLength" class="form-control" value="{{ old('HouseLength') }}" min="0">
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều rộng nhà (m)</label>
-                                                    <input type="number" name="HouseWidth" class="form-control" value="{{ old('HouseWidth') }}" placeholder="0">
+                                                    <input type="number" name="HouseWidth" class="form-control" value="{{ old('HouseWidth') }}" min="0">
                                                 </div>
                                             </div>
                                         </div>
@@ -637,13 +634,13 @@
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều dài tổng thể (m)</label>
-                                                    <input type="number" name="TotalLength" class="form-control" value="{{ old('TotalLength') }}" placeholder="0">
+                                                    <input type="number" name="TotalLength" class="form-control" value="{{ old('TotalLength') }}" min="0">
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều rộng tổng thể (m)</label>
-                                                    <input type="number" name="TotalWidth" class="form-control" value="{{ old('TotalWidth') }}" placeholder="0">
+                                                    <input type="number" name="TotalWidth" class="form-control" value="{{ old('TotalWidth') }}" min="0">
                                                 </div>
                                             </div>
                                         </div>
@@ -652,13 +649,13 @@
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Số phòng ngủ</label>
-                                                    <input type="number" name="Bedroom" class="form-control" value="{{ old('Bedroom') }}" placeholder="0">
+                                                    <input type="number" name="Bedroom" class="form-control" value="{{ old('Bedroom') }}" min="0">
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Số phòng WC</label>
-                                                    <input type="number" name="Bath_WC" class="form-control" value="{{ old('Bath_WC') }}" placeholder="0">
+                                                    <input type="number" name="Bath_WC" class="form-control" value="{{ old('Bath_WC') }}" min="0">
                                                 </div>
                                             </div>
                                         </div>
@@ -677,7 +674,7 @@
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Đường vào (m)</label>
-                                                    <input type="number" name="Road" class="form-control" value="{{ old('Road') }}" placeholder="0">
+                                                    <input type="number" name="Road" class="form-control" value="{{ old('Road') }}" min="0">
                                                 </div>
                                             </div>
                                         </div>
@@ -1173,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const address = escapeHtml(owner.Address || '');
 
                 return `
-                    <div class="autocomplete-item" data-owner-id="${owner.UserID}" onclick="selectOwner(${owner.UserID}, '${name}', '${phone}', '${email}', '${address}')">
+                    <div class="autocomplete-item" data-owner-id="${owner.UserID}" onclick="selectOwner('${owner.UserID}', '${name}', '${phone}', '${email}', '${address}')">
                         <div class="owner-name"><i class="fas fa-user me-2"></i>${name}</div>
                         <div class="owner-details"><i class="fas fa-phone me-1"></i>${phone} <i class="fas fa-envelope ms-2 me-1"></i>${email}</div>
                     </div>
@@ -1225,9 +1222,6 @@ function selectOwner(ownerId, name, phone, email, address) {
     selectedOwnerInfo.style.display = 'block';
     ownerSearchResults.style.display = 'none';
 
-    // Auto-fill contact information in basic tab
-    autoFillContactInfo(phone, email, address);
-
     // Remove validation error if any
     ownerSearchInput.classList.remove('is-invalid');
 }
@@ -1240,33 +1234,119 @@ function clearOwnerSelection() {
     ownerSearchInput.value = '';
     selectedOwnerIdInput.value = '';
     selectedOwnerInfo.style.display = 'none';
-
-    // Clear auto-filled contact info
-    clearContactInfo();
 }
 
-function autoFillContactInfo(phone, email, address) {
-    // Try to find contact info fields in basic tab and auto-fill if empty
-    const phoneField = document.querySelector('input[name="ContactPhone"]');
-    const emailField = document.querySelector('input[name="ContactEmail"]');
 
-    if (phoneField && !phoneField.value) {
-        phoneField.value = phone;
+</script>
+
+<script>
+// Load Vietnam Province API data for address selection
+document.addEventListener('DOMContentLoaded', function() {
+    const provinceSelect = document.getElementById('province');
+    const districtSelect = document.getElementById('district');
+    const wardSelect = document.getElementById('ward');
+
+    if (provinceSelect && districtSelect && wardSelect) {
+        // Fetch provinces
+        async function loadProvinces() {
+            try {
+                const response = await fetch('https://provinces.open-api.vn/api/?depth=1');
+                const provinces = await response.json();
+
+                provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+                provinces.forEach(province => {
+                    const option = document.createElement('option');
+                    option.value = province.name;
+                    option.textContent = province.name;
+                    option.setAttribute('data-code', province.code);
+                    provinceSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading provinces:', error);
+                provinceSelect.innerHTML = '<option value="">Lỗi tải dữ liệu tỉnh</option>';
+            }
+        }
+
+        // Fetch districts based on province
+        async function loadDistricts(provinceName) {
+            try {
+                const selectedOption = Array.from(provinceSelect.options).find(
+                    option => option.value === provinceName
+                );
+                const provinceCode = selectedOption ? selectedOption.getAttribute('data-code') : null;
+
+                if (!provinceCode) return;
+
+                const response = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
+                const data = await response.json();
+
+                districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+                wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+
+                data.districts.forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district.name;
+                    option.textContent = district.name;
+                    option.setAttribute('data-code', district.code);
+                    districtSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading districts:', error);
+                districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu quận/huyện</option>';
+            }
+        }
+
+        // Fetch wards based on district
+        async function loadWards(districtName) {
+            try {
+                const selectedOption = Array.from(districtSelect.options).find(
+                    option => option.value === districtName
+                );
+                const districtCode = selectedOption ? selectedOption.getAttribute('data-code') : null;
+
+                if (!districtCode) return;
+
+                const response = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
+                const data = await response.json();
+
+                wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+
+                data.wards.forEach(ward => {
+                    const option = document.createElement('option');
+                    option.value = ward.name;
+                    option.textContent = ward.name;
+                    wardSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading wards:', error);
+                wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu phường/xã</option>';
+            }
+        }
+
+        // Event listeners
+        provinceSelect.addEventListener('change', function() {
+            const provinceName = this.value;
+            districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+            wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+
+            if (provinceName) {
+                loadDistricts(provinceName);
+            }
+        });
+
+        districtSelect.addEventListener('change', function() {
+            const districtName = this.value;
+            wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+
+            if (districtName) {
+                loadWards(districtName);
+            }
+        });
+
+        // Load provinces on page load
+        loadProvinces();
     }
-
-    if (emailField && !emailField.value) {
-        emailField.value = email;
-    }
-}
-
-function clearContactInfo() {
-    // Clear auto-filled contact info
-    const phoneField = document.querySelector('input[name="ContactPhone"]');
-    const emailField = document.querySelector('input[name="ContactEmail"]');
-
-    if (phoneField) phoneField.value = '';
-    if (emailField) emailField.value = '';
-}
+});
 </script>
 
 

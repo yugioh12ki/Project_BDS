@@ -31,7 +31,7 @@
                             <h4>{{ $agent->Name }}</h4>
                             <p class="agent-email">{{ $agent->Email }}</p>
                             <p class="agent-area">
-                                Khu vực: {{ optional($agent->profile_agent)->AreaAgent ?? 'Chưa có' }}
+                                Khu vực: {{ $agent->profile_agent->AreaAgent ?? 'Chưa có' }}
                             </p>
                             <p class="property-count" id="count-{{ $agent->UserID }}">
                                 Đang quản lý: <span class="{{ $agent->active_property_count >= 10 ? 'text-danger' : '' }}">{{ $agent->active_property_count }}/10</span>

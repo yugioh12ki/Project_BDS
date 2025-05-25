@@ -84,7 +84,7 @@ Route::middleware(['auth'])->group(function()
             Route::get('/property/{id}', [SystemController::class, "getPropertyById"])->name('property.id');
 
             // Route cho việc gán và quản lý agent cho bất động sản
-            //Route::get('/assign-property', [SystemController::class, 'getAssignProperty'])->name('assign.property');
+            Route::get('/assign-property', [SystemController::class, 'getAssignProperty'])->name('assign.property');
             Route::post('/assign-property', [SystemController::class, 'assignAgentToProperty'])->name('assign.property.store');
             Route::get('/check-agent-limit/{agentId}', [SystemController::class, 'checkAgentPropertyCount'])->name('check.agent.limit');
             Route::get('/agent/{id}/properties', [SystemController::class, 'getAgentProperties'])->name('agent.properties');

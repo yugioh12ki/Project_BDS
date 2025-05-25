@@ -67,9 +67,8 @@ class LoginController extends Controller
         // Tìm người dùng theo email
         $user = User::where('Email', $credentials['email'])->first();
 
-        if ($user && $user->PasswordHash == $credentials['password']) { // So sánh trực tiếp mật khẩu
-
-
+        // Kiểm tra nếu người dùng tồn tại và mật khẩu khớp với hash MD5
+        if ($user && $user->PasswordHash === md5($credentials['password'])) {
             // Kiểm tra trạng thái người dùng
             if (!$user->isActive()) { // Sử dụng phương thức isActive() từ model User
                 Auth::logout();
@@ -78,7 +77,6 @@ class LoginController extends Controller
 
             // Đăng nhập người dùng
             Auth::login($user);
-            //dd(Auth::user());
 
             session(['name' => $user->Name]);
 
@@ -89,20 +87,6 @@ class LoginController extends Controller
                 'User' => redirect()->route('trangchu.index'),
                 default => redirect()->route('login')->withErrors(['role' => 'Vai trò không hợp lệ.']),
             };
-
-
-
-            // switch ($user->Role) {
-            //     case 'Admin':
-            //         return redirect()->route('admin.users');
-            //     case 'Owner':
-            //     case 'Agent':
-            //         return redirect()->route('agent.dashboard');
-            //     case 'User':
-            //         return redirect()->route('trangchu.index');
-            //     default:
-            //         return redirect()->route('login')->withErrors(['role' => 'Vai trò không hợp lệ.']);
-            // }
         }
 
         // Nếu thông tin đăng nhập không chính xác

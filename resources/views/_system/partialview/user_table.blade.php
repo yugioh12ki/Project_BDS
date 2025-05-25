@@ -39,7 +39,6 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
-                                @include('_system.partialview.user_modals', ['user' => $user])
                             </td>
                         </tr>
                     @empty
@@ -81,7 +80,6 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
-                                @include('_system.partialview.user_modals', ['user' => $user])
                             </td>
                         </tr>
                     @empty
@@ -99,5 +97,10 @@
         {{ $users->appends(request()->except('page'))->links() }}
     </div>
 @endif
+
+{{-- Tất cả các modals cho tất cả users --}}
+@foreach ($users as $user)
+    @include('_system.partialview.user_modals', ['user' => $user])
+@endforeach
 
 
