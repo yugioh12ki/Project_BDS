@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Property;
 use App\Models\profile_agent;
 use App\Models\Appointment;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AgentController extends Controller
 {
@@ -49,20 +51,20 @@ class AgentController extends Controller
     {
         $agent = Auth::user();
         
-        $appointments = Appointment::with(['cusUser', 'property', 'ownerUser']) // Thêm ownerUser vào eager loading
+        // Lấy danh sách appointments với eager loading
+        $appointments = Appointment::with(['cusUser', 'ownerUser', 'property'])
             ->where('AgentID', $agent->UserID)
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
-        // Chỉ lấy những BĐS đang active và được phân công cho agent
-        $properties = Property::with('owner')  // Thêm relationship với owner
-            ->select('PropertyID', 'Title', 'Address', 'Ward', 'District', 'OwnerID')
+        // Lấy danh sách properties với eager loading owner
+        $properties = Property::with(['owner'])
             ->where('AgentID', $agent->UserID)
             ->where('Status', 'active')
-            ->orderBy('PostedDate', 'desc')
             ->get();
 
-        return view('agents.appointments', compact('appointments', 'properties')); 
+        // Truyền cả 2 biến vào view
+        return view('agents.appointments', compact('appointments', 'properties'));
     }
     
     /**
@@ -166,5 +168,22 @@ class AgentController extends Controller
             })
             ->select('UserID', 'Name')
             ->get();
+    }
+
+    public function searchCustomers(Request $request)
+    {
+        $term = $request->get('term');
+        $propertyId = $request->get('propertyId');
+
+        $customers = Appointment::where('PropertyID', $propertyId)
+            ->join('users', 'appointments.CusID', '=', 'users.UserID')
+            ->where('users.Name', 'LIKE', "%{$term}%")
+            ->select('users.UserID as id', 'users.Name as name', 'users.Phone as phone')
+            ->distinct()
+            ->get();
+
+        return response()->json([
+            'customers' => $customers
+        ]);
     }
 }

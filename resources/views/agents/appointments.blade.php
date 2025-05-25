@@ -165,24 +165,31 @@
                 <form id="appointmentForm" action="{{ route('agent.appointments.create') }}" method="POST">
                     @csrf
                     <div class="mb-3 position-relative">
-                        <label class="form-label">Tiêu đề bất động sản <span class="text-danger">*</span></label>
+                        <label class="form-label">Tên bất động sản <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="propertySearch" 
-                               placeholder="Nhập tiêu đề bất động sản..." required>
+                               placeholder="Nhập tên bất động sản..." required>
                         <input type="hidden" name="PropertyID" id="propertyID">
-                        <!-- Owner info container -->
-                        <div id="ownerInfo" class="mt-2" style="display: none;"></div>
+                        <ul id="propertyList" class="dropdown-menu w-100 show" style="display:none; position:absolute; inset: auto 0px 0px; transform: translate(0px, 40px);">
+                        </ul>
+                        <div id="ownerInfo" class="mt-2 alert alert-info" style="display: none;">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Chủ sở hữu: <strong id="ownerName"></strong>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3 position-relative">
                         <label class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="CustomerName" required
-                               placeholder="Nhập tên khách hàng">
+                        <input type="text" class="form-control" id="customerSearch" 
+                               placeholder="Nhập tên khách hàng để tìm..." required>
+                        <input type="hidden" name="CusID" id="customerID">
+                        <ul id="customerList" class="dropdown-menu w-100 show" style="display:none; position:absolute; inset: auto 0px 0px; transform: translate(0px, 40px);">
+                        </ul>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Số điện thoại khách hàng <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control" name="CustomerPhone" required
-                               placeholder="Nhập số điện thoại khách hàng">
+                        <label class="form-label">Số điện thoại khách hàng</label>
+                        <input type="tel" class="form-control" name="CustomerPhone" readonly
+                               placeholder="Số điện thoại sẽ tự động điền khi chọn khách hàng">
                     </div>
 
                     <div class="mb-3">
@@ -227,15 +234,46 @@
 </div>
 @push('scripts')
 <script>
-// Truyền dữ liệu properties từ PHP sang JS
-window.propertyList = @json($properties->map(function($property) {
-    return [
+window.propertyList = {!! json_encode($properties->map(function($property) {
+    return array(
         'id' => $property->PropertyID,
         'title' => $property->Title,
+        'ownerId' => $property->OwnerID, 
         'ownerName' => optional($property->owner)->Name ?? 'Không xác định'
-    ];
-}));
+    );
+})) !!};
+
+// Debug để kiểm tra dữ liệu
+console.log('Property List:', window.propertyList);
 </script>
 <script src="{{ asset('js/appointments.js') }}"></script>
+
+<style>
+.dropdown-menu.show {
+    display: block !important;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    position: absolute;
+    inset: auto 0px 0px;
+    transform: translate(0px, 40px);
+}
+
+/* Thêm style để hiển thị rõ ràng owner name */
+.property-item {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.property-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.owner-name {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+</style>
 @endpush
 @endsection

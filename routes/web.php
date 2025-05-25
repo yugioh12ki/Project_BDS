@@ -135,14 +135,15 @@ Route::middleware(['auth'])->group(function () {
     // Agent routes
     Route::middleware(['checkRole:Agent'])->prefix('agent')->name('agent.')->group(function () {
         Route::get('/', [AgentController::class, 'dashboard'])->name('dashboard');
-        Route::get('/brokers', [AgentController::class, 'brokers'])->name('brokers');  // Route cho phân công môi giới
-        Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments'); // Route cho lịch hẹn
+        Route::get('/brokers', [AgentController::class, 'brokers'])->name('brokers');
+        Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments');
         Route::post('/appointments/create', [AgentController::class, 'createAppointment'])->name('appointments.create');
-        Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions'); // Route cho giao dịch
+        Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions');
         Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
         Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');
         Route::get('/search-properties', [AgentController::class, 'searchProperties']);
         Route::get('/get-related-customers/{propertyId}', [AgentController::class, 'getRelatedCustomers']);
+        Route::get('/customers/search', [AgentController::class, 'searchCustomers'])->name('customers.search');
     });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)
