@@ -24,6 +24,21 @@
                 <span>19001881</span>
             </div>
             @if(Auth::check() && Auth::user()->Role == 'Customer')
+                <!-- Notification Icon -->
+                <div class="notification-dropdown">
+                    <button class="notification-btn" id="notificationBtn">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge" id="notificationCount">0</span>
+                    </button>
+                    <div class="notification-content" id="notificationContent">
+                        <div class="notification-header">
+                            <h6>Thông báo</h6>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <!-- Notifications will be loaded here -->
+                        </div>
+                    </div>
+                </div>
                 <div class="user-dropdown">
                     <button class="user-dropdown-btn" type="button" id="userDropdownBtn">
                         Xin chào, {{ Auth::user()->Name }} <span style="font-size: 12px;">&#9662;</span>

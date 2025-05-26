@@ -26,7 +26,7 @@ class Appointment extends Model
     ];
 
     //Mối quan hệ với bảng 'user'
-    public function user_agent()
+    public function agent()
     {
         return $this->belongsTo(User::class, 'AgentID', 'UserID');
     }

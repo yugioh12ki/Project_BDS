@@ -156,6 +156,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/change-password', [CustomerController::class, 'showChangePasswordForm'])->name('change-password');
         Route::post('/change-password', [CustomerController::class, 'changePassword'])->name('password.change');
         Route::get('/appointments', [CustomerController::class, 'showAppointments'])->name('appointments.index');
+        
+        // Notification routes
+        Route::get('/notifications', [CustomerController::class, 'getNotifications'])->name('notifications');
+        Route::post('/notifications/{id}/mark-as-read', [CustomerController::class, 'markNotificationAsRead'])->name('notifications.mark-read');
     });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)

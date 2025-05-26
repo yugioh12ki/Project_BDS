@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 use App\Models\Property;
 use App\Models\DanhMucBDS;
 use App\Models\DetailProperty;
 use App\Models\Appointment;
+use App\Notifications\NewAppointmentNotification;
 
 class CustomerController extends Controller
 {
@@ -86,18 +88,18 @@ class CustomerController extends Controller
     public function search(Request $request)
     {
         // Debug request
-        \Log::info('Search request:', $request->all());
+        Log::info('Search request:', $request->all());
 
         // Base query với eager loading
         $query = Property::with(['danhMuc', 'chiTiet', 'images'])
             ->where('Status', 'active'); // Chỉ lấy BĐS đã được duyệt (active)
 
-        \Log::info('Initial Status filter: active');
+        Log::info('Initial Status filter: active');
 
         // Tìm theo từ khóa
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
-            \Log::info('Searching with keyword: ' . $keyword);
+            Log::info('Searching with keyword: ' . $keyword);
             
             $query->where(function($q) use ($keyword) {
                 $q->where('Province', 'like', '%'.$keyword.'%')
@@ -152,13 +154,13 @@ class CustomerController extends Controller
         }
 
         // Debug final query
-        \Log::info('Final SQL: ' . $query->toSql());
-        \Log::info('SQL Bindings:', $query->getBindings());
+        Log::info('Final SQL: ' . $query->toSql());
+        Log::info('SQL Bindings:', $query->getBindings());
 
         // Execute query
         $properties = $query->paginate(12);
 
-        \Log::info('Found ' . $properties->total() . ' active properties');
+        Log::info('Found ' . $properties->total() . ' active properties');
 
         return view('trangchu.search-results', [
             'properties' => $properties,
@@ -200,7 +202,7 @@ class CustomerController extends Controller
     {
         try {
             // Debug
-            \Log::info('Accessing property detail with ID: ' . $id);
+            Log::info('Accessing property detail with ID: ' . $id);
             
             // Tìm property theo ID và đảm bảo load các relationships
             $property = Property::with(['danhMuc', 'chiTiet', 'chusohuu', 'moigioi', 'images'])
@@ -208,7 +210,7 @@ class CustomerController extends Controller
                 ->where('Status', 'active')
                 ->firstOrFail();
 
-            \Log::info('Found property: ' . $property->Title);
+            Log::info('Found property: ' . $property->Title);
 
             // Lấy các BĐS liên quan
             $relatedProperties = Property::where('Status', 'active')
@@ -223,7 +225,7 @@ class CustomerController extends Controller
 
             return view('trangchu.property-detail', compact('property', 'relatedProperties'));
         } catch (\Exception $e) {
-            \Log::error('Error in propertyDetail: ' . $e->getMessage());
+            Log::error('Error in propertyDetail: ' . $e->getMessage());
             return redirect()->route('home')->with('error', 'Không tìm thấy bất động sản này');
         }
     }
@@ -236,5 +238,46 @@ class CustomerController extends Controller
             ->get();
 
         return view('customer.appointments.show', compact('appointments'));
+    }
+
+    public function getNotifications()
+    {
+        $user = Auth::user();
+        $appointments = Appointment::with(['property', 'user_agent'])
+            ->where('CusID', $user->UserID)
+            ->where('Status', 'pending')  // Only show pending appointments
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->get()
+            ->map(function($appointment) {
+                return [
+                    'id' => $appointment->AppointmentID,
+                    'data' => [
+                        'agent_name' => $appointment->user_agent->Name,
+                        'property_title' => $appointment->property->Title,
+                        'appointment_date' => $appointment->AppointmentDateStart
+                    ],
+                    'created_at' => $appointment->AppointmentDateStart
+                ];
+            });
+
+        return response()->json([
+            'notifications' => $appointments,
+            'unreadCount' => $appointments->count()
+        ]);
+    }
+
+    public function markNotificationAsRead($id)
+    {
+        $appointment = Appointment::where('AppointmentID', $id)
+            ->where('CusID', Auth::id())
+            ->first();
+
+        if ($appointment) {
+            $appointment->Status = 'read';
+            $appointment->save();
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false], 404);
     }
 }

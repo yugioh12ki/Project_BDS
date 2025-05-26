@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Trang Bất Động Sản</title>
     @vite([
         'resources/sass/header.scss',
         'resources/sass/footer.scss',
         'resources/sass/home.scss',
         'resources/js/home.js',
+        'resources/js/notifications.js',
         'resources/sass/apphome.scss',
         ])
     {{-- Từ bản laravel 12x trở lên sử dụng @vite để điều hướng scss --}}
