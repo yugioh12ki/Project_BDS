@@ -120,7 +120,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/property', [OwnerController::class, 'listProperty'])->name('property.index');
         Route::get('/property/create', [OwnerController::class, 'createPropertyForm'])->name('property.create');
         Route::post('/property', [OwnerController::class, 'createProperty'])->name('property.store');
-        Route::get('/property/get-for-listing', [OwnerController::class, 'getPropertiesForListing'])->name('owner.property.get-for-listing');
+        Route::get('/property/get-for-listing', [OwnerController::class, 'getPropertiesForListing'])->name('property.get-for-listing');
         Route::post('/property/listings', [OwnerController::class, 'storePropertyListing'])->name('property.listings.store');
         Route::get('/appointments', [OwnerController::class, 'appointments'])->name('appointments.index');
         Route::get('/transactions', [OwnerController::class, 'transactions'])->name('transactions.index');

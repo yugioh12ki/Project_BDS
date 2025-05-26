@@ -11,7 +11,7 @@
         'resources/js/header_owner.js',
         'resources/js/dscactinh.js',
         'resources/js/dscactinh_edit.js',
-        'resources/js/create_property_listing.js',
+        // 'resources/js/create_property_listing.js', // Disabled to avoid conflict with inline script
         ])
     <title>@yield('title', 'Trang Chủ Sở Hữu')</title>
     

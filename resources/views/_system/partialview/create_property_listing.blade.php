@@ -205,11 +205,12 @@
                       <!-- Image preview slots -->
                       @for ($i = 0; $i < 3; $i++)
                       <div class="col-md-4">
-                        <div class="image-upload-slot border rounded-3 d-flex align-items-center justify-content-center" style="height: 200px;">
-                          <div class="text-center p-3">
+                        <div class="image-upload-slot border rounded-3 d-flex align-items-center justify-content-center" style="height: 200px; overflow: hidden;" id="previewSlot{{ $i }}">
+                          <div class="text-center p-3 preview-placeholder">
                             <i class="bi bi-image fs-2 text-secondary"></i>
                             <p class="mb-0 small text-secondary">Tải lên hình {{ $i + 1 }}</p>
                           </div>
+                          <img src="#" alt="Preview" class="img-preview" style="display: none; max-width: 100%; max-height: 100%; object-fit: contain;">
                         </div>
                       </div>
                       @endfor
@@ -222,14 +223,94 @@
                     </div>
                   </div>
                 </div>
+                
+<script>
+// Xử lý hiển thị hình ảnh khi chọn file
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('imageInput');
+    const addImagesBtn = document.getElementById('addImagesBtn');
+    
+    if (imageInput) {
+        imageInput.addEventListener('change', function() {
+            const files = this.files;
+            
+            // Hiển thị số lượng hình ảnh đã chọn
+            if (files.length > 0 && addImagesBtn) {
+                if (files.length >= 3) {
+                    addImagesBtn.innerHTML = `<i class="bi bi-check-lg me-2"></i>Đã chọn ${files.length} hình ảnh`;
+                    addImagesBtn.classList.remove('btn-outline-primary');
+                    addImagesBtn.classList.add('btn-success');
+                } else {
+                    addImagesBtn.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>Cần chọn thêm ${3 - files.length} hình ảnh`;
+                    addImagesBtn.classList.remove('btn-outline-primary', 'btn-success');
+                    addImagesBtn.classList.add('btn-warning');
+                }
+            }
+            
+            // Hiển thị preview cho tối đa 3 hình ảnh
+            const maxPreview = Math.min(files.length, 3);
+            
+            // Ẩn tất cả placeholder và reset tất cả preview
+            const placeholders = document.querySelectorAll('.preview-placeholder');
+            const previews = document.querySelectorAll('.img-preview');
+            
+            placeholders.forEach(placeholder => {
+                placeholder.style.display = 'block';
+            });
+            
+            previews.forEach(preview => {
+                preview.style.display = 'none';
+                preview.src = '#';
+            });
+            
+            // Hiển thị preview cho các hình ảnh đã chọn
+            for (let i = 0; i < maxPreview; i++) {
+                const file = files[i];
+                const previewSlot = document.getElementById(`previewSlot${i}`);
+                
+                if (previewSlot) {
+                    const placeholder = previewSlot.querySelector('.preview-placeholder');
+                    const preview = previewSlot.querySelector('.img-preview');
+                    
+                    if (placeholder && preview) {
+                        // Ẩn placeholder
+                        placeholder.style.display = 'none';
+                        
+                        // Hiển thị preview
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.src = e.target.result;
+                            preview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+        });
+    }
+    
+    if (addImagesBtn) {
+        addImagesBtn.addEventListener('click', function() {
+            if (imageInput) {
+                imageInput.click();
+            }
+        });
+    }
+});
+</script>
 
                 <div class="mb-4">
                   <label class="form-label fw-medium">Video giới thiệu (Không bắt buộc)</label>
                   <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-youtube"></i></span>
-                    <input type="text" class="form-control" name="video_url" placeholder="Nhập đường dẫn YouTube">
+                    <span class="input-group-text">
+                      <select class="form-select border-0 bg-transparent" name="video_platform" style="width: auto; min-width: 100px;">
+                        <option value="youtube">YouTube</option>
+                        <option value="tiktok">TikTok</option>
+                      </select>
+                    </span>
+                    <input type="text" class="form-control" name="video_url" placeholder="Nhập đường dẫn video">
                   </div>
-                  <div class="form-text">Hỗ trợ đường dẫn YouTube</div>
+                  <div class="form-text">Hỗ trợ đường dẫn YouTube hoặc TikTok</div>
                 </div>
               </div>
 
@@ -317,12 +398,427 @@
 
             </div>
             <div class="modal-footer justify-content-center border-0">
-              <button type="button" class="btn btn-light rounded-pill px-5 me-2 d-none" id="backButton">
+              <button type="button" class="btn btn-light rounded-pill px-5 me-2 d-none" id="backButton" onclick="moveToPreviousStep()">
                 Quay lại
               </button>
-              <button type="button" class="btn btn-primary rounded-pill px-5" id="nextButton" disabled>
+              
+<script>
+function moveToPreviousStep() {
+    console.log('moveToPreviousStep called');
+    
+    // Get current step by checking which section is visible
+    var currentStep = 1;
+    var listingDetailsSection = document.querySelector('.listing-details-section');
+    var packageSelectionSection = document.querySelector('.package-selection-section');
+    
+    if (listingDetailsSection && window.getComputedStyle(listingDetailsSection).display !== 'none') {
+        currentStep = 2;
+    } else if (packageSelectionSection && window.getComputedStyle(packageSelectionSection).display !== 'none') {
+        currentStep = 3;
+    }
+    
+    console.log('Current step:', currentStep);
+    
+    // Hide all sections using vanilla JavaScript
+    var sections = document.querySelectorAll('.property-selection-list, .listing-details-section, .package-selection-section');
+    sections.forEach(function(section) {
+        if (section) {
+            section.classList.add('d-none');
+            section.style.display = 'none';
+        }
+    });
+    
+    switch(currentStep) {
+        case 2:
+            // Move back to step 1
+            var propertySelectionList = document.querySelector('.property-selection-list');
+            if (propertySelectionList) {
+                propertySelectionList.classList.remove('d-none');
+                propertySelectionList.style.display = 'block';
+            }
+            
+            // Hide back button
+            var backButton = document.getElementById('backButton');
+            if (backButton) {
+                backButton.classList.add('d-none');
+            }
+            
+            // Update step UI
+            updateStepUI(1);
+            
+            console.log('Moved back to step 1');
+            break;
+            
+        case 3:
+            // Move back to step 2
+            if (listingDetailsSection) {
+                listingDetailsSection.classList.remove('d-none');
+                listingDetailsSection.style.display = 'block';
+            }
+            
+            // Change button text back to "Tiếp tục"
+            var nextButton = document.getElementById('nextButton');
+            if (nextButton) {
+                nextButton.textContent = 'Tiếp tục';
+            }
+            
+            // Update step UI
+            updateStepUI(2);
+            
+            console.log('Moved back to step 2');
+            break;
+    }
+}
+</script>
+              <button type="button" class="btn btn-primary rounded-pill px-5" id="nextButton" onclick="moveToNextStep()">
                 Tiếp tục
               </button>
+              
+<script>
+function moveToNextStep() {
+    console.log('moveToNextStep called');
+    
+    // Get current step by checking which section is visible
+    var currentStep = 1;
+    var listingDetailsSection = document.querySelector('.listing-details-section');
+    var packageSelectionSection = document.querySelector('.package-selection-section');
+    
+    if (listingDetailsSection && window.getComputedStyle(listingDetailsSection).display !== 'none') {
+        currentStep = 2;
+    } else if (packageSelectionSection && window.getComputedStyle(packageSelectionSection).display !== 'none') {
+        currentStep = 3;
+    }
+    
+    console.log('Current step:', currentStep);
+    
+    switch(currentStep) {
+        case 1:
+            // Check if property is selected
+            var selectedProperty = document.querySelector('input[name="selectedProperty"]:checked');
+            if (!selectedProperty) {
+                alert('Vui lòng chọn một bất động sản để tiếp tục.');
+                return;
+            }
+            
+            // Move to step 2 using vanilla JavaScript
+            var propertySelectionList = document.querySelector('.property-selection-list');
+            if (propertySelectionList) {
+                propertySelectionList.classList.add('d-none');
+                propertySelectionList.style.display = 'none';
+            }
+            
+            if (listingDetailsSection) {
+                listingDetailsSection.classList.remove('d-none');
+                listingDetailsSection.style.display = 'block';
+            }
+            
+            // Show back button
+            var backButton = document.getElementById('backButton');
+            if (backButton) {
+                backButton.classList.remove('d-none');
+            }
+            
+            // Update step UI
+            updateStepUI(2);
+            
+            console.log('Moved to step 2');
+            break;
+            
+        case 2:
+            // Validate step 2
+            if (!validateStep2()) {
+                return;
+            }
+            
+            // Move to step 3 using vanilla JavaScript
+            if (listingDetailsSection) {
+                listingDetailsSection.classList.add('d-none');
+                listingDetailsSection.style.display = 'none';
+            }
+            
+            if (packageSelectionSection) {
+                packageSelectionSection.classList.remove('d-none');
+                packageSelectionSection.style.display = 'block';
+            }
+            
+            // Change button text
+            var nextButton = document.getElementById('nextButton');
+            if (nextButton) {
+                nextButton.textContent = 'Hoàn tất';
+            }
+            
+            // Update step UI
+            updateStepUI(3);
+            
+            console.log('Moved to step 3');
+            break;
+            
+        case 3:
+            // Check if package is selected using vanilla JavaScript
+            var selectedPackage = document.querySelector('input[name="selectedPackage"]:checked');
+            if (!selectedPackage) {
+                alert('Vui lòng chọn gói đăng tin');
+                return;
+            }
+            
+            // Submit form
+            submitForm();
+            break;
+    }
+}
+
+function updateStepUI(step) {
+    // Use vanilla JavaScript
+    var stepCircles = document.querySelectorAll('.step-circle');
+    
+    stepCircles.forEach(function(circle, index) {
+        var stepNumber = index + 1;
+        var wrapper = circle.querySelector('.circle-wrapper');
+        var span = wrapper ? wrapper.querySelector('span') : null;
+        var text = circle.querySelector('div:last-child');
+        
+        if (stepNumber <= step) {
+            circle.classList.add('active');
+            if (wrapper) {
+                wrapper.classList.remove('border-secondary');
+                wrapper.classList.add('border-primary');
+            }
+            if (span) {
+                span.classList.remove('text-secondary');
+                span.classList.add('text-primary');
+            }
+            if (text) {
+                text.classList.remove('text-secondary');
+                text.classList.add('text-primary');
+            }
+        } else {
+            circle.classList.remove('active');
+            if (wrapper) {
+                wrapper.classList.remove('border-primary');
+                wrapper.classList.add('border-secondary');
+            }
+            if (span) {
+                span.classList.remove('text-primary');
+                span.classList.add('text-secondary');
+            }
+            if (text) {
+                text.classList.remove('text-primary');
+                text.classList.add('text-secondary');
+            }
+        }
+    });
+}
+
+function validateStep2() {
+    const titleInput = document.querySelector('input[name="title"]');
+    const descriptionInput = document.querySelector('textarea[name="description"]');
+    const imageInput = document.getElementById('imageInput');
+    
+    const title = titleInput ? titleInput.value.trim() : '';
+    const description = descriptionInput ? descriptionInput.value.trim() : '';
+    const images = imageInput ? imageInput.files : null;
+    
+    if (!title) {
+        alert('Vui lòng nhập tiêu đề tin đăng');
+        if (titleInput) titleInput.focus();
+        return false;
+    }
+    
+    if (!description) {
+        alert('Vui lòng nhập mô tả chi tiết');
+        if (descriptionInput) descriptionInput.focus();
+        return false;
+    }
+    
+    if (!images || images.length < 3) {
+        alert('Vui lòng tải lên ít nhất 3 hình ảnh');
+        return false;
+    }
+    
+    return true;
+}
+
+function submitForm() {
+    const form = document.getElementById('propertyListingForm');
+    if (!form) return;
+    
+    // Add selected property data to form
+    const selectedProperty = document.querySelector('input[name="selectedProperty"]:checked');
+    const selectedPropertyId = selectedProperty ? selectedProperty.value : null;
+    const selectedPropertyType = selectedProperty ? selectedProperty.getAttribute('data-type') : null;
+    
+    if (selectedPropertyId) {
+        // Remove existing hidden inputs
+        const existingPropertyIdInputs = form.querySelectorAll('input[name="property_id"]');
+        existingPropertyIdInputs.forEach(input => input.remove());
+        
+        const existingPropertyTypeInputs = form.querySelectorAll('input[name="property_type"]');
+        existingPropertyTypeInputs.forEach(input => input.remove());
+        
+        // Add new hidden inputs
+        const propertyIdInput = document.createElement('input');
+        propertyIdInput.type = 'hidden';
+        propertyIdInput.name = 'property_id';
+        propertyIdInput.value = selectedPropertyId;
+        form.appendChild(propertyIdInput);
+        
+        if (selectedPropertyType) {
+            const propertyTypeInput = document.createElement('input');
+            propertyTypeInput.type = 'hidden';
+            propertyTypeInput.name = 'property_type';
+            propertyTypeInput.value = selectedPropertyType;
+            form.appendChild(propertyTypeInput);
+        }
+    }
+    
+    // Submit the form
+    form.submit();
+}
+
+// Additional event handlers
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Document ready - Setting up additional event handlers');
+    
+    // Ensure proper display of sections on page load
+    const propertySelectionList = document.querySelector('.property-selection-list');
+    const listingDetailsSection = document.querySelector('.listing-details-section');
+    const packageSelectionSection = document.querySelector('.package-selection-section');
+    
+    // Remove d-none class and set display style
+    if (propertySelectionList) {
+        propertySelectionList.classList.remove('d-none');
+        propertySelectionList.style.display = 'block';
+    }
+    
+    if (listingDetailsSection) {
+        listingDetailsSection.classList.add('d-none');
+        listingDetailsSection.style.display = 'none';
+    }
+    
+    if (packageSelectionSection) {
+        packageSelectionSection.classList.add('d-none');
+        packageSelectionSection.style.display = 'none';
+    }
+    
+    // Ensure next button is disabled initially
+    const nextButton = document.getElementById('nextButton');
+    if (nextButton) {
+        nextButton.disabled = false; // Set to false to allow clicking
+    }
+    
+    // Ensure back button is hidden initially
+    const backButton = document.getElementById('backButton');
+    if (backButton) {
+        backButton.classList.add('d-none');
+    }
+    
+    // Handle property item clicks
+    const propertyItems = document.querySelectorAll('.property-item');
+    propertyItems.forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            // Don't select if clicking on the radio button itself
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') {
+                return;
+            }
+            
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                
+                // Update UI
+                propertyItems.forEach(function(pi) {
+                    pi.classList.remove('border-primary');
+                });
+                this.classList.add('border-primary');
+                
+                console.log('Selected property:', radio.value);
+                
+                // Enable next button
+                const nextButton = document.getElementById('nextButton');
+                if (nextButton) {
+                    nextButton.disabled = false;
+                }
+            }
+        });
+    });
+    
+    // Handle radio button changes
+    const propertyRadios = document.querySelectorAll('input[name="selectedProperty"]');
+    propertyRadios.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            // Update UI
+            propertyItems.forEach(function(pi) {
+                pi.classList.remove('border-primary');
+            });
+            
+            let parentItem = this.closest('.property-item');
+            if (parentItem) {
+                parentItem.classList.add('border-primary');
+            }
+            
+            console.log('Selected property (radio change):', this.value);
+            
+            // Enable next button
+            const nextButton = document.getElementById('nextButton');
+            if (nextButton) {
+                nextButton.disabled = false;
+            }
+        });
+    });
+    
+    // Xử lý tải lên hình ảnh đã được chuyển sang script riêng ở phần trên
+    
+    // Handle package selection
+    const packageCards = document.querySelectorAll('.package-card');
+    packageCards.forEach(function(card) {
+        card.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+            }
+            
+            packageCards.forEach(function(pc) {
+                pc.classList.remove('border-primary');
+                pc.classList.add('border-2');
+            });
+            
+            this.classList.remove('border-2');
+            this.classList.add('border-primary');
+        });
+    });
+    
+    // Reset modal when closed
+    const modal = document.getElementById('createPropertyListingModal');
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', function() {
+            // Reset state
+            const sections = document.querySelectorAll('.property-selection-list, .listing-details-section, .package-selection-section');
+            sections.forEach(function(section) {
+                section.classList.add('d-none');
+                section.style.display = 'none';
+            });
+            
+            const propertySelectionList = document.querySelector('.property-selection-list');
+            if (propertySelectionList) {
+                propertySelectionList.classList.remove('d-none');
+                propertySelectionList.style.display = 'block';
+            }
+            
+            const nextButton = document.getElementById('nextButton');
+            if (nextButton) {
+                nextButton.textContent = 'Tiếp tục';
+            }
+            
+            const backButton = document.getElementById('backButton');
+            if (backButton) {
+                backButton.classList.add('d-none');
+            }
+            
+            updateStepUI(1);
+        });
+    }
+});
+</script>
             </div>
           </div>
         </div>
@@ -330,132 +826,3 @@
   </div>
 </form>
 
-<script>
-$(document).ready(function() {
-    var currentStep = 1;
-    
-    // Xử lý click vào card bất động sản
-    $('.property-item').click(function() {
-        // Check radio và bỏ check các radio khác
-        $(this).find('input[type="radio"]').prop('checked', true);
-        // Enable nút Tiếp tục
-        $('#nextButton').prop('disabled', false);
-        // Thêm viền highlight cho card được chọn
-        $('.property-item').removeClass('border-primary');
-        $(this).addClass('border-primary');
-    });
-
-    // Xử lý nút Tiếp tục
-    $('#nextButton').click(function() {
-        switch(currentStep) {
-            case 1:
-                if($('input[name="selectedProperty"]:checked').length) {
-                    // Ẩn step 1, hiện step 2
-                    $('.property-selection-list').addClass('d-none');
-                    $('.listing-details-section').removeClass('d-none');
-                    currentStep = 2;
-                    
-                    // Hiện nút Quay lại
-                    $('#backButton').removeClass('d-none');
-                    
-                    // Cập nhật UI steps
-                    updateStepUI(2);
-                }
-                break;
-
-            case 2:
-                if(validateStep2()) {
-                    // Ẩn step 2, hiện step 3
-                    $('.listing-details-section').addClass('d-none');
-                    $('.package-selection-section').removeClass('d-none');
-                    currentStep = 3;
-                    
-                    // Cập nhật nút Tiếp tục thành "Hoàn tất"
-                    $('#nextButton').text('Hoàn tất');
-                    
-                    // Cập nhật UI steps
-                    updateStepUI(3);
-                }
-                break;
-
-            case 3:
-                if($('input[name="selectedPackage"]:checked').length) {
-                    $('#propertyListingForm').submit();
-                } else {
-                    alert('Vui lòng chọn gói đăng tin');
-                }
-                break;
-        }
-    });
-
-    // Back button handler  
-    $('#backButton').on('click', function() {
-        moveToStep(currentStep - 1);
-    });
-
-    function moveToStep(step) {
-        // Hide all sections
-        $('.property-selection-list, .listing-details-section, .package-selection-section').addClass('d-none');
-        
-        // Show appropriate section
-        switch(step) {
-            case 1:
-                $('.property-selection-list').removeClass('d-none');
-                $('#backButton').addClass('d-none');
-                $('#nextButton').text('Tiếp tục').prop('disabled', !$('input[name="selectedProperty"]:checked').length);
-                break;
-            case 2:
-                $('.listing-details-section').removeClass('d-none');
-                $('#backButton').removeClass('d-none');
-                $('#nextButton').text('Tiếp tục').prop('disabled', false);
-                break;
-            case 3:
-                $('.package-selection-section').removeClass('d-none');
-                $('#backButton').removeClass('d-none');
-                $('#nextButton').text('Hoàn tất').prop('disabled', false);
-                break;
-        }
-
-        // Update step indicators
-        $('.step-circle').each(function(index) {
-            if(index + 1 <= step) {
-                $(this).addClass('active')
-                    .find('.circle-wrapper').removeClass('border-secondary')
-                    .find('span').removeClass('text-secondary');
-            } else {
-                $(this).removeClass('active')
-                    .find('.circle-wrapper').addClass('border-secondary')
-                    .find('span').addClass('text-secondary');
-            }
-        });
-
-        currentStep = step;
-    }
-
-    function updateStepUI(step) {
-        $('.step-circle').each(function(index) {
-            if(index < step) {
-                $(this).addClass('active')
-                    .find('.circle-wrapper').removeClass('border-secondary')
-                    .find('span').removeClass('text-secondary');
-            } else {
-                $(this).removeClass('active')
-                    .find('.circle-wrapper').addClass('border-secondary')
-                    .find('span').addClass('text-secondary');  
-            }
-        });
-    }
-
-    function validateStep2() {
-        if(!$('input[name="title"]').val() || !$('textarea[name="description"]').val()) {
-            alert('Vui lòng điền đầy đủ thông tin bắt buộc');
-            return false;
-        }
-        if(!$('#imageInput')[0].files || $('#imageInput')[0].files.length < 3) {
-            alert('Vui lòng tải lên ít nhất 3 hình ảnh');
-            return false;
-        }
-        return true;
-    }
-});
-</script>
