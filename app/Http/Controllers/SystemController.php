@@ -1133,22 +1133,39 @@ class SystemController extends Controller
         // Get all agents with pagination and property counts
         // Sắp xếp agent theo số lượng bất động sản tăng dần (ít nhất lên đầu)
         $agents = User::where('Role', 'Agent')
-                    ->with('profile_agent')
+                    ->with(['profile_agent', 'moigioi' => function($query) {
+                        $query->where('Status', 'active')->with(['danhMuc', 'images']);
+                    }])
                     ->withCount(['moigioi as active_property_count' => function ($query) {
                         $query->where('Status', 'active');
+                    }])
+                    ->withCount(['appoint_agent as total_appointments' => function ($query) {
+                        $query->whereDate('AppointmentDateStart', '>=', now()->startOfMonth());
                     }])
                     ->orderBy('active_property_count', 'asc')
                     ->paginate(20);
 
-        // Get all appointments with relationships
-        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->get();
+        // Get recent appointments for overview
+        $recentAppointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property.danhMuc'])
+                            ->whereDate('AppointmentDateStart', '>=', now()->startOfWeek())
+                            ->orderBy('AppointmentDateStart', 'desc')
+                            ->limit(10)
+                            ->get();
 
-        if ($columns === null || $appointments->isEmpty()) {
+        // Get appointment statistics
+        $appointmentStats = [
+            'today' => Appointment::whereDate('AppointmentDateStart', now())->count(),
+            'this_week' => Appointment::whereBetween('AppointmentDateStart', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'this_month' => Appointment::whereMonth('AppointmentDateStart', now()->month)->count(),
+            'pending' => Appointment::where('Status', 'Pending')->count(),
+        ];
+
+        if ($columns === null) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
             return view('_system.appointment', compact('error')); // Truyền thông báo lỗi sang view
         }
 
-        return view('_system.appointment', compact('columns', 'appointments', 'agents')); // Pass data to view
+        return view('_system.appointment', compact('columns', 'agents', 'recentAppointments', 'appointmentStats')); // Pass data to view
     }
 
     public function getAppointmentById(Request $request, $id)
@@ -1185,16 +1202,64 @@ class SystemController extends Controller
     public function searchAppointmentByDate(Request $request)
     {
         $date = $request->input('date');
-        $columns = Schema::getColumnListing('appointments');
-        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])
-                        ->whereDate('AppointmentDateStart', $date)
-                        ->get();
+        $agentId = $request->input('agent_id');
+        $status = $request->input('status');
+        $type = $request->input('type'); // owner hoặc customer
 
-        if ($columns === null || $appointments->isEmpty()) {
-            return view('_system.appointment', ['error' => 'Không tìm thấy cuộc hẹn nào vào ngày ' . $date]);
+        $query = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property.danhMuc']);
+
+        if ($date) {
+            $query->whereDate('AppointmentDateStart', $date);
         }
 
-        return view('_system.appointment', compact('columns', 'appointments'));
+        if ($agentId && $agentId !== 'all') {
+            $query->where('AgentID', $agentId);
+        }
+
+        if ($status && $status !== 'all') {
+            $query->where('AppointmentStatus', $status);
+        }
+
+        if ($type && $type !== 'all') {
+            if ($type === 'owner') {
+                $query->whereNotNull('OwnerID');
+            } else if ($type === 'customer') {
+                $query->whereNotNull('CusID');
+            }
+        }
+
+        $appointments = $query->orderBy('AppointmentDateStart', 'asc')->get();
+
+        return response()->json([
+            'appointments' => $appointments,
+            'count' => $appointments->count(),
+            'date' => $date
+        ]);
+    }
+
+    // Lấy cuộc hẹn theo khoảng thời gian
+    public function getAppointmentsByDateRange(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $agentId = $request->input('agent_id');
+
+        $query = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property.danhMuc']);
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('AppointmentDateStart', [$startDate, $endDate]);
+        }
+
+        if ($agentId && $agentId !== 'all') {
+            $query->where('AgentID', $agentId);
+        }
+
+        $appointments = $query->orderBy('AppointmentDateStart', 'asc')->get();
+
+        return response()->json([
+            'appointments' => $appointments,
+            'count' => $appointments->count()
+        ]);
     }
 
     // Lấy danh sách cuộc hẹn theo agent ID
@@ -1215,8 +1280,10 @@ class SystemController extends Controller
         })->values();
 
         return response()->json([
+            'appointments' => $appointments, // Thêm dòng này để JavaScript có thể đọc được
             'withCustomers' => $withCustomers,
-            'withOwners' => $withOwners
+            'withOwners' => $withOwners,
+            'total' => $appointments->count()
         ]);
     }
 

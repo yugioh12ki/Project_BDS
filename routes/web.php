@@ -108,6 +108,7 @@ Route::middleware(['auth'])->group(function()
 
             Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
             Route::get('/appointment/search-by-date', [SystemController::class, "searchAppointmentByDate"])->name('appointment.search.date');
+            Route::get('/appointment/search-by-range', [SystemController::class, "getAppointmentsByDateRange"])->name('appointment.search.range');
             Route::get('/appointment/agent/{agentId}', [SystemController::class, "getAppointmentsByAgent"])->name('appointment.byAgent');
             Route::get('/appointment/detail/{id}', [SystemController::class, "getAppointmentDetail"])->name('appointment.detail');
             Route::get('/appointment/{id}', [SystemController::class, "getAppointmentById"])->name('appointment.id');

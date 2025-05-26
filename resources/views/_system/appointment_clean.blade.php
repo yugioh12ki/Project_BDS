@@ -695,15 +695,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
 
     function initializeEventListeners() {
-        console.log('Initializing event listeners...');
-        console.log('Agent items found:', agentItems.length);
-
         // Agent selection
         agentItems.forEach(function(item) {
-            console.log('Adding click listener to agent:', item.getAttribute('data-agent-id'));
             item.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Agent clicked:', this.getAttribute('data-agent-id'));
                 selectAgent(this);
             });
         });
@@ -736,8 +731,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectAgent(agentElement) {
-        console.log('selectAgent called for:', agentElement.getAttribute('data-agent-id'));
-
         // Remove active class from all agents
         agentItems.forEach(item => item.classList.remove('active'));
 
@@ -746,29 +739,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Get agent ID
         currentAgentId = agentElement.getAttribute('data-agent-id');
-        console.log('Current agent ID set to:', currentAgentId);
 
         // Load agent's appointments
         loadAgentAppointments(currentAgentId);
     }
 
     function loadAgentAppointments(agentId) {
-        console.log('Loading appointments for agent:', agentId);
         showLoadingState();
 
-        const url = `/admin/appointment/agent/${agentId}`;
-        console.log('Fetching from URL:', url);
-
-        fetch(url)
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+        fetch(`/admin/appointment/agent/${agentId}`)
+            .then(response => response.json())
             .then(data => {
-                console.log('Received data:', data);
                 allAppointments = data.appointments || [];
                 filteredAppointments = [...allAppointments];
                 updateAppointmentsDisplay();
@@ -776,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error loading appointments:', error);
-                showErrorMessage('Không thể tải danh sách cuộc hẹn: ' + error.message);
+                showErrorMessage('Không thể tải danh sách cuộc hẹn');
             });
     }
 
