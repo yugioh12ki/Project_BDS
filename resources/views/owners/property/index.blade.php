@@ -4,9 +4,9 @@
 <div class="property-dashboard">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="fs-2 fw-bold">Bất động sản của tôi</h1>
-        <button type="button" class="btn btn-primary rounded-3 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addPropertyModal">
+        {{-- <button type="button" class="btn btn-primary rounded-3 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addPropertyModal">
             <i class="bi bi-plus-lg me-2"></i> Thêm bất động sản
-        </button>
+        </button> --}}
     </div>
 
     <!-- Statistics Cards -->
@@ -75,11 +75,11 @@
                 Danh sách bất động sản
             </button>
         </li>
-        <li class="nav-item" role="presentation">
+        {{-- <li class="nav-item" role="presentation">
             <button class="nav-link" id="property-posts-tab" data-bs-toggle="tab" data-bs-target="#property-posts-content" type="button" role="tab" aria-controls="property-posts-content" aria-selected="false">
                 Tin đăng ký gửi bất động sản
             </button>
-        </li>
+        </li> --}}
     </ul>
 
     @if(session('success'))
@@ -154,22 +154,22 @@
                                         <i class="bi bi-three-dots-vertical"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
+                                        {{-- <li>
                                             <a class="dropdown-item edit-property" href="#" data-bs-toggle="modal" data-bs-target="#editPropertyModal" data-property-id="{{ $property->PropertyID }}">
                                                 <i class="bi bi-pencil me-2 text-primary"></i> Chỉnh sửa
                                             </a>
-                                        </li>
+                                        </li> --}}
                                         <li>
                                             <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#viewPropertyModal" data-property-id="{{ $property->PropertyID }}">
                                                 <i class="bi bi-eye me-2 text-secondary"></i> Xem chi tiết
                                             </a>
                                         </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
+                                        {{-- <li><hr class="dropdown-divider"></li> --}}
+                                        {{-- <li>
                                             <a class="dropdown-item text-danger" href="#">
                                                 <i class="bi bi-trash me-2"></i> Xóa
                                             </a>
-                                        </li>
+                                        </li> --}}
                                     </ul>
                                 </div>
                             </div>
@@ -269,11 +269,11 @@
                                         </div>
                                     @endif
                                     
-                                    <div>
+                                    {{-- <div>
                                         <button class="btn btn-outline-primary edit-property" data-bs-toggle="modal" data-bs-target="#editPropertyModal" data-property-id="{{ $property->PropertyID }}">
                                             <i class="bi bi-pencil-square me-1"></i> Chỉnh sửa
                                         </button>
-                                    </div>
+                                    </div> --}}
                                 </div>
                             </div>
                         </div>
@@ -367,8 +367,8 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2 text-primary"></i> Xem chi tiết</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li>
+                                                {{-- <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li> --}}
                                             </ul>
                                         </div>
                                     </td>
@@ -402,8 +402,8 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2 text-primary"></i> Xem chi tiết</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li>
+                                                {{-- <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li> --}}
                                             </ul>
                                         </div>
                                     </td>
@@ -437,8 +437,8 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2 text-primary"></i> Xem chi tiết</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li>
+                                                {{-- <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li> --}}
                                             </ul>
                                         </div>
                                     </td>
@@ -472,8 +472,8 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2 text-primary"></i> Xem chi tiết</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li>
+                                                {{-- <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li> --}}
                                             </ul>
                                         </div>
                                     </td>
@@ -507,8 +507,8 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2 text-primary"></i> Xem chi tiết</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li>
+                                                {{-- <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li> --}}
                                             </ul>
                                         </div>
                                     </td>
@@ -542,8 +542,8 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2 text-primary"></i> Xem chi tiết</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li>
+                                                {{-- <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2 text-secondary"></i> Chỉnh sửa</a></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xoá</a></li> --}}
                                             </ul>
                                         </div>
                                     </td>
@@ -557,7 +557,7 @@
     </div>
 </div>
 
-<!-- Add Property Modal -->
+{{-- <!-- Add Property Modal -->
 <div class="modal fade" id="addPropertyModal" tabindex="-1" aria-labelledby="addPropertyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -570,9 +570,9 @@
       </div>
     </div>
   </div>
-</div>
+</div> --}}
 
-<!-- Include Property Listing Modal -->
+{{-- <!-- Include Property Listing Modal -->
 @include('_system.partialview.create_property_listing', ['ownerProperties' => $ownerProperties])
 
 <!-- Edit Property Modal -->
@@ -582,7 +582,7 @@
       @include('_system.partialview.edit_property')
     </div>
   </div>
-</div>
+</div> --}}
 
 <!-- View Property Modal -->
 <div class="modal fade" id="viewPropertyModal" tabindex="-1" aria-labelledby="viewPropertyModalLabel" aria-hidden="true">
