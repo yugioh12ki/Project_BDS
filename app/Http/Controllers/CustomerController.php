@@ -232,10 +232,28 @@ class CustomerController extends Controller
 
     public function showAppointments()
     {
-        $appointments = Appointment::with(['property', 'agent'])
+        // Debug authentication
+        $user = Auth::user();
+        Log::info('showAppointments called', [
+            'auth_check' => Auth::check(),
+            'user_id' => Auth::id(),
+            'user' => $user ? $user->toArray() : null
+        ]);
+
+        if (!Auth::check()) {
+            Log::error('User not authenticated in showAppointments');
+            return redirect()->route('login')->withErrors(['error' => 'Bạn cần đăng nhập để xem lịch hẹn']);
+        }
+
+        $appointments = Appointment::with(['property', 'agent', 'owner'])
             ->where('CusID', Auth::id())  // Sửa từ UserID thành CusID
             ->orderBy('AppointmentDateStart', 'desc')  // Sửa thành AppointmentDateStart
             ->get();
+
+        Log::info('Appointments found', [
+            'count' => $appointments->count(),
+            'user_id' => Auth::id()
+        ]);
 
         return view('customer.appointments.show', compact('appointments'));
     }
@@ -279,5 +297,21 @@ class CustomerController extends Controller
         }
 
         return response()->json(['success' => false], 404);
+    }
+    
+    public function cancelAppointment($id)
+    {
+        $appointment = Appointment::where('AppointmentID', $id)
+            ->where('CusID', Auth::id())
+            ->whereIn('Status', ['Pending', 'Confirmed'])
+            ->first();
+
+        if ($appointment) {
+            $appointment->Status = 'Cancelled';
+            $appointment->save();
+            return response()->json(['success' => true, 'message' => 'Lịch hẹn đã được hủy thành công']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Không thể hủy lịch hẹn này'], 404);
     }
 }

@@ -15,14 +15,15 @@ class Appointment extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'AppointmentID',
-        'CusID',           // Thay đổi từ UserID thành CusID theo CSDL
         'PropertyID',
         'AgentID',
+        'OwnerID',
+        'CusID',
+        'TitleAppoint',
+        'DescAppoint',
         'AppointmentDateStart',
         'AppointmentDateEnd',
-        'Status',
-        'Description' 
+        'Status'
     ];
 
     //Mối quan hệ với bảng 'user'
@@ -31,13 +32,17 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'AgentID', 'UserID');
     }
 
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
+    }
+
     public function customer()
     {
-        return $this->belongsTo(User::class, 'CusID', 'UserID');  // Sửa lại relationship
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
     }
 
     //Mối quan hệ với bảng 'property'
-
     public function property()
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');

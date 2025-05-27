@@ -156,6 +156,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/change-password', [CustomerController::class, 'showChangePasswordForm'])->name('change-password');
         Route::post('/change-password', [CustomerController::class, 'changePassword'])->name('password.change');
         Route::get('/appointments', [CustomerController::class, 'showAppointments'])->name('appointments.index');
+        Route::post('/appointments/{id}/cancel', [CustomerController::class, 'cancelAppointment'])->name('appointments.cancel');
         
         // Notification routes
         Route::get('/notifications', [CustomerController::class, 'getNotifications'])->name('notifications');
@@ -169,4 +170,68 @@ Route::middleware(['auth'])->group(function () {
     })->name('logout');
 
     
+});
+
+// Debug route - temporary
+Route::get('/debug-auth', function() {
+    return [
+        'auth_check' => Auth::check(),
+        'user_id' => Auth::id(),
+        'user' => Auth::user() ? Auth::user()->toArray() : null,
+        'session_data' => session()->all()
+    ];
+});
+
+// Test login route - temporary
+Route::get('/test-login', function() {
+    $user = App\Models\User::where('Email', 'nhuquynh1234@gmail.com')->first();
+    if ($user) {
+        Auth::login($user);
+        session(['name' => $user->Name]);
+        return redirect('/customer/appointments')->with('success', 'Test login successful');
+    }
+    return 'User not found';
+});
+
+// Debug appointments data
+Route::get('/debug-appointments', function() {
+    if (!Auth::check()) {
+        return 'Not authenticated';
+    }
+    
+    $appointments = App\Models\Appointment::with(['property', 'agent', 'owner'])
+        ->where('CusID', Auth::id())
+        ->get();
+    
+    return $appointments->map(function($app) {
+        return [
+            'id' => $app->AppointmentID,
+            'title' => $app->TitleAppoint,
+            'desc' => $app->DescAppoint,
+            'start_date' => $app->AppointmentDateStart,
+            'end_date' => $app->AppointmentDateEnd,
+            'status' => $app->Status,
+            'property_title' => $app->property->Title ?? 'NULL',
+            'agent_name' => $app->agent->Name ?? 'NULL',
+            'owner_name' => $app->owner->Name ?? 'NULL',
+        ];
+    });
+});
+
+// Test view render
+Route::get('/test-appointments-view', function() {
+    if (!Auth::check()) {
+        $user = App\Models\User::where('Email', 'nhuquynh1234@gmail.com')->first();
+        if ($user) {
+            Auth::login($user);
+            session(['name' => $user->Name]);
+        }
+    }
+    
+    $appointments = App\Models\Appointment::with(['property', 'agent', 'owner'])
+        ->where('CusID', Auth::id())
+        ->orderBy('AppointmentDateStart', 'desc')
+        ->get();
+    
+    return view('customer.appointments.show', compact('appointments'));
 });

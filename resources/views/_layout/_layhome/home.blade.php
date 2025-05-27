@@ -16,6 +16,8 @@
     {{-- Từ bản laravel 12x trở lên sử dụng @vite để điều hướng scss --}}
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    @yield('styles')
 </head>
 <header>
     @include('_layout.header')
@@ -23,9 +25,11 @@
 
 <body>
     @yield('home')
+    @yield('content')
 </body>
 <footer>
     @include('_layout.footer')
 </footer>
 
+@yield('scripts')
 </html>

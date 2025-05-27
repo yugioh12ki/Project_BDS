@@ -12,8 +12,6 @@
                 @else
                     <li><a href="{{ route('login') }}">Lịch hẹn</a></li>
                 @endauth
-                <li><a href="#">Ý kiến khách hàng</a></li>
-                <li><a href="#">Liên hệ</a></li>
                 <li><a href="#">Danh bạ</a></li>
                 <li><a href="#">Lịch sử giao dịch</a></li>
             </ul>
