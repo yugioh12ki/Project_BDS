@@ -138,6 +138,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/brokers', [AgentController::class, 'brokers'])->name('brokers');
         Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments');
         Route::post('/appointments/create', [AgentController::class, 'createAppointment'])->name('appointments.create');
+        Route::put('/appointments/{id}/update-status', [AgentController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
         Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions');
         Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
         Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');

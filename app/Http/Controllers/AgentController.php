@@ -57,14 +57,30 @@ class AgentController extends Controller
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
-        // Lấy danh sách properties với eager loading owner
-        $properties = Property::with(['owner'])
+        // Lấy danh sách properties với eager loading owner - đảm bảo load relationship
+        $properties = Property::with(['owner' => function($query) {
+                $query->select('UserID', 'Name', 'Phone', 'Email');
+            }])
             ->where('AgentID', $agent->UserID)
             ->where('Status', 'active')
+            ->select('PropertyID', 'Title', 'OwnerID', 'Address', 'Ward', 'District')
             ->get();
+            
+        // Tạo mảng JavaScript friendly cho properties
+        $propertyList = [];
+        foreach ($properties as $property) {
+            $propertyList[] = [
+                'id' => $property->PropertyID,
+                'title' => $property->Title,
+                'ownerId' => $property->OwnerID,
+                'ownerName' => $property->owner ? $property->owner->Name : 'Không xác định',
+                'address' => $property->Address ?? '',
+                'district' => $property->District ?? '',
+            ];
+        }
 
         // Truyền cả 2 biến vào view
-        return view('agents.appointments', compact('appointments', 'properties'));
+        return view('agents.appointments', compact('appointments', 'properties', 'propertyList'));
     }
     
     /**
@@ -170,6 +186,37 @@ class AgentController extends Controller
             ->get();
     }
 
+    public function transactions()
+    {
+        // Implement transactions view
+    }
+
+    /**
+     * Update appointment status
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateAppointmentStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|string|in:Thành công,Đã hủy,Hoàn thành,Chờ xử lý'
+        ]);
+
+        $appointment = Appointment::findOrFail($id);
+        
+        // Kiểm tra xem agent có quyền cập nhật trạng thái lịch hẹn này không
+        if ($appointment->AgentID !== Auth::id()) {
+            return redirect()->back()->with('error', 'Bạn không có quyền cập nhật lịch hẹn này');
+        }
+
+        $appointment->Status = $request->status;
+        $appointment->save();
+
+        return redirect()->back()->with('success', 'Cập nhật trạng thái lịch hẹn thành công');
+    }
+    
     public function searchCustomers(Request $request)
     {
         $term = $request->get('term');
