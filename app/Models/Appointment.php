@@ -30,7 +30,6 @@ class Appointment extends Model
     }
 
     //Mối quan hệ với bảng 'property'
-
     public function property()
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');

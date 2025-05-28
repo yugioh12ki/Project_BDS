@@ -1,30 +1,148 @@
-{{-- Tabs cho tài khoản hoạt động và không hoạt động --}}
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-0 pb-0">
-        <ul class="nav nav-tabs" id="userTabs" role="tablist">
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+{{-- Thống kê nhanh --}}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Tổng số User</h6>
+                        <h3 class="mb-0">{{ $users->count() }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Đang hoạt động</h6>
+                        <h3 class="mb-0">{{ $users->filter(fn($u) => strtolower($u->StatusUser) === 'active')->count() }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Ngừng hoạt động</h6>
+                        <h3 class="mb-0">{{ $users->filter(fn($u) => strtolower($u->StatusUser) === 'inactive')->count() }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-times fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Role hiện tại</h6>
+                        <h3 class="mb-0">{{ ucfirst($users->first()->Role ?? 'Tất cả') }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-tag fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Search and Filter Bar - Moved below stats as requested --}}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="input-group">
+            <span class="input-group-text bg-info text-white">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text"
+                   id="searchUsers"
+                   class="form-control"
+                   placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
+                   value="{{ request('keyword') }}"
+                   onkeyup="debounceSearch()">
+        </div>
+    </div>
+    <div class="col-md-2">
+        <select id="roleFilter" class="form-select" onchange="searchUsers()">
+            <option value="all" {{ request('role') === 'all' ? 'selected' : '' }}>Tất cả role</option>
+            <option value="Admin" {{ request('role') === 'Admin' ? 'selected' : '' }}>Admin</option>
+            <option value="Agent" {{ request('role') === 'Agent' ? 'selected' : '' }}>Agent</option>
+            <option value="Owner" {{ request('role') === 'Owner' ? 'selected' : '' }}>Owner</option>
+            <option value="Customer" {{ request('role') === 'Customer' ? 'selected' : '' }}>Customer</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <div class="btn-group w-100" role="group">
+            <button type="button" class="btn btn-outline-success" onclick="createUserByRole('Agent')" title="Tạo Agent">
+                <i class="fas fa-user-tie"></i>
+            </button>
+            <button type="button" class="btn btn-outline-info" onclick="createUserByRole('Owner')" title="Tạo Owner">
+                <i class="fas fa-home"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="createUserByRole('Customer')" title="Tạo Customer">
+                <i class="fas fa-user-tag"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- Tabs cho Active/Inactive --}}
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <ul class="nav nav-tabs card-header-tabs" id="userTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="active-users-tab" data-bs-toggle="tab" data-bs-target="#active-users" type="button" role="tab" aria-controls="active-users" aria-selected="true">
+                <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-users" type="button" role="tab">
                     <i class="fas fa-user-check text-success me-2"></i>
-                    <strong>Tài khoản hoạt động</strong>
-                    <span class="badge bg-success ms-2">{{ $users->filter(function($user) { return $user->StatusUser == 'active'; })->count() }}</span>
+                    Đang hoạt động
+                    <span class="badge bg-success ms-1">{{ $users->filter(fn($u) => strtolower($u->StatusUser) === 'active')->count() }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="inactive-users-tab" data-bs-toggle="tab" data-bs-target="#inactive-users" type="button" role="tab" aria-controls="inactive-users" aria-selected="false">
+                <button class="nav-link" id="inactive-tab" data-bs-toggle="tab" data-bs-target="#inactive-users" type="button" role="tab">
                     <i class="fas fa-user-times text-warning me-2"></i>
-                    <strong>Tài khoản không hoạt động</strong>
-                    <span class="badge bg-warning ms-2">{{ $users->filter(function($user) { return $user->StatusUser == 'inactive'; })->count() }}</span>
+                    Ngừng hoạt động
+                    <span class="badge bg-warning ms-1">{{ $users->filter(fn($u) => strtolower($u->StatusUser) === 'inactive')->count() }}</span>
                 </button>
             </li>
         </ul>
     </div>
 
-    <div class="card-body p-0">
+    <div class="card-body">
         <div class="tab-content" id="userTabsContent">
-            {{-- Tab tài khoản hoạt động --}}
-            <div class="tab-pane fade show active" id="active-users" role="tabpanel" aria-labelledby="active-users-tab">
+            {{-- Tab Active Users --}}
+            <div class="tab-pane fade show active" id="active-users" role="tabpanel">
+                @php
+                    $activeUsers = $users->filter(fn($u) => strtolower($u->StatusUser) === 'active');
+                @endphp
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th scope="col">
@@ -66,8 +184,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($users->filter(function($user) { return $user->StatusUser == 'active'; }) as $user)
-                                <tr class="user-row border-start border-success border-3" data-user-id="{{ $user->UserID }}" data-status="active">
+                            @forelse ($activeUsers as $user)
+                                <tr class="user-row" data-user-id="{{ $user->UserID }}" data-status="active">
                                     <td>
                                         <code class="bg-light px-2 py-1 rounded text-dark fw-bold">{{ $user->UserID }}</code>
                                     </td>
@@ -114,7 +232,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-danger btn-sm"
-                                                    onclick="toggleUserStatus('{{ $user->UserID }}', 'active')"
+                                                    onclick="toggleUserStatus('{{ $user->UserID }}', '{{ strtolower($user->StatusUser) }}')"
                                                     title="Vô hiệu hóa">
                                                 <i class="fas fa-user-times"></i>
                                             </button>
@@ -125,9 +243,9 @@
                                 <tr>
                                     <td colspan="6" class="text-center py-4">
                                         <div class="empty-state">
-                                            <i class="fas fa-user-check fa-3x mb-3 text-success"></i>
-                                            <h5 class="text-dark">Không có tài khoản hoạt động nào</h5>
-                                            <p class="text-muted">Tất cả tài khoản hiện đang bị vô hiệu hóa.</p>
+                                            <i class="fas fa-users fa-3x mb-3 text-muted"></i>
+                                            <h5 class="text-dark">Không có user nào đang hoạt động</h5>
+                                            <p class="text-muted">Hãy thêm user mới hoặc kích hoạt user đã tồn tại.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -137,72 +255,75 @@
                 </div>
             </div>
 
-            {{-- Tab tài khoản không hoạt động --}}
-            <div class="tab-pane fade" id="inactive-users" role="tabpanel" aria-labelledby="inactive-users-tab">
+            {{-- Tab Inactive Users - Fixed and Complete --}}
+            <div class="tab-pane fade" id="inactive-users" role="tabpanel">
+                @php
+                    $inactiveUsers = $users->filter(fn($u) => strtolower($u->StatusUser) === 'inactive');
+                @endphp
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th scope="col">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-id-card text-primary me-2"></i>
+                                        <i class="fas fa-id-card text-warning me-2"></i>
                                         <strong>User ID</strong>
                                     </div>
                                 </th>
                                 <th scope="col">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-user text-primary me-2"></i>
+                                        <i class="fas fa-user text-warning me-2"></i>
                                         <strong>Họ tên</strong>
                                     </div>
                                 </th>
                                 <th scope="col">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-envelope text-primary me-2"></i>
+                                        <i class="fas fa-envelope text-warning me-2"></i>
                                         <strong>Email</strong>
                                     </div>
                                 </th>
                                 <th scope="col">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-phone text-primary me-2"></i>
+                                        <i class="fas fa-phone text-warning me-2"></i>
                                         <strong>Điện thoại</strong>
                                     </div>
                                 </th>
                                 <th scope="col">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-user-tag text-primary me-2"></i>
+                                        <i class="fas fa-user-tag text-warning me-2"></i>
                                         <strong>Role</strong>
                                     </div>
                                 </th>
                                 <th scope="col" style="width: 150px;">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-cogs text-primary me-2"></i>
+                                        <i class="fas fa-cogs text-warning me-2"></i>
                                         <strong>Thao tác</strong>
                                     </div>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($users->filter(function($user) { return $user->StatusUser == 'inactive'; }) as $user)
-                                <tr class="user-row border-start border-warning border-3 bg-light" data-user-id="{{ $user->UserID }}" data-status="inactive">
+                            @forelse ($inactiveUsers as $user)
+                                <tr class="user-row" data-user-id="{{ $user->UserID }}" data-status="inactive">
                                     <td>
-                                        <code class="bg-secondary px-2 py-1 rounded text-white fw-bold">{{ $user->UserID }}</code>
+                                        <code class="bg-light px-2 py-1 rounded text-dark fw-bold">{{ $user->UserID }}</code>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             @if($user->Avatar)
-                                                <img src="{{ asset('storage/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle me-2 opacity-50" width="32" height="32">
+                                                <img src="{{ asset('storage/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle me-2 opacity-75" width="32" height="32">
                                             @else
                                                 <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
                                                     <span class="text-white fw-bold">{{ strtoupper(substr($user->Name, 0, 1)) }}</span>
                                                 </div>
                                             @endif
-                                            <span class="fw-bold text-muted">{{ $user->Name }}</span>
+                                            <span class="fw-bold text-dark">{{ $user->Name }}</span>
                                         </div>
                                     </td>
-                                    <td><span class="text-muted fw-medium">{{ $user->Email }}</span></td>
+                                    <td><span class="text-dark fw-medium">{{ $user->Email }}</span></td>
                                     <td>
                                         @if($user->Phone)
-                                            <span class="text-muted fw-medium">
+                                            <span class="text-dark fw-medium">
                                                 <i class="fas fa-phone-alt text-muted me-1"></i>
                                                 {{ $user->Phone }}
                                             </span>
@@ -230,7 +351,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button type="button" class="btn btn-outline-success btn-sm"
-                                                    onclick="toggleUserStatus('{{ $user->UserID }}', 'inactive')"
+                                                    onclick="toggleUserStatus('{{ $user->UserID }}', '{{ strtolower($user->StatusUser) }}')"
                                                     title="Kích hoạt lại">
                                                 <i class="fas fa-user-check"></i>
                                             </button>
@@ -241,9 +362,9 @@
                                 <tr>
                                     <td colspan="6" class="text-center py-4">
                                         <div class="empty-state">
-                                            <i class="fas fa-user-times fa-3x mb-3 text-warning"></i>
-                                            <h5 class="text-dark">Không có tài khoản bị vô hiệu hóa</h5>
-                                            <p class="text-muted">Tất cả tài khoản đều đang hoạt động.</p>
+                                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                                            <h5 class="text-dark">Tuyệt vời! Không có user nào bị vô hiệu hóa</h5>
+                                            <p class="text-muted">Tất cả user đều đang hoạt động bình thường.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -258,7 +379,7 @@
 
 {{-- Phân trang --}}
 @if ($users instanceof \Illuminate\Pagination\LengthAwarePaginator)
-    <div class="pagination-wrapper mt-4 d-flex justify-content-center">
+    <div class="pagination-wrapper mt-3">
         {{ $users->appends(request()->except('page'))->links() }}
     </div>
 @endif
@@ -433,69 +554,25 @@ body {
 }
 
 /* Tab Styling */
-.nav-tabs {
-    border-bottom: 2px solid var(--border-color);
-    margin-bottom: 0;
-}
-
 .nav-tabs .nav-link {
     color: var(--dark-text);
-    border: none;
+    border: 1px solid transparent;
     border-radius: 0.375rem 0.375rem 0 0;
     font-weight: 600;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.5rem;
     transition: all 0.3s ease;
-    background: transparent;
-    position: relative;
-    margin-right: 0.25rem;
 }
 
 .nav-tabs .nav-link:hover {
-    background-color: rgba(52, 152, 219, 0.1);
-    color: var(--info-color);
-    transform: translateY(-2px);
+    border-color: var(--border-color);
+    background-color: var(--light-bg);
 }
 
 .nav-tabs .nav-link.active {
     color: var(--primary-color);
     background-color: #ffffff;
-    border-bottom: 3px solid var(--info-color);
+    border-color: var(--border-color) var(--border-color) #ffffff;
     font-weight: 700;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.nav-tabs .nav-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(135deg, var(--info-color) 0%, var(--primary-color) 100%);
-    border-radius: 3px 3px 0 0;
-}
-
-/* Tab Content */
-.tab-content {
-    background: #ffffff;
-    border-radius: 0 0 0.375rem 0.375rem;
-}
-
-.tab-pane {
-    min-height: 300px;
-}
-
-/* Inactive users styling */
-tr[data-status="inactive"] {
-    background-color: rgba(248, 249, 250, 0.8);
-}
-
-tr[data-status="inactive"] .text-muted {
-    color: #6c757d !important;
-}
-
-tr[data-status="inactive"]:hover {
-    background-color: rgba(243, 156, 18, 0.05) !important;
 }
 
 /* Search Bar Styling */

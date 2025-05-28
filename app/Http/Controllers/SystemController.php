@@ -113,12 +113,14 @@ class SystemController extends Controller
     public function getUser()
     {
         $columns = Schema::getColumnListing('user');
-        $users = User::paginate(10); // Sửa $user thành $users
-        if ($columns === null || $users->isEmpty()) {
-            $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
-            return view('_system.users', compact('error')); // Truyền thông báo lỗi sang view
+        $users = User::paginate(10);
+
+        if ($columns === null) {
+            $error = 'Lỗi lấy cấu trúc bảng user';
+            return view('_system.users', compact('error', 'columns', 'users'));
         }
-        return view('_system.users', compact('columns','users')); // Đảm bảo biến truyền vào view là $users
+
+        return view('_system.users', compact('columns','users'));
     }
 
     public function getUserByRole(Request $request,$role)  // Hàm tìm kiếm user theo role (Không Produruce)
@@ -189,6 +191,8 @@ class SystemController extends Controller
             'district' => 'required|max:255',
             'province' => 'required|max:255',
             'password' => 'required|min:6|max:30',
+            'role' => 'nullable|string', // Allow role from form
+            'redirect_to_property' => 'nullable', // Flag for property redirect
         ]);
 
         $userExists = User::where('Email', $validated['email'])->first();
@@ -196,7 +200,10 @@ class SystemController extends Controller
             return redirect()->back()->withErrors('error','Email đã tồn tại.');
         }
 
-        User::create([
+        // Determine the role - use provided role or default to Customer
+        $role = $validated['role'] ?? 'Customer';
+
+        $user = User::create([
             'Name' => $validated['name'],
             'Email' => $validated['email'],
             'Birth' => $validated['birth'],
@@ -207,10 +214,23 @@ class SystemController extends Controller
             'Ward' => $validated['ward'],
             'District' => $validated['district'],
             'Province' => $validated['province'],
-            'Role' => 'Customer', // Luôn để mặc định là Customer
+            'Role' => $role,
             'StatusUser' => 'active',
             'PasswordHash' => $validated['password'],
         ]);
+
+        // Check if this is a redirect from property creation
+        if ($request->has('redirect_to_property') && $role === 'Owner') {
+            // Redirect back to property creation with new owner info
+            $redirectUrl = route('admin.property.create') . '?' . http_build_query([
+                'newOwnerId' => $user->UserID,
+                'newOwnerName' => $user->Name,
+                'newOwnerPhone' => $user->Phone,
+                'newOwnerEmail' => $user->Email,
+            ]);
+
+            return redirect($redirectUrl)->with('success', 'Chủ sở hữu đã được tạo thành công và đã được chọn trong form bất động sản.');
+        }
 
         return redirect()->route('admin.users')->with('success', 'Người dùng đã được tạo thành công.');
     }
@@ -265,14 +285,12 @@ class SystemController extends Controller
             'Province' => $validated['province'],
             'Role' => $validated['role'],
             'StatusUser' => $validated['status'],
-            'PasswordHash' => $validated['password'],
         ];
 
-        // Nếu có nhập password mới thì cập nhật
-        if (empty($validated['password'])) {
-           $user->password  = $validated['password']; // Giữ nguyên mật khẩu cũ
+        // Chỉ cập nhật password nếu có nhập password mới
+        if (!empty($validated['password'])) {
+           $data['PasswordHash'] = $validated['password']; // MD5 sẽ được áp dụng tự động qua setPasswordAttribute
         }
-
 
         $user->update($data);
 
@@ -302,6 +320,149 @@ class SystemController extends Controller
             return redirect()->route('admin.users')->withErrors(['error' => 'Đã xảy ra lỗi: ' . $e->getMessage()]);
         }
 
+    }
+
+    /**
+     * Create user with profile based on role
+     */
+    public function createUserWithProfile(Request $request)
+    {
+        try {
+            // Log request data for debugging
+            Log::info('Create user request data:', $request->all());
+
+            // Basic user validation
+            $rules = [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:user,Email',
+                'password' => 'required|string|min:6',
+                'role' => 'required|in:Admin,Agent,Owner,Customer',
+                'phone' => 'nullable|string|max:15',
+                'birth' => 'nullable|date',
+                'sex' => 'required|string|in:Nam,Nữ,Khác',
+                'identity_card' => 'required|string|max:12',
+                'address' => 'required|string|max:255',
+                'ward' => 'required|string|max:255',
+                'district' => 'required|string|max:255',
+                'province' => 'required|string|max:255',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ];
+
+            // Role-specific validation
+            switch ($request->role) {
+                case 'Admin':
+                    $rules['TenChucVu'] = 'nullable|string|in:Nhân viên,Quản trị viên,Giám đốc';
+                    break;
+                case 'Agent':
+                    $rules['Certificate'] = 'nullable|string';
+                    $rules['ContactAgent'] = 'nullable|string|max:15';
+                    $rules['NumberCardAgent'] = 'nullable|string';
+                    $rules['ProvinceAgent'] = 'nullable|string';
+                    $rules['DistrictAgent'] = 'nullable|string';
+                    break;
+                case 'Owner':
+                    $rules['ContactOwner'] = 'nullable|string|max:15';
+                    $rules['NumberCardOwner'] = 'nullable|string';
+                    $rules['GiayTo'] = 'nullable|string';
+                    break;
+                case 'Customer':
+                    $rules['Whitelist'] = 'nullable|string';
+                    $rules['PreferredPropertyType'] = 'nullable|string';
+                    break;
+            }
+
+            $validated = $request->validate($rules);
+
+            // Check if email exists
+            if (User::where('Email', $validated['email'])->exists()) {
+                return redirect()->back()->withErrors(['email' => 'Email đã tồn tại.'])->withInput();
+            }
+
+            DB::beginTransaction();
+
+            // Handle avatar upload
+            $avatarPath = null;
+            if ($request->hasFile('avatar')) {
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            }
+
+            // Create user
+            $user = User::create([
+                'Name' => $validated['name'],
+                'Email' => $validated['email'],
+                'Phone' => $validated['phone'] ?? null,
+                'Birth' => $validated['birth'] ?? null,
+                'Sex' => $validated['sex'] ?? null,
+                'IdentityCard' => $validated['identity_card'] ?? null,
+                'Address' => $validated['address'] ?? null,
+                'Ward' => $validated['ward'] ?? null,
+                'District' => $validated['district'] ?? null,
+                'Province' => $validated['province'] ?? null,
+                'Role' => $validated['role'],
+                'StatusUser' => 'active',
+                'PasswordHash' => $validated['password'], // MD5 sẽ được áp dụng tự động qua setPasswordAttribute
+                'Avatar' => $avatarPath,
+            ]);
+
+            // Update role-specific profile (profiles are auto-created by database triggers)
+            $this->updateRoleProfile($user->UserID, $validated['role'], $validated);
+
+            DB::commit();
+
+            return redirect()->route('admin.users')->with('success', 'Tài khoản đã được tạo thành công với thông tin profile!');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error creating user with profile: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Có lỗi xảy ra khi tạo tài khoản: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    /**
+     * Update role-specific profile for user (profiles are auto-created by database triggers)
+     */
+    private function updateRoleProfile($userId, $role, $data)
+    {
+        switch ($role) {
+            case 'Admin':
+                DB::table('profile_admin')
+                    ->where('UserID', $userId)
+                    ->update([
+                        'TenChucVu' => $data['TenChucVu'] ?? 'Nhân viên',
+                    ]);
+                break;
+
+            case 'Agent':
+                DB::table('profile_agent')
+                    ->where('UserID', $userId)
+                    ->update([
+                        'Certificate' => $data['Certificate'] ?? null,
+                        'DistrictAgent' => $data['DistrictAgent'] ?? null,
+                        'ProvinceAgent' => $data['ProvinceAgent'] ?? null,
+                        'ContactAgent' => $data['ContactAgent'] ?? null,
+                        'NumberCardAgent' => $data['NumberCardAgent'] ?? null,
+                    ]);
+                break;
+
+            case 'Owner':
+                DB::table('profile_owner')
+                    ->where('UserID', $userId)
+                    ->update([
+                        'ContactOwner' => $data['ContactOwner'] ?? null,
+                        'NumberCardOwner' => $data['NumberCardOwner'] ?? null,
+                        'GiayTo' => $data['GiayTo'] ?? null,
+                    ]);
+                break;
+
+            case 'Customer':
+                DB::table('profile_customer')
+                    ->where('UserID', $userId)
+                    ->update([
+                        'Whitelist' => $data['Whitelist'] ?? null,
+                        'PreferredPropertyType' => $data['PreferredPropertyType'] ?? null,
+                    ]);
+                break;
+        }
     }
 
     public function SearchUser(Request $request)
@@ -1244,7 +1405,14 @@ class SystemController extends Controller
         $endDate = $request->input('end_date');
         $agentId = $request->input('agent_id');
 
-        $query = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property.danhMuc']);
+        $query = Appointment::with([
+            'user_owner',
+            'user_agent',
+            'user_customer',
+            'property.danhMuc',
+            'property.chiTiet',
+            'property.images'
+        ]);
 
         if ($startDate && $endDate) {
             $query->whereBetween('AppointmentDateStart', [$startDate, $endDate]);
@@ -1265,7 +1433,14 @@ class SystemController extends Controller
     // Lấy danh sách cuộc hẹn theo agent ID
     public function getAppointmentsByAgent($agentId)
     {
-        $appointments = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])
+        $appointments = Appointment::with([
+            'user_owner',
+            'user_agent',
+            'user_customer',
+            'property.danhMuc',
+            'property.chiTiet',
+            'property.images'
+        ])
                         ->where('AgentID', $agentId)
                         ->orderBy('AppointmentDateStart', 'desc') // Sắp xếp theo thời gian bắt đầu giảm dần
                         ->get();
@@ -1290,7 +1465,14 @@ class SystemController extends Controller
     // Lấy chi tiết cuộc hẹn theo ID (trả về JSON)
     public function getAppointmentDetail($id)
     {
-        $appointment = Appointment::with(['user_owner', 'user_agent', 'user_customer', 'property'])->find($id);
+        $appointment = Appointment::with([
+            'user_owner',
+            'user_agent',
+            'user_customer',
+            'property.danhMuc',
+            'property.chiTiet',
+            'property.images'
+        ])->find($id);
 
         if (!$appointment) {
             return response()->json(['error' => 'Không tìm thấy cuộc hẹn'], 404);
@@ -2074,4 +2256,96 @@ class SystemController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Toggle user status between active and inactive
+     */
+    public function toggleUserStatus(Request $request, $userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+            $newStatus = $request->input('status');
+
+            // Validate status
+            if (!in_array($newStatus, ['active', 'inactive'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Trạng thái không hợp lệ.'
+                ], 400);
+            }
+
+            $user->StatusUser = $newStatus;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => "User đã được {$newStatus}.",
+                'user' => $user
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error toggling user status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật trạng thái user.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Search users by name, email, or phone only
+     */
+    public function searchUsers(Request $request)
+    {
+        try {
+            $query = User::query();
+
+            // Search only in Name, Email, Phone as requested
+            if ($request->has('keyword') && !empty($request->keyword)) {
+                $keyword = $request->keyword;
+                $query->where(function($q) use ($keyword) {
+                    $q->where('Name', 'LIKE', "%{$keyword}%")
+                      ->orWhere('Email', 'LIKE', "%{$keyword}%")
+                      ->orWhere('Phone', 'LIKE', "%{$keyword}%");
+                });
+            }
+
+            // Filter by role if specified
+            if ($request->has('role') && $request->role !== 'all') {
+                $query->where('Role', $request->role);
+            }
+
+            // Filter by status if specified
+            if ($request->has('status') && !empty($request->status)) {
+                $query->where('StatusUser', $request->status);
+            }
+
+            $users = $query->orderBy('Name')->get();
+
+            // Return JSON for AJAX requests
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'users' => $users,
+                    'total' => $users->count()
+                ]);
+            }
+
+            // Return view for regular requests
+            return view('_system.partialview.user_table', compact('users'));
+
+        } catch (\Exception $e) {
+            Log::error('Error searching users: ' . $e->getMessage());
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có lỗi xảy ra khi tìm kiếm.'
+                ], 500);
+            }
+
+            return back()->with('error', 'Có lỗi xảy ra khi tìm kiếm.');
+        }
+    }
+
 }

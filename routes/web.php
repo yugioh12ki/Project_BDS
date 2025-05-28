@@ -95,7 +95,7 @@ Route::middleware(['auth'])->group(function()
             // Route điều hướng đến trang quản lý người dùng
 
             Route::get('/user', [SystemController::class, "getUser"])->name('users');
-            Route::get('/user/create', [SystemController::class, "createUserForm"])->name('.users.create');
+            Route::get('/user/create', [SystemController::class, "createUserForm"])->name('users.create');
             Route::post('/user/create', [SystemController::class, 'createUser'])->name('users.store');
             Route::delete('/user/{id}',[SystemController::class, 'deleteUser'])->name('users.delete');
             Route::get('/user/{id}/edit', [SystemController::class, 'editUserForm'])->name('users.edit');
@@ -103,6 +103,16 @@ Route::middleware(['auth'])->group(function()
             Route::get('/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('users.byRole');
             Route::get('/user/status/{status}', [SystemController::class, 'getUserByStatus'])->name('users.byStatus');
             Route::get('/user/role/{role}/search', [SystemController::class, 'SearchUser'])->name('users.search');
+
+            // New enhanced user management routes
+            Route::post('/users/{userId}/toggle-status', [SystemController::class, 'toggleUserStatus'])->name('users.toggleStatus');
+            Route::get('/users/search', [SystemController::class, 'searchUsers'])->name('users.search.enhanced');
+
+            // Profile management routes
+            Route::post('/users/create-with-profile', [SystemController::class, 'createUserWithProfile'])->name('users.createWithProfile');
+            Route::put('/users/{userId}/update-with-profile', [SystemController::class, 'updateUserWithProfile'])->name('users.updateWithProfile');
+            Route::put('/users/{userId}/profile/{role}', [SystemController::class, 'updateRoleProfile'])->name('users.updateRoleProfile');
+            Route::post('/users/{userId}/activate', [SystemController::class, 'activateUser'])->name('users.activate');
 
             // Route điều hướng đến trang quản lý lịch hẹn
 
@@ -172,6 +182,9 @@ Route::middleware(['auth'])->group(function()
         Auth::logout(); // Đăng xuất người dùng
         return redirect()->route('login'); // Chuyển hướng về trang chủ
     })->name('logout');
+
+    Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
+
 });
 
 // Route API cho chatbot

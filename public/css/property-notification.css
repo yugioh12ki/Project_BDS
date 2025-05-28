@@ -1,18 +1,24 @@
 /* Property Notification Styles */
-/* Tách riêng để dễ quản lý và tùy chỉnh */
+/* Enhanced version for better UI/UX */
 
 /* =================================================================
    PROPERTY NOTIFICATION CONTAINER
    ================================================================= */
 
 .property-notification-card {
-    border: 2px solid #19f5c5 !important;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(25, 245, 197, 0.15);
+    border: 2px solid #1976d2 !important;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(25, 118, 210, 0.15);
     background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
     overflow: hidden;
     position: relative;
     animation: slideInRight 0.5s ease-out;
+    transition: all 0.3s ease;
+}
+
+.property-notification-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(25, 118, 210, 0.2);
 }
 
 .property-notification-card::before {
@@ -22,7 +28,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
 }
 
 .property-notification-card.show {
@@ -32,7 +38,7 @@
 
 /* Header của notification */
 .property-notification-header {
-    background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
     color: white;
     padding: 15px 20px;
     margin: -1px -1px 15px -1px;

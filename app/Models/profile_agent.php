@@ -21,9 +21,11 @@ class profile_agent extends Model
     }
 
     protected $fillable = [
-        'ContactAgent',
+        'UserID',
         'Certificate',
-        'AreaAgent',
+        'DistrictAgent',
+        'ProvinceAgent',
+        'ContactAgent',
         'NumberCardAgent'
     ];
 }

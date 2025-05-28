@@ -11,13 +11,24 @@ class User extends Authenticatable
     use HasFactory;
 
     protected $table = 'user'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
-    protected $primaryKey = 'UserID'; // Chỉ định khóa chính là 'id'
+    protected $primaryKey = 'UserID'; // Chỉ định khóa chính là 'UserID'
 
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
 
     public $incrementing = false; // Nếu khóa chính không phải là số nguyên tự động tăng
 
     protected $keyType = 'string'; // Nếu khóa chính là chuỗi
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            if (empty($user->UserID)) {
+                $user->UserID = 'USER_' . uniqid() . '_' . time();
+            }
+        });
+    }
 
     protected $fillable = [
         'Name',
@@ -33,6 +44,7 @@ class User extends Authenticatable
         'Role',
         'StatusUser',
         'PasswordHash',
+        'Avatar',
     ];
 
     // Mối quan hệ với bảng 'Property'
@@ -102,6 +114,15 @@ class User extends Authenticatable
         return $this->hasOne(profile_agent::class, 'UserID', 'UserID');
     }
 
+    public function profile_customer()
+    {
+        return $this->hasOne(profile_customer::class, 'UserID', 'UserID');
+    }
+    public function profile_owner()
+    {
+        return $this->hasOne(profile_owner::class, 'UserID', 'UserID');
+    }
+
     public function comm_agent()
     {
         return $this->hasOne(Commission::class, 'UserID', 'UserID');
@@ -115,7 +136,7 @@ class User extends Authenticatable
 
     public function setPasswordAttribute($password)
     {
-        $this->attributes['PasswordHash'] = bcrypt($password);
+        $this->attributes['PasswordHash'] = md5($password);
     }
 
     public function isActive()
@@ -138,5 +159,6 @@ class User extends Authenticatable
                       ->where('Status', 'active')
                       ->count();
     }
+
 
 }

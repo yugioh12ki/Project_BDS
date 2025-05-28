@@ -1,0 +1,5 @@
+#users { float:left; width: 150px; border-right:1px solid #ccc; min-height: 300px;}
+    #chatpanel { margin-left: 170px;}
+    #chatbox { height: 300px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 1rem; padding: 1rem;}
+    .msg.admin { color: blue; }
+    .msg.user { color: green; }

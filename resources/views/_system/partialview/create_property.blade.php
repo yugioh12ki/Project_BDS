@@ -431,7 +431,12 @@
                                                     <input type="hidden" name="selectedOwnerId" id="selectedOwnerId" required>
                                                     <div id="ownerSearchResults" class="autocomplete-results"></div>
                                                 </div>
-                                                <small class="text-muted">Nhập ít nhất 2 ký tự để tìm kiếm</small>
+                                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                                    <small class="text-muted">Nhập ít nhất 2 ký tự để tìm kiếm</small>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="createNewOwner()">
+                                                        <i class="fas fa-plus"></i> Tạo mới chủ sở hữu
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -665,7 +670,6 @@
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Ban công</label>
                                                     <select name="Balcony" class="form-control">
-                                                        <option value="">-- Chọn --</option>
                                                         <option value="1" {{ old('Balcony') == '1' ? 'selected' : '' }}>Có</option>
                                                         <option value="0" {{ old('Balcony') == '0' ? 'selected' : '' }}>Không</option>
                                                     </select>
@@ -712,7 +716,6 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Nội thất</label>
                                             <select name="Interior" class="form-control">
-                                                <option value="">-- Chọn --</option>
                                                 <option value="Cơ bản" {{ old('Interior') == 'Cơ bản' ? 'selected' : '' }}>Cơ bản</option>
                                                 <option value="Đầy đủ" {{ old('Interior') == 'Đầy đủ' ? 'selected' : '' }}>Đầy đủ</option>
                                             </select>
@@ -723,7 +726,6 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Giá nước</label>
                                             <select name="WaterPrice" class="form-control">
-                                                <option value="">-- Chọn --</option>
                                                 <option value="Thỏa thuận" {{ old('WaterPrice') == 'Thỏa thuận' ? 'selected' : '' }}>Thỏa thuận</option>
                                                 <option value="Do chủ nhà quy định" {{ old('WaterPrice') == 'Do chủ nhà quy định' ? 'selected' : '' }}>Do chủ nhà quy định</option>
                                                 <option value="Theo nhà nước" {{ old('WaterPrice') == 'Theo nhà nước' ? 'selected' : '' }}>Theo nhà nước</option>
@@ -733,7 +735,6 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Giá điện</label>
                                             <select name="PowerPrice" class="form-control">
-                                                <option value="">-- Chọn --</option>
                                                 <option value="Thỏa thuận" {{ old('PowerPrice') == 'Thỏa thuận' ? 'selected' : '' }}>Thỏa thuận</option>
                                                 <option value="Do chủ nhà quy định" {{ old('PowerPrice') == 'Do chủ nhà quy định' ? 'selected' : '' }}>Do chủ nhà quy định</option>
                                                 <option value="Theo nhà nước" {{ old('PowerPrice') == 'Theo nhà nước' ? 'selected' : '' }}>Theo nhà nước</option>
@@ -743,7 +744,6 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Tiện ích khác</label>
                                             <select name="Utilities" class="form-control">
-                                                <option value="">-- Chọn --</option>
                                                 <option value="Thỏa thuận" {{ old('Utilities') == 'Thỏa thuận' ? 'selected' : '' }}>Thỏa thuận</option>
                                                 <option value="Do chủ nhà quy định" {{ old('Utilities') == 'Do chủ nhà quy định' ? 'selected' : '' }}>Do chủ nhà quy định</option>
                                             </select>
@@ -1129,6 +1129,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedOwnerInfo = document.getElementById('selectedOwnerInfo');
     const ownerInfoDisplay = document.getElementById('ownerInfoDisplay');
 
+    // Initialize form restoration and owner selection
+    restoreFormData();
+    handleOwnerCreationReturn();
+
     // Search owners
     ownerSearchInput.addEventListener('input', function() {
         const query = this.value.trim();
@@ -1234,6 +1238,102 @@ function clearOwnerSelection() {
     ownerSearchInput.value = '';
     selectedOwnerIdInput.value = '';
     selectedOwnerInfo.style.display = 'none';
+}
+
+// Function to redirect to create new owner
+function createNewOwner() {
+    // Save current form data to localStorage for restoration later
+    const formData = new FormData(document.querySelector('form'));
+    const formDataObj = {};
+    for (let [key, value] of formData.entries()) {
+        formDataObj[key] = value;
+    }
+    localStorage.setItem('propertyFormDraft', JSON.stringify(formDataObj));
+
+    // Redirect to owners page with modal parameter
+    window.location.href = '{{ route("admin.users.byRole", "Owner") }}?showCreateModal=true';
+}
+
+// Function to restore form data from localStorage
+function restoreFormData() {
+    const savedData = localStorage.getItem('propertyFormDraft');
+    if (savedData) {
+        try {
+            const formData = JSON.parse(savedData);
+            const form = document.querySelector('form');
+
+            // Restore form fields
+            Object.keys(formData).forEach(key => {
+                const field = form.querySelector(`[name="${key}"]`);
+                if (field) {
+                    if (field.type === 'checkbox' || field.type === 'radio') {
+                        field.checked = formData[key] === field.value;
+                    } else if (field.tagName === 'SELECT') {
+                        field.value = formData[key];
+                    } else {
+                        field.value = formData[key];
+                    }
+                }
+            });
+
+            // Clear the saved data after restoration
+            localStorage.removeItem('propertyFormDraft');
+
+            // Show notification that data was restored
+            if (Object.keys(formData).length > 0) {
+                showNotification('Dữ liệu form đã được khôi phục thành công!', 'success');
+            }
+        } catch (error) {
+            console.error('Error restoring form data:', error);
+            localStorage.removeItem('propertyFormDraft');
+        }
+    }
+}
+
+// Function to show notification
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Function to handle owner selection after creation
+function handleOwnerCreationReturn() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const newOwnerId = urlParams.get('newOwnerId');
+    const newOwnerName = urlParams.get('newOwnerName');
+    const newOwnerPhone = urlParams.get('newOwnerPhone');
+    const newOwnerEmail = urlParams.get('newOwnerEmail');
+
+    if (newOwnerId && newOwnerName) {
+        // Select the newly created owner
+        selectOwner(newOwnerId, newOwnerName, newOwnerPhone || '', newOwnerEmail || '', '');
+
+        // Clean up URL parameters
+        const url = new URL(window.location);
+        url.searchParams.delete('newOwnerId');
+        url.searchParams.delete('newOwnerName');
+        url.searchParams.delete('newOwnerPhone');
+        url.searchParams.delete('newOwnerEmail');
+        window.history.replaceState({}, document.title, url.toString());
+
+        showNotification(`Đã chọn chủ sở hữu: ${newOwnerName}`, 'success');
+    }
 }
 
 

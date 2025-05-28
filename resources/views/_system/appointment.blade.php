@@ -16,135 +16,70 @@
     </div>
 @else
 
-<!-- Header với thống kê -->
-<div class="appointment-header mb-4">
-    <div class="row">
-        <div class="col-md-8">
-            <h1 class="page-title">
-                <i class="fas fa-calendar-alt me-2"></i>
-                Quản lý Lịch hẹn
-            </h1>
-            <p class="text-muted">Theo dõi và quản lý lịch hẹn của tất cả môi giới</p>
-        </div>
-        <div class="col-md-4">
-            <div class="appointment-stats-summary">
-                <div class="row g-2">
-                    <div class="col-6">
-                        <div class="stat-card stat-today">
-                            <div class="stat-number">{{ $appointmentStats['today'] }}</div>
-                            <div class="stat-label">Hôm nay</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card stat-week">
-                            <div class="stat-number">{{ $appointmentStats['this_week'] }}</div>
-                            <div class="stat-label">Tuần này</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Bộ lọc và tìm kiếm nâng cao -->
-<div class="search-filters-section mb-4">
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-search me-2"></i>
-                Tìm kiếm và Lọc
-            </h5>
-        </div>
-        <div class="card-body">
-            <form id="appointmentSearchForm">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Ngày cụ thể</label>
-                        <input type="date" id="searchDate" class="form-control">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Từ ngày</label>
-                        <input type="date" id="startDate" class="form-control">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Đến ngày</label>
-                        <input type="date" id="endDate" class="form-control">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Môi giới</label>
-                        <select id="filterAgent" class="form-select">
-                            <option value="all">Tất cả</option>
-                            @foreach($agents as $agent)
-                                <option value="{{ $agent->UserID }}">{{ $agent->Name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Trạng thái</label>
-                        <select id="filterStatus" class="form-select">
-                            <option value="all">Tất cả</option>
-                            <option value="Pending">Chờ xử lý</option>
-                            <option value="Confirmed">Đã xác nhận</option>
-                            <option value="Completed">Hoàn thành</option>
-                            <option value="Cancelled">Đã hủy</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="button" id="searchBtn" class="btn btn-primary w-100">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Layout chính 3 cột -->
+<!-- Layout chính 2 cột -->
 <div class="appointment-main-layout">
     <div class="row g-4">
 
-        <!-- Cột 1: Danh sách môi giới và thống kê -->
+        <!-- Cột 1: Bộ lọc và tìm kiếm -->
         <div class="col-lg-3">
-            <div class="agents-panel">
+            <div class="search-filters-panel">
                 <div class="card h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fas fa-users me-2"></i>
-                            Môi giới
+                            <i class="fas fa-search me-2"></i>
+                            Tìm kiếm cuộc hẹn
                         </h5>
-                        <span class="badge bg-primary">{{ $agents->total() }}</span>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="agent-list-container">
-                            @foreach($agents as $agent)
-                            <div class="agent-item" data-agent-id="{{ $agent->UserID }}">
-                                <div class="agent-info">
-                                    <div class="agent-name">{{ $agent->Name }}</div>
-                                    <div class="agent-stats">
-                                        <span class="property-count">
-                                            <i class="fas fa-home"></i>
-                                            {{ $agent->active_property_count }} BĐS
-                                        </span>
-                                        <span class="appointment-count">
-                                            <i class="fas fa-calendar"></i>
-                                            {{ $agent->total_appointments }} lịch hẹn
-                                        </span>
+                    <div class="card-body">
+                        <form id="appointmentSearchForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Tìm kiếm môi giới</label>
+                                <div class="position-relative">
+                                    <input type="text" id="agentSearch" class="form-control"
+                                           placeholder="Nhập tên môi giới..." autocomplete="off">
+                                    <button type="button" id="clearAgentSearch" class="btn btn-sm btn-outline-secondary position-absolute"
+                                            style="right: 5px; top: 50%; transform: translateY(-50%); display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <input type="hidden" id="selectedAgentId" value="">
+                                    <div id="agentSuggestions" class="dropdown-menu w-100" style="max-height: 200px; overflow-y: auto; display: none;">
+                                        @foreach($agents as $agent)
+                                            <a class="dropdown-item agent-suggestion" href="#"
+                                               data-agent-id="{{ $agent->UserID }}"
+                                               data-agent-name="{{ $agent->Name }}">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <i class="fas fa-user-tie"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">{{ $agent->Name }}</div>
+                                                        @if($agent->profile_agent)
+                                                            <small class="text-muted">{{ $agent->profile_agent->AreaAgent }}</small>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        @endforeach
                                     </div>
-                                    @if($agent->profile_agent)
-                                        <div class="agent-contact">
-                                            <small class="text-muted">{{ $agent->profile_agent->AreaAgent }}</small>
-                                        </div>
-                                    @endif
                                 </div>
                             </div>
-                            @endforeach
-                        </div>
-                        <!-- Phân trang -->
-                        <div class="agent-pagination p-3">
-                            {{ $agents->links('pagination::bootstrap-5') }}
-                        </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Từ ngày</label>
+                                <input type="date" id="startDate" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Đến ngày</label>
+                                <input type="date" id="endDate" class="form-control">
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="button" id="searchBtn" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i> Tìm kiếm
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -177,65 +112,18 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <!-- Tabs cho loại cuộc hẹn -->
-                        <ul class="nav nav-tabs" id="appointmentTypeTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="all-appointments-tab" data-bs-toggle="tab"
-                                        data-bs-target="#all-appointments" type="button" role="tab">
-                                    <i class="fas fa-calendar-alt me-1"></i>Tất cả
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="owner-appointments-tab" data-bs-toggle="tab"
-                                        data-bs-target="#owner-appointments" type="button" role="tab">
-                                    <i class="fas fa-user-tie me-1"></i>Với chủ sở hữu
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="customer-appointments-tab" data-bs-toggle="tab"
-                                        data-bs-target="#customer-appointments" type="button" role="tab">
-                                    <i class="fas fa-user me-1"></i>Với khách hàng
-                                </button>
-                            </li>
-                        </ul>
-
-                        <div class="tab-content" id="appointmentTabContent">
-                            <!-- Tab tất cả cuộc hẹn -->
-                            <div class="tab-pane fade show active" id="all-appointments" role="tabpanel">
-                                <div class="appointments-container">
-                                    <div class="initial-message text-center py-5">
-                                        <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
-                                        <h5 class="text-muted">Chọn môi giới hoặc tìm kiếm để xem cuộc hẹn</h5>
-                                        <p class="text-muted">Sử dụng bộ lọc ở trên để tìm kiếm cuộc hẹn theo ngày tháng</p>
-                                    </div>
-                                    <div class="appointments-content d-none">
-                                        <div id="appointments-list" class="appointments-list-view">
-                                            <!-- Danh sách cuộc hẹn sẽ được load ở đây -->
-                                        </div>
-                                        <div id="appointments-grid" class="appointments-grid-view d-none">
-                                            <!-- Grid view cuộc hẹn sẽ được load ở đây -->
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="appointments-container">
+                            <div class="initial-message text-center py-5">
+                                <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">Tìm kiếm môi giới để xem cuộc hẹn</h5>
+                                <p class="text-muted">Sử dụng bộ tìm kiếm ở trên để tìm kiếm cuộc hẹn theo môi giới và ngày tháng</p>
                             </div>
-
-                            <!-- Tab cuộc hẹn với chủ sở hữu -->
-                            <div class="tab-pane fade" id="owner-appointments" role="tabpanel">
-                                <div id="owner-appointments-content" class="p-3">
-                                    <div class="initial-message text-center py-4">
-                                        <i class="fas fa-user-tie fa-2x text-muted mb-2"></i>
-                                        <p class="text-muted">Chọn môi giới để xem cuộc hẹn với chủ sở hữu</p>
-                                    </div>
+                            <div class="appointments-content d-none">
+                                <div id="appointments-list" class="appointments-list-view">
+                                    <!-- Danh sách cuộc hẹn sẽ được load ở đây -->
                                 </div>
-                            </div>
-
-                            <!-- Tab cuộc hẹn với khách hàng -->
-                            <div class="tab-pane fade" id="customer-appointments" role="tabpanel">
-                                <div id="customer-appointments-content" class="p-3">
-                                    <div class="initial-message text-center py-4">
-                                        <i class="fas fa-user fa-2x text-muted mb-2"></i>
-                                        <p class="text-muted">Chọn môi giới để xem cuộc hẹn với khách hàng</p>
-                                    </div>
+                                <div id="appointments-grid" class="appointments-grid-view d-none">
+                                    <!-- Grid view cuộc hẹn sẽ được load ở đây -->
                                 </div>
                             </div>
                         </div>
@@ -265,19 +153,19 @@
                     </div>
                 </div>
 
-                <!-- Bất động sản liên quan -->
+                <!-- Thông tin bất động sản -->
                 <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0">
                             <i class="fas fa-building me-2"></i>
-                            Bất động sản liên quan
+                            Thông tin bất động sản
                         </h6>
                     </div>
                     <div class="card-body">
-                        <div id="related-properties">
+                        <div id="property-info">
                             <div class="no-data text-center py-4">
                                 <i class="fas fa-home fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">Chưa có thông tin BĐS</p>
+                                <p class="text-muted mb-0">Chọn cuộc hẹn để xem thông tin BĐS</p>
                             </div>
                         </div>
                     </div>
@@ -295,13 +183,10 @@
                 <h5 class="modal-title" id="appointmentDetailModalLabel">Chi tiết cuộc hẹn</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="appointmentDetailModal-body">
+            <div class="modal-body" id="appointmentDetail">
                 <!-- Nội dung chi tiết sẽ được thêm vào bằng JavaScript -->
             </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-danger btn-sm delete-appointment-btn">
-                    <i class="fa fa-trash"></i> Xóa
-                </button>
+            <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
@@ -335,181 +220,109 @@
 @endsection
 
 <style>
-/* ===== APPOINTMENT PAGE STYLES ===== */
+/* Modern appointment management styling */
 
-/* Header styles */
-.appointment-header .page-title {
-    color: #2c3e50;
+/* Search filters panel */
+.search-filters-panel .card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 12px;
+}
+
+.search-filters-panel .form-label {
+    color: #495057;
     font-weight: 600;
     margin-bottom: 0.5rem;
 }
 
-/* Statistics cards */
-.appointment-stats-summary {
-    margin-top: 1rem;
+.search-filters-panel .form-control {
+    border-radius: 8px;
+    border: 1px solid #e3e6f0;
+    transition: all 0.2s ease;
 }
 
-.stat-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1rem;
-    border-radius: 10px;
-    text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+.search-filters-panel .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
 
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+/* Agent search with suggestions */
+.position-relative .dropdown-menu {
+    border: 1px solid #e3e6f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-top: 2px;
 }
 
-.stat-card.stat-today {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+/* Clear button styling */
+#clearAgentSearch {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #dee2e6;
+    background: white;
+    border-radius: 4px;
+    z-index: 5;
 }
 
-.stat-card.stat-week {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.stat-number {
-    font-size: 1.8rem;
-    font-weight: bold;
-    line-height: 1;
-}
-
-.stat-label {
-    font-size: 0.85rem;
-    opacity: 0.9;
-    margin-top: 0.25rem;
-}
-
-/* Search filters */
-.search-filters-section .card {
-    border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border-radius: 15px;
-}
-
-.search-filters-section .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-}
-
-/* Main layout */
-.appointment-main-layout {
-    min-height: 600px;
-}
-
-/* Agent panel styles */
-.agents-panel .card {
-    border: none;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    border-radius: 15px;
-}
-
-.agent-item {
-    padding: 1rem;
-    margin: 0.5rem;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-left: 4px solid transparent;
+#clearAgentSearch:hover {
     background: #f8f9fa;
+    border-color: #adb5bd;
 }
 
-.agent-item:hover {
-    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    transform: translateX(5px);
-    border-left-color: #2196f3;
-    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+#clearAgentSearch i {
+    font-size: 12px;
+    color: #6c757d;
 }
 
-.agent-item.active {
-    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%);
-    border-left-color: #4caf50;
-    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
-    transform: translateX(8px);
+.agent-suggestion {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f1f1;
+    transition: all 0.2s ease;
 }
 
-.agent-name {
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
+.agent-suggestion:hover {
+    background-color: #f8f9fa;
+    transform: translateX(2px);
 }
 
-.agent-stats {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.agent-stats span {
-    font-size: 0.85rem;
-    color: #666;
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-}
-
-.agent-stats i {
-    color: #3498db;
-}
-
-.agent-contact {
-    font-size: 0.8rem;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
 }
 
 /* Appointments panel */
-.appointments-panel .card {
-    border: none;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    border-radius: 15px;
-}
-
-.appointment-view-controls .btn-group {
-    border-radius: 20px;
-    overflow: hidden;
-}
-
-/* Tabs styling */
-.nav-tabs {
-    border-bottom: 2px solid #e9ecef;
-}
-
-.nav-tabs .nav-link {
-    color: #6c757d;
-    border: none;
-    padding: 1rem 1.5rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.nav-tabs .nav-link:hover {
-    border: none;
-    color: #495057;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.nav-tabs .nav-link.active {
-    color: #495057;
-    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    border: none;
-    border-bottom: 3px solid #007bff;
-}
-
-/* Appointments list/grid */
-.appointments-container {
-    min-height: 400px;
-}
-
-.initial-message {
-    color: #6c757d;
-}
-
 .appointments-list-view {
-    max-height: 500px;
+    max-height: 600px;
     overflow-y: auto;
+}
+
+.appointment-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.appointment-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    border-color: #007bff;
+}
+
+.appointment-card.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    background-color: #f8f9ff;
 }
 
 .appointments-grid-view {
@@ -519,83 +332,109 @@
     padding: 1rem;
 }
 
-.appointment-item {
-    padding: 1rem;
-    margin: 0.5rem;
-    border-radius: 10px;
-    border: 1px solid #e9ecef;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.appointment-item:hover {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.appointment-item.selected {
-    border-color: #007bff;
-    background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%);
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
-}
-
 /* Details panel */
 .details-panel .card {
     border: none;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    border-radius: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px;
 }
 
-.details-panel .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
+.no-selection, .no-data {
+    color: #6c757d;
 }
 
-/* Status badges */
-.status-badge {
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
+/* Property info card */
+.property-info-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.property-info-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.property-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+/* Khi không có hình ảnh, property-details sẽ chiếm toàn bộ không gian */
+.property-info-card .property-details {
+    padding: 1rem;
+}
+
+.property-title {
+    font-size: 1rem;
     font-weight: 600;
-    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    line-height: 1.4;
 }
 
-.status-pending {
-    background: #fff3cd;
-    color: #856404;
+.property-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e74c3c;
+    margin-bottom: 0.5rem;
 }
 
-.status-confirmed {
-    background: #d4edda;
-    color: #155724;
+.property-location {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
 }
 
-.status-completed {
-    background: #d1ecf1;
-    color: #0c5460;
+.property-type {
+    background: #3498db;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
-.status-cancelled {
-    background: #f8d7da;
-    color: #721c24;
+.property-details {
+    padding: 1rem;
 }
 
-/* Loading states */
-.loading-spinner {
+.property-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.property-price {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.property-location {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.property-type {
     display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
 }
 
 /* Responsive design */
@@ -605,41 +444,38 @@
         margin-bottom: 2rem;
     }
 
-    .agent-stats {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .stat-card {
-        margin-bottom: 1rem;
+    .search-filters-panel .mb-3:last-child {
+        margin-bottom: 0 !important;
     }
 }
 
 @media (max-width: 768px) {
-    .appointment-header {
-        text-align: center;
+    .appointments-grid-view {
+        grid-template-columns: 1fr;
     }
 
-    .appointment-stats-summary {
-        margin-top: 1.5rem;
+    .property-image {
+        height: 120px;
     }
 
-    .search-filters-section .row > div {
-        margin-bottom: 1rem;
-    }
-
-    .appointment-view-controls {
-        margin-top: 1rem;
+    .search-filters-panel .card-body {
+        padding: 1rem;
     }
 }
 
-/* Animation effects */
+/* Status badges */
+.status-pending { background-color: #ffc107; }
+.status-confirmed { background-color: #28a745; }
+.status-completed { background-color: #007bff; }
+.status-cancelled { background-color: #dc3545; }
+
+/* Animation classes */
 .fade-in {
-    animation: fadeIn 0.5s ease-in;
+    animation: fadeIn 0.3s ease-in;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -648,480 +484,770 @@
 }
 
 @keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-/* Custom scrollbar */
-.agent-list-container::-webkit-scrollbar,
-.appointments-list-view::-webkit-scrollbar {
-    width: 6px;
-}
-
-.agent-list-container::-webkit-scrollbar-track,
-.appointments-list-view::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.agent-list-container::-webkit-scrollbar-thumb,
-.appointments-list-view::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 10px;
-}
-
-.agent-list-container::-webkit-scrollbar-thumb:hover,
-.appointments-list-view::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Global variables
+    // Variables for managing state
     let currentAgentId = null;
     let currentAppointmentId = null;
     let allAppointments = [];
     let filteredAppointments = [];
+    let currentView = 'list'; // 'list' hoặc 'grid'
 
     // DOM elements
-    const agentItems = document.querySelectorAll('.agent-item');
-    const searchBtn = document.getElementById('searchBtn');
-    const appointmentCountBadge = document.getElementById('appointmentCount');
-    const listViewBtn = document.getElementById('listView');
-    const gridViewBtn = document.getElementById('gridView');
+    const searchForm = document.getElementById('appointmentSearchForm');
+    const appointmentCount = document.getElementById('appointmentCount');
+    const appointmentsList = document.getElementById('appointments-list');
+    const appointmentsGrid = document.getElementById('appointments-grid');
+    const appointmentDetailSidebar = document.getElementById('appointment-detail-sidebar');
+    const propertyInfo = document.getElementById('property-info');
 
     // Initialize event listeners
     initializeEventListeners();
 
     function initializeEventListeners() {
-        console.log('Initializing event listeners...');
-        console.log('Agent items found:', agentItems.length);
+        // Search button
+        const searchBtn = document.getElementById('searchBtn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', handleSearch);
+        }
 
-        // Agent selection
-        agentItems.forEach(function(item) {
-            console.log('Adding click listener to agent:', item.getAttribute('data-agent-id'));
-            item.addEventListener('click', function(e) {
+        // View type toggle
+        const listView = document.getElementById('listView');
+        if (listView) {
+            listView.addEventListener('change', () => {
+                if (document.getElementById('listView').checked) {
+                    toggleView('list');
+                }
+            });
+        }
+
+        const gridView = document.getElementById('gridView');
+        if (gridView) {
+            gridView.addEventListener('change', () => {
+                if (document.getElementById('gridView').checked) {
+                    toggleView('grid');
+                }
+            });
+        }
+
+        // Agent search functionality
+        const agentSearchInput = document.getElementById('agentSearch');
+        const agentSuggestions = document.getElementById('agentSuggestions');
+        const clearAgentBtn = document.getElementById('clearAgentSearch');
+
+        if (agentSearchInput && agentSuggestions) {
+            // Initially hide suggestions
+            agentSuggestions.style.display = 'none';
+
+            agentSearchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                if (searchTerm.length > 0) {
+                    filterAgentSuggestions(searchTerm);
+                    showClearButton();
+                } else {
+                    filterAgentSuggestions(''); // Hiển thị tất cả khi không có text
+                    hideClearButton();
+                    document.getElementById('selectedAgentId').value = '';
+                }
+            });
+
+            // Hiển thị dropdown ngay khi focus vào input
+            agentSearchInput.addEventListener('focus', function() {
+                agentSuggestions.style.display = 'block';
+                const searchTerm = this.value.toLowerCase().trim();
+                filterAgentSuggestions(searchTerm);
+            });
+
+            // Ẩn dropdown khi blur (click ra ngoài)
+            agentSearchInput.addEventListener('blur', function() {
+                // Delay để cho phép click vào suggestion
+                setTimeout(() => {
+                    agentSuggestions.style.display = 'none';
+                }, 200);
+            });
+
+            // Clear button functionality
+            if (clearAgentBtn) {
+                clearAgentBtn.addEventListener('click', function() {
+                    agentSearchInput.value = '';
+                    document.getElementById('selectedAgentId').value = '';
+                    agentSuggestions.style.display = 'none';
+                    hideClearButton();
+
+                    // Clear appointments list
+                    allAppointments = [];
+                    filteredAppointments = [];
+                    updateAppointmentCount(0);
+                    appointmentsList.innerHTML = '<div class="text-center py-4 text-muted">Chọn môi giới để xem cuộc hẹn</div>';
+                    appointmentsGrid.innerHTML = '<div class="text-center py-4 text-muted">Chọn môi giới để xem cuộc hẹn</div>';
+                    appointmentDetailSidebar.innerHTML = '<div class="no-selection text-center py-4"><i class="fas fa-hand-point-left fa-2x text-muted mb-2"></i><p class="text-muted mb-0">Chọn cuộc hẹn để xem chi tiết</p></div>';
+                });
+            }
+        }
+
+        // Agent suggestion click
+        document.querySelectorAll('.agent-suggestion').forEach(suggestion => {
+            suggestion.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Agent clicked:', this.getAttribute('data-agent-id'));
-                selectAgent(this);
+                const agentId = this.getAttribute('data-agent-id');
+                const agentName = this.getAttribute('data-agent-name');
+
+                if (!agentId || agentId === 'null' || agentId === 'undefined') {
+                    console.error('Invalid agentId:', agentId);
+                    return;
+                }
+
+                agentSearchInput.value = agentName || '';
+                document.getElementById('selectedAgentId').value = agentId;
+                agentSuggestions.style.display = 'none';
+                showClearButton();
+
+                // Load appointments for selected agent
+                loadAgentAppointments(agentId);
             });
         });
 
-        // Search functionality
-        searchBtn.addEventListener('click', performSearch);
-
-        // Enter key in search forms
-        document.getElementById('appointmentSearchForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            performSearch();
-        });
-
-        // View toggle
-        listViewBtn.addEventListener('change', function() {
-            if (this.checked) toggleView('list');
-        });
-
-        gridViewBtn.addEventListener('change', function() {
-            if (this.checked) toggleView('grid');
-        });
-
-        // Tab switching
-        document.querySelectorAll('#appointmentTypeTabs button[data-bs-toggle="tab"]').forEach(function(tab) {
-            tab.addEventListener('shown.bs.tab', function(e) {
-                const target = e.target.getAttribute('data-bs-target');
-                loadTabContent(target);
-            });
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (agentSearchInput && agentSuggestions &&
+                !agentSearchInput.contains(e.target) &&
+                !agentSuggestions.contains(e.target)) {
+                agentSuggestions.style.display = 'none';
+            }
         });
     }
 
-    function selectAgent(agentElement) {
-        console.log('selectAgent called for:', agentElement.getAttribute('data-agent-id'));
+    function handleSearch() {
+        const selectedAgentId = document.getElementById('selectedAgentId').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
 
-        // Remove active class from all agents
-        agentItems.forEach(item => item.classList.remove('active'));
+        if (!selectedAgentId && !startDate && !endDate) {
+            showErrorMessage('Vui lòng chọn môi giới hoặc khoảng thời gian để tìm kiếm');
+            return;
+        }
 
-        // Add active class to selected agent
-        agentElement.classList.add('active');
+        showLoadingState();
 
-        // Get agent ID
-        currentAgentId = agentElement.getAttribute('data-agent-id');
-        console.log('Current agent ID set to:', currentAgentId);
+        // Nếu có agentId, dùng endpoint agent-specific
+        if (selectedAgentId) {
+            loadAgentAppointments(selectedAgentId);
+            return;
+        }
 
-        // Load agent's appointments
-        loadAgentAppointments(currentAgentId);
+        // Nếu có date range, dùng search-by-range endpoint
+        if (startDate && endDate) {
+            const searchParams = new URLSearchParams();
+            searchParams.append('start_date', startDate);
+            searchParams.append('end_date', endDate);
+
+            const endpoint = `/admin/appointment/search-by-range?${searchParams}`;
+
+            fetch(endpoint)
+                .then(response => response.json())
+                .then(data => {
+                    allAppointments = data.appointments || [];
+                    filteredAppointments = [...allAppointments];
+                    updateAppointmentCount(allAppointments.length);
+                    renderAppointments();
+                    hideInitialMessage();
+                })
+                .catch(error => {
+                    console.error('Search by range error:', error);
+                    showErrorMessage('Lỗi khi tìm kiếm cuộc hẹn theo khoảng thời gian');
+                });
+        }
+    }
+
+    function filterAgentSuggestions(searchTerm) {
+        const suggestions = document.querySelectorAll('.agent-suggestion');
+        suggestions.forEach(suggestion => {
+            const agentName = suggestion.getAttribute('data-agent-name').toLowerCase();
+            if (agentName.includes(searchTerm)) {
+                suggestion.style.display = 'block';
+            } else {
+                suggestion.style.display = 'none';
+            }
+        });
     }
 
     function loadAgentAppointments(agentId) {
         console.log('Loading appointments for agent:', agentId);
         showLoadingState();
 
-        const url = `/admin/appointment/agent/${agentId}`;
-        console.log('Fetching from URL:', url);
-
-        fetch(url)
+        fetch(`/admin/appointment/agent/${agentId}`)
             .then(response => {
-                console.log('Response status:', response.status);
+                console.log('Agent appointments response status:', response.status);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Received data:', data);
+                console.log('Agent appointments data:', data);
                 allAppointments = data.appointments || [];
                 filteredAppointments = [...allAppointments];
-                updateAppointmentsDisplay();
+                console.log('Loaded appointments count:', allAppointments.length);
+                updateAppointmentCount(allAppointments.length);
+                renderAppointments();
                 hideInitialMessage();
             })
             .catch(error => {
-                console.error('Error loading appointments:', error);
-                showErrorMessage('Không thể tải danh sách cuộc hẹn: ' + error.message);
+                console.error('Error loading agent appointments:', error);
+                showErrorMessage(`Lỗi khi tải danh sách cuộc hẹn: ${error.message}`);
             });
     }
 
-    function performSearch() {
-        const searchDate = document.getElementById('searchDate').value;
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const filterAgent = document.getElementById('filterAgent').value;
-        const filterStatus = document.getElementById('filterStatus').value;
-
-        showLoadingState();
-
-        let searchUrl = '/admin/appointment/search';
-        const params = new URLSearchParams();
-
-        if (searchDate) {
-            searchUrl = '/admin/appointment/search-by-date';
-            params.append('date', searchDate);
-        } else if (startDate && endDate) {
-            searchUrl = '/admin/appointment/search-by-range';
-            params.append('start_date', startDate);
-            params.append('end_date', endDate);
-        }
-
-        if (filterAgent && filterAgent !== 'all') {
-            params.append('agent_id', filterAgent);
-        }
-
-        if (filterStatus && filterStatus !== 'all') {
-            params.append('status', filterStatus);
-        }
-
-        const fullUrl = params.toString() ? `${searchUrl}?${params.toString()}` : searchUrl;
-
-        fetch(fullUrl)
-            .then(response => response.json())
-            .then(data => {
-                allAppointments = data.appointments || [];
-                filteredAppointments = [...allAppointments];
-                updateAppointmentsDisplay();
-                hideInitialMessage();
-
-                // Clear agent selection if search is performed
-                agentItems.forEach(item => item.classList.remove('active'));
-                currentAgentId = null;
-            })
-            .catch(error => {
-                console.error('Error searching appointments:', error);
-                showErrorMessage('Không thể tìm kiếm cuộc hẹn');
-            });
-    }
-
-    function updateAppointmentsDisplay() {
-        appointmentCountBadge.textContent = filteredAppointments.length;
-
-        const currentView = document.querySelector('input[name="viewType"]:checked').id;
-
-        if (currentView === 'listView') {
-            renderListView();
+    function renderAppointments() {
+        if (currentView === 'list') {
+            renderAppointmentsList();
         } else {
-            renderGridView();
+            renderAppointmentsGrid();
         }
     }
 
-    function renderListView() {
-        const container = document.getElementById('appointments-list');
-        container.innerHTML = '';
-
+    function renderAppointmentsList() {
         if (filteredAppointments.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
-                    <p class="text-muted">Không có cuộc hẹn nào</p>
-                </div>
-            `;
+            appointmentsList.innerHTML = '<div class="text-center py-4 text-muted">Không có cuộc hẹn nào</div>';
             return;
         }
 
-        const listHTML = filteredAppointments.map(appointment => `
-            <div class="appointment-item" data-appointment-id="${appointment.AppointmentID}" onclick="selectAppointment(${appointment.AppointmentID})">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="appointment-info flex-grow-1">
-                        <h6 class="appointment-title mb-2">${appointment.AppointmentTitle || 'Cuộc hẹn'}</h6>
-                        <p class="appointment-description text-muted small mb-2">${appointment.AppointmentDescription || 'Không có mô tả'}</p>
-                        <div class="appointment-meta">
-                            <span class="badge bg-light text-dark me-2">
-                                <i class="fas fa-calendar me-1"></i>
-                                ${formatDate(appointment.AppointmentDateStart)}
-                            </span>
-                            <span class="badge bg-light text-dark me-2">
-                                <i class="fas fa-clock me-1"></i>
-                                ${formatTime(appointment.AppointmentDateStart)}
-                            </span>
-                            ${getStatusBadge(appointment.AppointmentStatus)}
+        const html = filteredAppointments.map(appointment => {
+            const appointmentId = appointment.AppointmentID || 'unknown';
+            return `
+            <div class="appointment-card" data-appointment-id="${appointmentId}">
+                <div class="row">
+                    <div class="col-8">
+                        <h6 class="mb-2">${appointment.TitleAppoint || 'Không có tiêu đề'}</h6>
+                        <p class="text-muted mb-2 small">${truncateText(appointment.DescAppoint || '', 100)}</p>
+                        <div class="d-flex align-items-center gap-3 small">
+                            <span><i class="fas fa-calendar"></i> ${formatDate(appointment.AppointmentDateStart)}</span>
+                            <span><i class="fas fa-user"></i> ${getAppointmentPerson(appointment)}</span>
                         </div>
                     </div>
-                    <div class="appointment-actions">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointmentDetail(${appointment.AppointmentID}); event.stopPropagation();">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                    <div class="col-4 text-end">
+                        <span class="badge ${getStatusClass(appointment.Status)} mb-2">${appointment.Status || 'Pending'}</span>
+                        ${appointment.property ? `<div class="small text-muted"><i class="fas fa-home"></i> ${appointment.property.Title}</div>` : ''}
                     </div>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
-        container.innerHTML = listHTML;
+        appointmentsList.innerHTML = html;
+
+        // Add click handlers
+        document.querySelectorAll('.appointment-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const appointmentId = this.getAttribute('data-appointment-id');
+                selectAppointment(appointmentId);
+            });
+        });
     }
 
-    function renderGridView() {
-        const container = document.getElementById('appointments-grid');
-        container.innerHTML = '';
-
+    function renderAppointmentsGrid() {
         if (filteredAppointments.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
-                    <p class="text-muted">Không có cuộc hẹn nào</p>
-                </div>
-            `;
+            appointmentsGrid.innerHTML = '<div class="text-center py-4 text-muted">Không có cuộc hẹn nào</div>';
             return;
         }
 
-        const gridHTML = filteredAppointments.map(appointment => `
-            <div class="card appointment-card" data-appointment-id="${appointment.AppointmentID}" onclick="selectAppointment(${appointment.AppointmentID})">
-                <div class="card-body">
-                    <h6 class="card-title">${appointment.AppointmentTitle || 'Cuộc hẹn'}</h6>
-                    <p class="card-text text-muted small">${appointment.AppointmentDescription || 'Không có mô tả'}</p>
-                    <div class="mb-3">
-                        <small class="text-muted">
-                            <i class="fas fa-calendar me-1"></i>
-                            ${formatDate(appointment.AppointmentDateStart)}
-                        </small><br>
-                        <small class="text-muted">
-                            <i class="fas fa-clock me-1"></i>
-                            ${formatTime(appointment.AppointmentDateStart)} - ${formatTime(appointment.AppointmentDateEnd)}
-                        </small>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        ${getStatusBadge(appointment.AppointmentStatus)}
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointmentDetail(${appointment.AppointmentID}); event.stopPropagation();">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
+        const html = filteredAppointments.map(appointment => {
+            const appointmentId = appointment.AppointmentID || 'unknown';
+            return `
+            <div class="appointment-card" data-appointment-id="${appointmentId}">
+                <h6 class="mb-2">${appointment.TitleAppoint || 'Không có tiêu đề'}</h6>
+                <p class="text-muted mb-2 small">${truncateText(appointment.DescAppoint || '', 80)}</p>
+                <div class="mb-2">
+                    <span class="badge ${getStatusClass(appointment.Status)}">${appointment.Status || 'Pending'}</span>
+                </div>
+                <div class="small text-muted">
+                    <div><i class="fas fa-calendar"></i> ${formatDate(appointment.AppointmentDateStart)}</div>
+                    <div><i class="fas fa-user"></i> ${getAppointmentPerson(appointment)}</div>
+                    ${appointment.property ? `<div><i class="fas fa-home"></i> ${appointment.property.Title}</div>` : ''}
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
-        container.innerHTML = gridHTML;
-    }
+        appointmentsGrid.innerHTML = html;
 
-    function toggleView(viewType) {
-        const listContainer = document.getElementById('appointments-list');
-        const gridContainer = document.getElementById('appointments-grid');
-
-        if (viewType === 'list') {
-            listContainer.classList.remove('d-none');
-            gridContainer.classList.add('d-none');
-            renderListView();
-        } else {
-            listContainer.classList.add('d-none');
-            gridContainer.classList.remove('d-none');
-            renderGridView();
-        }
+        // Add click handlers
+        document.querySelectorAll('.appointment-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const appointmentId = this.getAttribute('data-appointment-id');
+                selectAppointment(appointmentId);
+            });
+        });
     }
 
     function selectAppointment(appointmentId) {
+        // Kiểm tra appointmentId hợp lệ
+        if (!appointmentId || appointmentId === 'undefined' || appointmentId === 'null') {
+            console.error('Invalid appointmentId:', appointmentId);
+            return;
+        }
+
         currentAppointmentId = appointmentId;
 
-        // Update visual selection
-        document.querySelectorAll('.appointment-item, .appointment-card').forEach(item => {
-            item.classList.remove('selected');
+        // Remove selected class from all cards
+        document.querySelectorAll('.appointment-card').forEach(card => {
+            card.classList.remove('selected');
         });
 
-        document.querySelector(`[data-appointment-id="${appointmentId}"]`)?.classList.add('selected');
+        // Add selected class to clicked card
+        const targetCard = document.querySelector(`[data-appointment-id="${appointmentId}"]`);
+        if (targetCard) {
+            targetCard.classList.add('selected');
+        } else {
+            console.error('Cannot find appointment card with ID:', appointmentId);
+        }
 
-        // Load appointment details in sidebar
-        loadAppointmentDetail(appointmentId);
+        // Load appointment details
+        loadAppointmentDetails(appointmentId);
     }
 
-    function loadAppointmentDetail(appointmentId) {
-        const sidebar = document.getElementById('appointment-detail-sidebar');
-        sidebar.innerHTML = '<div class="text-center"><div class="loading-spinner"></div></div>';
+    function loadAppointmentDetails(appointmentId) {
+        appointmentDetailSidebar.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
 
         fetch(`/admin/appointment/detail/${appointmentId}`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
-                renderAppointmentDetail(data.appointment);
-                if (data.properties) {
-                    renderRelatedProperties(data.properties);
+                console.log('=== RAW API RESPONSE ===');
+                console.log('Full data:', data);
+                console.log('Appointment exists:', !!data.appointment);
+                console.log('Property exists:', !!(data.appointment && data.appointment.property));
+
+                // Render appointment details first
+                renderAppointmentDetails(data.appointment);
+
+                // Handle property info separately
+                if (data.appointment && data.appointment.property) {
+                    console.log('=== PROPERTY FOUND ===');
+                    console.log('Property object:', data.appointment.property);
+                    console.log('Property PropertyID:', data.appointment.property.PropertyID);
+                    console.log('Property Title:', data.appointment.property.Title);
+
+                    // Test if property-info element exists
+                    const propertyInfoElement = document.getElementById('property-info');
+                    console.log('Property info element exists:', !!propertyInfoElement);
+
+                    // Render property info
+                    renderPropertyInfo(data.appointment.property);
+                } else {
+                    console.log('=== NO PROPERTY DATA ===');
+                    console.log('Appointment object:', data.appointment);
+                    console.log('Property value:', data.appointment ? data.appointment.property : 'No appointment');
+
+                    // Clear property info
+                    const propertyInfoElement = document.getElementById('property-info');
+                    if (propertyInfoElement) {
+                        propertyInfoElement.innerHTML = `
+                            <div class="no-data text-center py-4">
+                                <i class="fas fa-home fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">Không có thông tin BĐS</p>
+                            </div>
+                        `;
+                    }
                 }
             })
             .catch(error => {
-                console.error('Error loading appointment detail:', error);
-                sidebar.innerHTML = '<div class="text-center text-danger">Không thể tải chi tiết</div>';
+                console.error('Error loading appointment details:', error);
+                appointmentDetailSidebar.innerHTML = '<div class="text-center py-4 text-danger">Lỗi khi tải chi tiết</div>';
             });
     }
 
-    function renderAppointmentDetail(appointment) {
-        const sidebar = document.getElementById('appointment-detail-sidebar');
-
-        const detailHTML = `
+    function renderAppointmentDetails(appointment) {
+        const html = `
             <div class="appointment-detail-content">
-                <h6 class="fw-bold mb-3">${appointment.AppointmentTitle || 'Cuộc hẹn'}</h6>
-
-                <div class="detail-item mb-3">
-                    <label class="text-muted small">Mô tả:</label>
-                    <p class="mb-0">${appointment.AppointmentDescription || 'Không có mô tả'}</p>
+                <div class="mb-3">
+                    <h6 class="fw-bold">${appointment.TitleAppoint || 'Không có tiêu đề'}</h6>
+                    <span class="badge ${getStatusClass(appointment.Status)}">${appointment.Status || 'Pending'}</span>
                 </div>
 
-                <div class="detail-item mb-3">
-                    <label class="text-muted small">Thời gian:</label>
-                    <p class="mb-0">
-                        <i class="fas fa-calendar me-1"></i>
-                        ${formatDate(appointment.AppointmentDateStart)}<br>
-                        <i class="fas fa-clock me-1"></i>
-                        ${formatTime(appointment.AppointmentDateStart)} - ${formatTime(appointment.AppointmentDateEnd)}
-                    </p>
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Thời gian bắt đầu</div>
+                    <div>${formatDate(appointment.AppointmentDateStart)}</div>
                 </div>
 
-                <div class="detail-item mb-3">
-                    <label class="text-muted small">Trạng thái:</label>
-                    <div>${getStatusBadge(appointment.AppointmentStatus)}</div>
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Thời gian kết thúc</div>
+                    <div>${formatDate(appointment.AppointmentDateEnd)}</div>
                 </div>
 
-                <div class="detail-actions mt-4">
-                    <button class="btn btn-primary btn-sm w-100 mb-2" onclick="viewAppointmentDetail(${appointment.AppointmentID})">
-                        <i class="fas fa-expand-alt me-1"></i>
-                        Xem chi tiết đầy đủ
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Môi giới</div>
+                    <div>${appointment.user_agent ? appointment.user_agent.Name : 'Chưa xác định'}</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Người hẹn</div>
+                    <div>${getAppointmentPerson(appointment)}</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Mô tả</div>
+                    <div class="bg-light p-2 rounded">${appointment.DescAppoint || 'Không có mô tả'}</div>
+                </div>
+
+                <div class="d-grid">
+                    <button class="btn btn-primary btn-sm" onclick="showDetailModal('${appointment.AppointmentID}')">
+                        <i class="fas fa-expand"></i> Xem chi tiết đầy đủ
                     </button>
                 </div>
             </div>
         `;
 
-        sidebar.innerHTML = detailHTML;
+        appointmentDetailSidebar.innerHTML = html;
     }
 
-    function renderRelatedProperties(properties) {
-        const container = document.getElementById('related-properties');
+    function renderPropertyInfo(property) {
+        console.log('Starting renderPropertyInfo with property:', property);
 
-        if (!properties || properties.length === 0) {
-            container.innerHTML = `
+        if (!property) {
+            console.log('No property data provided');
+            document.getElementById('property-info').innerHTML = `
                 <div class="no-data text-center py-4">
                     <i class="fas fa-home fa-2x text-muted mb-2"></i>
-                    <p class="text-muted mb-0">Chưa có thông tin BĐS</p>
+                    <p class="text-muted mb-0">Không có thông tin BĐS</p>
                 </div>
             `;
             return;
         }
 
-        const propertiesHTML = properties.map(property => `
-            <div class="property-item mb-3 p-3 border rounded">
-                <h6 class="property-title">${property.PropertyTitle}</h6>
-                <p class="text-muted small mb-2">${property.PropertyAddress}</p>
-                <div class="property-meta">
-                    <span class="badge bg-light text-dark">
-                        ${property.PropertyPrice ? formatPrice(property.PropertyPrice) : 'Giá thỏa thuận'}
-                    </span>
+        // Kiểm tra các thuộc tính của property
+        console.log('Property keys:', Object.keys(property));
+        console.log('Property Title:', property.Title);
+        console.log('Property Price:', property.Price);
+        console.log('Property Address:', property.Address);
+        console.log('Property images:', property.images);
+        console.log('Property danhMuc:', property.danhMuc);
+        console.log('Property danh_muc:', property.danh_muc);
+        console.log('Property chiTiet:', property.chiTiet);
+        console.log('Property chi_tiet:', property.chi_tiet);
+
+        // Xây dựng src cho hình ảnh - Trả về hình ảnh rỗng nếu không có
+        let propertyImage = '';
+        if (property.images && property.images.length > 0) {
+            propertyImage = `/storage/${property.images[0].image_path}`;
+            console.log('Property image path:', propertyImage);
+        }
+
+        // Xác định thông tin danh mục
+        let categoryName = 'Chưa phân loại';
+        if (property.danhMuc && property.danhMuc.ten_pro) {
+            categoryName = property.danhMuc.ten_pro;
+        } else if (property.danh_muc && property.danh_muc.ten_pro) {
+            categoryName = property.danh_muc.ten_pro;
+        }
+
+        const html = `
+            <div class="property-info-card">
+                ${propertyImage ? `<img src="${propertyImage}" alt="${property.Title || 'Property'}" class="property-image" onerror="this.style.display='none'">` : ''}
+                <div class="property-details">
+                    <h6 class="property-title">${property.Title || 'Chưa có tiêu đề'}</h6>
+                    <div class="property-price">${formatPrice(property.Price)}</div>
+                    <div class="property-location">
+                        <i class="fas fa-map-marker-alt me-1"></i>
+                        ${property.Address || 'Chưa có địa chỉ'}
+                    </div>
+                    <div class="mt-2">
+                        <span class="property-type">
+                            ${categoryName}
+                        </span>
+                    </div>
                 </div>
             </div>
-        `).join('');
+        `;
 
-        container.innerHTML = propertiesHTML;
+        console.log('Updating property-info with HTML:', html);
+        document.getElementById('property-info').innerHTML = html;
     }
 
-    function loadTabContent(target) {
-        // Implementation for loading different tab contents
-        console.log('Loading tab content for:', target);
+    function toggleView(viewType) {
+        currentView = viewType;
+
+        if (viewType === 'list') {
+            appointmentsList.classList.remove('d-none');
+            appointmentsGrid.classList.add('d-none');
+        } else {
+            appointmentsList.classList.add('d-none');
+            appointmentsGrid.classList.remove('d-none');
+        }
+
+        renderAppointments();
     }
 
-    // Global functions (accessible from onclick handlers)
-    window.selectAppointment = selectAppointment;
-    window.viewAppointmentDetail = function(appointmentId) {
-        loadAppointmentDetail(appointmentId);
-        // Open modal if needed
-        const modal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
-        modal.show();
-    };
+    function filterAppointmentsByType(type) {
+        switch(type) {
+            case 'all':
+                filteredAppointments = [...allAppointments];
+                break;
+            case 'owner':
+                filteredAppointments = allAppointments.filter(apt => apt.OwnerID);
+                break;
+            case 'customer':
+                filteredAppointments = allAppointments.filter(apt => apt.CusID);
+                break;
+        }
 
-    // Utility functions
-    function formatDate(dateString) {
-        if (!dateString) return 'Chưa xác định';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN');
-    }
-
-    function formatTime(dateString) {
-        if (!dateString) return 'Chưa xác định';
-        const date = new Date(dateString);
-        return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function formatPrice(price) {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND'
-        }).format(price);
-    }
-
-    function getStatusBadge(status) {
-        const statusMap = {
-            'Pending': { class: 'status-pending', text: 'Chờ xử lý' },
-            'Confirmed': { class: 'status-confirmed', text: 'Đã xác nhận' },
-            'Completed': { class: 'status-completed', text: 'Hoàn thành' },
-            'Cancelled': { class: 'status-cancelled', text: 'Đã hủy' }
-        };
-
-        const statusInfo = statusMap[status] || { class: 'status-pending', text: status || 'Chưa xác định' };
-        return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+        updateAppointmentCount(filteredAppointments.length);
+        renderAppointments();
     }
 
     function showLoadingState() {
-        const container = document.querySelector('.appointments-content');
-        if (container) {
-            container.innerHTML = `
-                <div class="text-center py-5">
-                    <div class="loading-spinner mb-3"></div>
-                    <p class="text-muted">Đang tải dữ liệu...</p>
-                </div>
-            `;
-            container.classList.remove('d-none');
-        }
-    }
-
-    function hideInitialMessage() {
-        document.querySelectorAll('.initial-message').forEach(el => {
-            el.classList.add('d-none');
-        });
-        document.querySelector('.appointments-content')?.classList.remove('d-none');
+        const loadingHtml = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
+        appointmentsList.innerHTML = loadingHtml;
+        appointmentsGrid.innerHTML = loadingHtml;
     }
 
     function showErrorMessage(message) {
-        const container = document.querySelector('.appointments-content');
-        if (container) {
-            container.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
-                    <p class="text-danger">${message}</p>
-                    <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
-                        <i class="fas fa-refresh me-1"></i>
-                        Thử lại
-                    </button>
+        const errorHtml = `<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle"></i> ${message}</div>`;
+        appointmentsList.innerHTML = errorHtml;
+        appointmentsGrid.innerHTML = errorHtml;
+    }
+
+    function hideInitialMessage() {
+        document.querySelector('.initial-message').classList.add('d-none');
+        document.querySelector('.appointments-content').classList.remove('d-none');
+    }
+
+    function updateAppointmentCount(count) {
+        appointmentCount.textContent = count;
+    }
+
+    function handleDeleteButtonClick() {
+        // Handle delete from modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('appointmentDetailModal'));
+        modal.hide();
+
+        setTimeout(() => {
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            deleteModal.show();
+        }, 300);
+    }
+
+    // Global functions for button callbacks
+    window.showDetailModal = function(appointmentId) {
+        // Load appointment details into modal and show
+        loadAppointmentDetailsModal(appointmentId);
+    };
+
+    window.confirmDelete = function(appointmentId) {
+        document.getElementById('deleteAppointmentForm').action = `/admin/appointment/${appointmentId}`;
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        deleteModal.show();
+    };
+
+    // DEBUG FUNCTION - Temporary for testing
+    window.testAPI = function(appointmentId) {
+        console.log('=== TESTING API DIRECTLY ===');
+        fetch(`/admin/appointment/detail/${appointmentId}`)
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.text(); // Get as text first
+            })
+            .then(text => {
+                console.log('Raw response text:', text);
+                try {
+                    const data = JSON.parse(text);
+                    console.log('Parsed JSON:', data);
+                    console.log('Appointment property exists:', !!(data.appointment && data.appointment.property));
+                    if (data.appointment && data.appointment.property) {
+                        console.log('Property details:', data.appointment.property);
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                }
+            })
+            .catch(error => {
+                console.error('API test error:', error);
+            });
+    };
+
+    function loadAppointmentDetailsModal(appointmentId) {
+        const modal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
+        modal.show();
+
+        fetch(`/admin/appointment/detail/${appointmentId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Render full details in modal
+                document.getElementById('appointmentDetail').innerHTML = renderFullAppointmentDetails(data.appointment);
+                document.getElementById('deleteAppointmentForm').action = `/admin/appointment/${appointmentId}`;
+            })
+            .catch(error => {
+                console.error('Error loading modal details:', error);
+                document.getElementById('appointmentDetail').innerHTML = '<div class="text-center py-4 text-danger">Lỗi khi tải chi tiết</div>';
+            });
+    }
+
+    function renderFullAppointmentDetails(appointment) {
+        return `
+            <div class="appointment-detail-full">
+                <div class="mb-3">
+                    <span class="badge bg-secondary">ID: ${appointment.AppointmentID}</span>
                 </div>
-            `;
-            container.classList.remove('d-none');
+
+                <div class="mb-3">
+                    <h6 class="text-primary fw-bold mb-0">${appointment.TitleAppoint || 'Không có tiêu đề'}</h6>
+                    <small class="text-muted">
+                        Trạng thái: <span class="badge ${getStatusClass(appointment.Status)}">${appointment.Status || 'ĐANG CHỜ'}</span>
+                    </small>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt text-primary me-2"></i>
+                            <div>
+                                <div class="small fw-bold">Bắt đầu</div>
+                                <div>${formatDate(appointment.AppointmentDateStart)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-check text-primary me-2"></i>
+                            <div>
+                                <div class="small fw-bold">Kết thúc</div>
+                                <div>${formatDate(appointment.AppointmentDateEnd)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-tie text-primary me-2"></i>
+                            <div>
+                                <div class="small fw-bold">Môi giới</div>
+                                <div>${appointment.user_agent ? appointment.user_agent.Name : 'Chưa xác định'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user text-primary me-2"></i>
+                            <div>
+                                <div class="small fw-bold">Người hẹn</div>
+                                <div>${getAppointmentPerson(appointment)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                ${appointment.property ? `
+                <div class="mb-3 pb-2 border-bottom">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-home text-primary me-2"></i>
+                        <div>
+                            <div class="small fw-bold">Bất động sản</div>
+                            <div>${appointment.property.Title || 'Không có thông tin'}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="mb-0">
+                    <div class="small fw-bold text-muted mb-2">Mô tả chi tiết:</div>
+                    <div class="bg-light p-3 rounded appointment-notes">
+                        ${appointment.DescAppoint || 'Không có mô tả chi tiết'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Helper functions for clear button
+    function showClearButton() {
+        const clearBtn = document.getElementById('clearAgentSearch');
+        if (clearBtn) {
+            clearBtn.style.display = 'block';
         }
+    }
+
+    function hideClearButton() {
+        const clearBtn = document.getElementById('clearAgentSearch');
+        if (clearBtn) {
+            clearBtn.style.display = 'none';
+        }
+    }
+
+    // Utility functions
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    }
+
+    function formatPrice(price) {
+        if (!price || isNaN(price)) return 'Chưa có giá';
+
+        const numPrice = parseFloat(price);
+        if (numPrice >= 1000000000) {
+            return (numPrice / 1000000000).toFixed(1) + ' tỷ VNĐ';
+        } else if (numPrice >= 1000000) {
+            return (numPrice / 1000000).toFixed(1) + ' triệu VNĐ';
+        } else if (numPrice >= 1000) {
+            return (numPrice / 1000).toFixed(0) + 'k VNĐ';
+        } else {
+            return numPrice.toLocaleString('vi-VN') + ' VNĐ';
+        }
+    }
+
+    function getStatusClass(status) {
+        switch (status?.toLowerCase()) {
+            case 'confirmed':
+            case 'đã xác nhận':
+                return 'status-confirmed';
+            case 'completed':
+            case 'hoàn thành':
+                return 'status-completed';
+            case 'cancelled':
+            case 'đã hủy':
+                return 'status-cancelled';
+            case 'pending':
+            case 'đang chờ':
+            default:
+                return 'status-pending';
+        }
+    }
+
+    function getAppointmentPerson(appointment) {
+        if (appointment.user_customer) {
+            return appointment.user_customer.Name || 'Khách hàng';
+        } else if (appointment.user_owner) {
+            return appointment.user_owner.Name || 'Chủ sở hữu';
+        } else {
+            return 'Chưa xác định';
+        }
+    }
+
+    function truncateText(text, maxLength) {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
     }
 });
 </script>

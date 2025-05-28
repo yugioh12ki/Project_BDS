@@ -22,7 +22,17 @@ class Property extends Model
         return $this->belongsTo(DanhMucBDS::class, 'PropertyType', 'Protype_ID');
     }
 
+    public function danh_muc() // Thêm alias hỗ trợ tên relationship trong JSON
+    {
+        return $this->belongsTo(DanhMucBDS::class, 'PropertyType', 'Protype_ID');
+    }
+
     public function chiTiet()
+    {
+        return $this->hasOne(DetailProperty::class, 'PropertyID', 'PropertyID');
+    }
+
+    public function chi_tiet() // Thêm alias hỗ trợ tên relationship trong JSON
     {
         return $this->hasOne(DetailProperty::class, 'PropertyID', 'PropertyID');
     }

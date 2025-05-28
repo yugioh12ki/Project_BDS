@@ -1,6 +1,9 @@
 @extends('_layout._layadmin.app')
 
 @section('property')
+<!-- Include enhanced styles -->
+<link rel="stylesheet" href="{{ asset('css/property-enhancements.css') }}">
+
 <div class="property-page-wrapper">
     <ul class="nav nav-tabs" id="mainPropertyTabs">
         <li class="nav-item">
@@ -34,10 +37,11 @@
                 </div>
             </div>
 
-            <!-- Row 1: Property Table -->
+            <!-- Main Row: Property Table & Map (layout 8:4) -->
             <div class="row">
-                <div class="col-12">
-                    <div class="card property-table-card">
+                <!-- Left column - Property Table (8/12 width) -->
+                <div class="col-lg-8">
+                    <div class="card property-table-card enhanced-card h-100">
                         <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-list"></i> Danh sách bất động sản
@@ -52,47 +56,53 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Row 2: Property Details (left) and Map (right) -->
-            <div class="row mt-4">
-                <!-- Left column - Property details -->
-                <div class="col-lg-6">
-                    <div class="card property-details-card">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="fas fa-info-circle"></i> Thông tin chi tiết bất động sản
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-info">
-                                <i class="fas fa-hand-pointer"></i> Nhấn vào nút "Xem" trong bảng để hiển thị thông tin chi tiết bất động sản tại đây
-                            </div>
-                            <div id="property-notifications-area">
-                                <!-- Khu vực hiển thị thông tin chi tiết sẽ xuất hiện ở đây -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right column - Map -->
-                <div class="col-lg-6">
-                    <div class="card map-card">
+                <!-- Right column - Map (4/12 width) -->
+                <div class="col-lg-4">
+                    <div class="card map-card enhanced-card h-100" style="border-radius: 0 !important; overflow: hidden;">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">
-                                <i class="fas fa-map-marked-alt"></i> Vị trí trên bản đồ
+                                <i class="fas fa-map-marked-alt"></i> Bản đồ tương tác
                             </h6>
                             <div class="map-controls">
-                                <button class="btn btn-sm btn-outline-primary" id="fitAllMarkersBtn" title="Hiển thị tất cả vị trí">
+                                <button class="btn btn-sm btn-outline-light map-control-btn" id="fitAllMarkersBtn" title="Hiển thị tất cả vị trí">
                                     <i class="fas fa-compress-arrows-alt"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-light map-control-btn" id="refreshMapBtn" title="Làm mới bản đồ">
+                                    <i class="fas fa-sync-alt"></i>
                                 </button>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <div class="alert alert-info mb-2 py-2">
-                                <small><i class="fas fa-info-circle"></i> Nhấn vào bất kỳ bất động sản nào trong danh sách để xem vị trí trên bản đồ. Nếu không có tọa độ, hệ thống sẽ tự động tìm kiếm theo địa chỉ.</small>
+                        <div class="card-body" style="padding: 0 !important; margin: 0 !important; border: none !important;">
+                            <div id="googleMap" style="height: 600px !important; width: 100% !important; border: none !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Property Details Modal -->
+            <div class="modal fade" id="propertyDetailsModal" tabindex="-1" aria-labelledby="propertyDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="propertyDetailsModalLabel">
+                                <i class="fas fa-info-circle me-2"></i>Thông tin chi tiết bất động sản
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="propertyDetailsContent">
+                            <!-- Property details will be loaded here -->
+                            <div class="text-center p-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Đang tải thông tin...</p>
                             </div>
-                            <div id="googleMap"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>Đóng
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1526,7 +1536,7 @@ function initMap() {
                 showNotification('error', 'Không tìm thấy địa chỉ cho bất động sản này');
             }
         }
-    };    // Function to convert address to coordinates using Nominatim (OpenStreetMap's geocoder)
+    };    // Function to convert address to coordinates using Nominatim (OpenStreetMap's geocoder) with enhanced area searching
     function geocodeAddress(address, propertyId) {
         if (!address) return;
 
@@ -1536,118 +1546,291 @@ function initMap() {
         // Đảm bảo địa chỉ được chuẩn bị đúng
         address = address.trim();
 
-        // Thêm "Việt Nam" vào địa chỉ để tăng độ chính xác
-        if (address.toLowerCase().indexOf('việt nam') === -1) {
-            address += ', Việt Nam';
+        // Lấy thông tin chi tiết từ data attribute để xây dựng địa chỉ hoàn chỉnh
+        var row = document.getElementById('property-row-' + propertyId);
+        var addressParts = {
+            address: row ? row.getAttribute('data-address') : '',
+            ward: row ? row.getAttribute('data-ward') : '',
+            district: row ? row.getAttribute('data-district') : '',
+            province: row ? row.getAttribute('data-province') : ''
+        };
+
+        console.log('Address parts:', addressParts);
+
+        // Xây dựng danh sách địa chỉ để tìm kiếm theo độ ưu tiên
+        var searchAddresses = buildSearchAddressList(addressParts, address);
+
+        console.log('Search addresses:', searchAddresses);
+
+        // Thực hiện tìm kiếm theo thứ tự ưu tiên
+        performGeocodingWithFallback(searchAddresses, propertyId, 0);
+    }
+
+    // Xây dựng danh sách địa chỉ tìm kiếm theo độ ưu tiên
+    function buildSearchAddressList(parts, originalAddress) {
+        var addresses = [];
+
+        // 1. Địa chỉ đầy đủ ban đầu
+        if (originalAddress && originalAddress.trim() !== '') {
+            addresses.push(originalAddress + ', Việt Nam');
         }
 
-        console.log('Geocoding address:', address);
+        // 2. Địa chỉ được xây dựng từ các phần đầy đủ
+        if (parts.address && parts.ward && parts.district && parts.province) {
+            addresses.push(`${parts.address}, ${parts.ward}, ${parts.district}, ${parts.province}, Việt Nam`);
+        }
+
+        // 3. Địa chỉ không có số nhà (chỉ phường, quận, tỉnh)
+        if (parts.ward && parts.district && parts.province) {
+            addresses.push(`${parts.ward}, ${parts.district}, ${parts.province}, Việt Nam`);
+        }
+
+        // 4. Chỉ quận và tỉnh
+        if (parts.district && parts.province) {
+            addresses.push(`${parts.district}, ${parts.province}, Việt Nam`);
+        }
+
+        // 5. Chỉ tỉnh
+        if (parts.province) {
+            addresses.push(`${parts.province}, Việt Nam`);
+        }
+
+        // 6. Fallback cuối cùng - tìm theo tên gần đúng
+        if (parts.district && parts.province) {
+            // Thử tìm với tên rút gọn
+            var shortDistrict = parts.district.replace(/^(Quận|Huyện|Thành phố|TP\.)\s*/i, '');
+            var shortProvince = parts.province.replace(/^(Tỉnh|Thành phố|TP\.)\s*/i, '');
+            addresses.push(`${shortDistrict}, ${shortProvince}, Vietnam`);
+        }
+
+        return addresses.filter(addr => addr && addr.trim() !== ', Việt Nam');
+    }
+
+    // Thực hiện geocoding với fallback
+    function performGeocodingWithFallback(addresses, propertyId, currentIndex) {
+        if (currentIndex >= addresses.length) {
+            showNotification('error', 'Không thể tìm thấy vị trí cho bất động sản này sau khi thử tất cả các cách');
+            return;
+        }
+
+        var currentAddress = addresses[currentIndex];
+        console.log(`Trying address ${currentIndex + 1}/${addresses.length}:`, currentAddress);
+
+        // Hiển thị thông báo tiến trình
+        if (currentIndex > 0) {
+            showNotification('info', `Đang thử tìm kiếm theo vùng... (${currentIndex + 1}/${addresses.length})`);
+        }
 
         // Sử dụng Nominatim API (miễn phí) của OpenStreetMap
-        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(address))
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(currentAddress) + '&addressdetails=1&limit=5')
         .then(response => response.json())
         .then(data => {
             if (data && data.length > 0) {
-                const result = data[0];
-                const lat = parseFloat(result.lat);
-                const lng = parseFloat(result.lon);
+                // Tìm kết quả tốt nhất dựa trên type và importance
+                var bestResult = findBestGeocodingResult(data, currentIndex);
 
-                // Tạo marker mới nếu chưa tồn tại
-                let markerExists = false;
-                let existingMarker;
+                if (bestResult) {
+                    const lat = parseFloat(bestResult.lat);
+                    const lng = parseFloat(bestResult.lon);
 
-                for (let i = 0; i < markers.length; i++) {
-                    if (markers[i].options.propertyId === propertyId) {
-                        markerExists = true;
-                        existingMarker = markers[i];
-                        break;
-                    }
-                }
+                    console.log(`Found location for address ${currentIndex + 1}:`, bestResult.display_name);
 
-                if (!markerExists) {
-                    // Lấy thông tin bất động sản từ data attribute của row
-                    var row = document.getElementById('property-row-' + propertyId);
-                    var title = row ? row.querySelector('.property-title').textContent : 'Bất động sản #' + propertyId;
+                    // Tạo marker và hiển thị
+                    createPropertyMarker(propertyId, lat, lng, bestResult.display_name, currentIndex);
 
-                    // Lấy thêm thông tin chi tiết từ data attribute (nếu có)
-                    var propertyType = '';
-                    var propertyPrice = '';
-                    var propertyDate = '';
+                    // Thông báo thành công với mức độ chính xác
+                    var accuracyMessage = getAccuracyMessage(currentIndex);
+                    showNotification('success', `Đã tìm thấy vị trí ${accuracyMessage}`);
 
-                    if (row) {                try {
-                    // Lấy loại bất động sản từ row data-category
-                    let categorySelector = row.getAttribute('data-category') ?
-                        document.querySelector(`.property-row[data-category="${row.getAttribute('data-category')}"] td:nth-child(3)`) : null;
-                    propertyType = categorySelector ? categorySelector.textContent.trim() : '';
-                } catch (e) {
-                    propertyType = '';
-                    console.log('Error getting property type:', e);
-                }
-
-                // Lấy giá và ngày an toàn hơn
-                propertyPrice = row.getAttribute('data-price') ? new Intl.NumberFormat('vi-VN').format(row.getAttribute('data-price')) + ' VND' : '';
-                propertyDate = row.getAttribute('data-date') || '';
-                    }
-
-                    // Tạo marker mới
-                    var marker = L.marker([lat, lng], {
-                        propertyId: propertyId,
-                        title: title
-                    }).addTo(map);
-
-                    // Popup chi tiết cho marker với nhiều thông tin hơn
-                    var popupContent = '<div class="map-info-window">' +
-                        '<strong>' + title + '</strong>';
-
-                    if (address) {
-                        popupContent += '<p><i class="fas fa-map-marker-alt"></i> ' + address + '</p>';
-                    }
-
-                    if (propertyType) {
-                        popupContent += '<p><i class="fas fa-home"></i> ' + propertyType + '</p>';
-                    }
-
-                    if (propertyPrice) {
-                        popupContent += '<p><i class="fas fa-tags"></i> ' + propertyPrice + '</p>';
-                    }
-
-                    if (propertyDate) {
-                        popupContent += '<p><i class="far fa-calendar-alt"></i> ' + propertyDate + '</p>';
-                    }
-
-                    popupContent += '</div>';
-
-                    marker.bindPopup(popupContent).openPopup();
-
-                    // Sự kiện click cho marker
-                    marker.on('click', function() {
-                        highlightProperty(propertyId);
-                    });
-
-                    markers.push(marker);
-
-                    // Di chuyển bản đồ tới marker mới tạo
-                    map.setView([lat, lng], 15);
-
-                    // Cập nhật data attribute của dòng bất động sản
-                    if (row) {
-                        row.setAttribute('data-lat', lat);
-                        row.setAttribute('data-lng', lng);
-                    }
-
-                    showNotification('success', 'Đã tìm thấy vị trí bất động sản');
                 } else {
-                    // Dùng marker đã có sẵn
-                    map.setView(existingMarker.getLatLng(), 15);
-                    existingMarker.openPopup();
+                    // Thử địa chỉ tiếp theo
+                    performGeocodingWithFallback(addresses, propertyId, currentIndex + 1);
                 }
             } else {
-                showNotification('error', 'Không tìm thấy vị trí cho địa chỉ này');
+                // Thử địa chỉ tiếp theo
+                performGeocodingWithFallback(addresses, propertyId, currentIndex + 1);
             }
         })
         .catch(error => {
             console.error('Geocoding error:', error);
-            showNotification('error', 'Lỗi khi tìm kiếm vị trí: ' + error.message);
+            // Thử địa chỉ tiếp theo nếu có lỗi
+            performGeocodingWithFallback(addresses, propertyId, currentIndex + 1);
+        });
+    }
+
+    // Tìm kết quả geocoding tốt nhất
+    function findBestGeocodingResult(results, searchLevel) {
+        if (!results || results.length === 0) return null;
+
+        // Ưu tiên theo loại địa điểm và importance
+        var priorityTypes = ['house', 'building', 'residential', 'place', 'road', 'suburb', 'village', 'town', 'city', 'state'];
+
+        // Với tìm kiếm cấp cao hơn (theo vùng), chấp nhận kết quả rộng hơn
+        if (searchLevel >= 2) {
+            priorityTypes = ['place', 'suburb', 'village', 'town', 'city', 'county', 'state', 'house', 'building'];
+        }
+
+        var bestResult = null;
+        var bestScore = -1;
+
+        results.forEach(result => {
+            var score = 0;
+
+            // Điểm theo importance
+            score += (parseFloat(result.importance) || 0) * 10;
+
+            // Điểm theo loại
+            var typeIndex = priorityTypes.findIndex(type =>
+                result.type && result.type.toLowerCase().includes(type) ||
+                result.class && result.class.toLowerCase().includes(type)
+            );
+            if (typeIndex >= 0) {
+                score += (priorityTypes.length - typeIndex) * 2;
+            }
+
+            // Điểm nếu có address details đầy đủ
+            if (result.address) {
+                score += Object.keys(result.address).length * 0.5;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestResult = result;
+            }
+        });
+
+        return bestResult;
+    }
+
+    // Lấy thông báo độ chính xác
+    function getAccuracyMessage(searchLevel) {
+        switch(searchLevel) {
+            case 0: return 'chính xác (địa chỉ đầy đủ)';
+            case 1: return 'chính xác (địa chỉ chi tiết)';
+            case 2: return 'theo vùng phường/xã';
+            case 3: return 'theo vùng quận/huyện';
+            case 4: return 'theo vùng tỉnh/thành phố';
+            default: return 'gần đúng';
+        }
+    }
+
+    // Tạo marker cho bất động sản
+    function createPropertyMarker(propertyId, lat, lng, displayName, searchLevel) {
+        // Kiểm tra xem marker đã tồn tại chưa
+        let existingMarker = markers.find(marker => marker.options.propertyId === propertyId);
+
+        if (existingMarker) {
+            // Cập nhật vị trí marker hiện có
+            existingMarker.setLatLng([lat, lng]);
+            map.setView([lat, lng], getZoomLevel(searchLevel));
+            existingMarker.openPopup();
+            return;
+        }
+
+        // Lấy thông tin bất động sản từ data attribute của row
+        var row = document.getElementById('property-row-' + propertyId);
+        var title = row ? row.querySelector('.property-title').textContent : 'Bất động sản #' + propertyId;
+
+        // Lấy thêm thông tin chi tiết từ data attribute (nếu có)
+        var propertyType = '';
+        var propertyPrice = '';
+        var propertyDate = '';
+
+        if (row) {
+            try {
+                // Lấy loại bất động sản từ row data-category
+                let categorySelector = row.getAttribute('data-category') ?
+                    document.querySelector(`.property-row[data-category="${row.getAttribute('data-category')}"] td:nth-child(3)`) : null;
+                propertyType = categorySelector ? categorySelector.textContent.trim() : '';
+            } catch (e) {
+                propertyType = '';
+                console.log('Error getting property type:', e);
+            }
+
+            // Lấy giá và ngày an toàn hơn
+            propertyPrice = row.getAttribute('data-price') ? new Intl.NumberFormat('vi-VN').format(row.getAttribute('data-price')) + ' VND' : '';
+            propertyDate = row.getAttribute('data-date') || '';
+        }
+
+        // Tạo marker mới với icon khác nhau tùy theo độ chính xác
+        var markerIcon = getMarkerIcon(searchLevel);
+        var marker = L.marker([lat, lng], {
+            propertyId: propertyId,
+            title: title,
+            icon: markerIcon
+        }).addTo(map);
+
+        // Popup chi tiết cho marker với nhiều thông tin hơn
+        var popupContent = '<div class="map-info-window enhanced-popup">' +
+            '<div class="popup-header">' +
+            '<strong class="popup-title">' + title + '</strong>' +
+            '<div class="accuracy-badge">' + getAccuracyMessage(searchLevel) + '</div>' +
+            '</div>';
+
+        if (displayName) {
+            popupContent += '<div class="popup-address"><i class="fas fa-map-marker-alt text-danger"></i> ' + displayName + '</div>';
+        }
+
+        if (propertyType) {
+            popupContent += '<div class="popup-info"><i class="fas fa-home text-info"></i> <strong>Loại:</strong> ' + propertyType + '</div>';
+        }
+
+        if (propertyPrice) {
+            popupContent += '<div class="popup-info"><i class="fas fa-tags text-success"></i> <strong>Giá:</strong> ' + propertyPrice + '</div>';
+        }
+
+        if (propertyDate) {
+            popupContent += '<div class="popup-info"><i class="far fa-calendar-alt text-warning"></i> <strong>Ngày đăng:</strong> ' + propertyDate + '</div>';
+        }
+
+        popupContent += '</div>';
+
+        marker.bindPopup(popupContent).openPopup();
+
+        // Sự kiện click cho marker
+        marker.on('click', function() {
+            highlightProperty(propertyId);
+        });
+
+        markers.push(marker);
+
+        // Di chuyển bản đồ tới marker mới tạo với zoom level phù hợp
+        map.setView([lat, lng], getZoomLevel(searchLevel));
+
+        // Cập nhật data attribute của dòng bất động sản
+        if (row) {
+            row.setAttribute('data-lat', lat);
+            row.setAttribute('data-lng', lng);
+        }
+
+        // Highlight property trong danh sách
+        highlightProperty(propertyId);
+    }
+
+    // Lấy zoom level dựa trên độ chính xác tìm kiếm
+    function getZoomLevel(searchLevel) {
+        switch(searchLevel) {
+            case 0:
+            case 1: return 16; // Địa chỉ chính xác
+            case 2: return 14; // Phường/xã
+            case 3: return 12; // Quận/huyện
+            case 4: return 10; // Tỉnh/thành phố
+            default: return 8; // Mặc định
+        }
+    }
+
+    // Lấy icon marker dựa trên độ chính xác
+    function getMarkerIcon(searchLevel) {
+        var iconColor = searchLevel <= 1 ? 'green' : searchLevel <= 2 ? 'orange' : 'red';
+
+        // Sử dụng default Leaflet marker với màu khác nhau
+        return new L.Icon({
+            iconUrl: `https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${iconColor}.png`,
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
         });
     }
 
@@ -1792,46 +1975,522 @@ document.addEventListener('DOMContentLoaded', function() {
         background-color: transparent;
     }
 
+    /* Enhanced Navigation Tabs Styling */
     .nav-tabs {
         display: flex;
         justify-content: flex-start;
+        border-bottom: 2px solid #1976d2;
+        margin-bottom: 0;
+        background: linear-gradient(135deg, #f0f8ff 0%, #e3f2fd 100%);
+        border-radius: 12px 12px 0 0;
+        padding: 8px 16px 0 16px;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
     }
 
-    /* Map Info Window Styling */
-    .map-info-window {
-        min-width: 200px;
-        max-width: 300px;
-        padding: 5px;
+    .nav-tabs .nav-item {
+        margin-bottom: 0;
+        margin-right: 4px;
     }
 
-    .map-info-window strong {
-        display: block;
-        margin-bottom: 8px;
-        font-size: 14px;
+    .nav-tabs .nav-link {
+        border: 2px solid #e3f2fd;
+        border-radius: 12px 12px 0 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         color: #2c3e50;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 5px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+        margin-right: 0;
+        font-weight: 600;
+        padding: 12px 24px;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.875rem;
+        border-bottom: none;
     }
 
-    .map-info-window p {
-        margin: 4px 0;
-        font-size: 12px;
-        color: #555;
+    .nav-tabs .nav-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(25, 118, 210, 0.1), transparent);
+        transition: left 0.5s ease;
     }
 
-    .map-info-window i {
-        width: 16px;
-        margin-right: 5px;
-        color: #3498db;
+    .nav-tabs .nav-link:hover {
+        border-color: #1976d2;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #1565c0;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
     }
 
-    /* Leaflet popup styling */
+    .nav-tabs .nav-link:hover::before {
+        left: 100%;
+    }
+
+    .nav-tabs .nav-link.active {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        border-color: #1976d2;
+        color: white !important;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(25, 118, 210, 0.4);
+        animation: shimmer 2s infinite;
+    }
+
+    .nav-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #1976d2, #42a5f5, #1976d2);
+        animation: flow 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+        0%, 100% {
+            box-shadow: 0 8px 25px rgba(25, 118, 210, 0.4);
+        }
+        50% {
+            box-shadow: 0 12px 35px rgba(25, 118, 210, 0.6);
+        }
+    }
+
+    @keyframes flow {
+        0%, 100% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    /* Enhanced Alert Styling */
+    .alert {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .alert::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        animation: alertShimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes alertShimmer {
+        0% { left: -100%; }
+        50%, 100% { left: 100%; }
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #0d47a1;
+        border-left: 4px solid #1976d2;
+    }
+
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
+        color: #e65100;
+        border-left: 4px solid #ff9800;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+        color: #1b5e20;
+        border-left: 4px solid #4caf50;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        color: #c62828;
+        border-left: 4px solid #f44336;
+    }
+
+    /* Enhanced Map Info Window Styling */
+    .map-info-window {
+        min-width: 280px;
+        max-width: 380px;
+        padding: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+        border: 2px solid #e3f2fd;
+    }
+
+    .map-info-window.enhanced-popup {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .popup-header {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        padding: 15px 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .popup-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .popup-title {
+        color: white !important;
+        font-size: 16px !important;
+        font-weight: 700;
+        margin: 0;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .accuracy-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 8px;
+        border: 1px solid rgba(255,255,255,0.3);
+        position: relative;
+        z-index: 1;
+    }
+
+    .popup-content {
+        padding: 20px;
+    }
+
+    .popup-address {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        padding: 12px 15px;
+        margin: -20px -20px 15px -20px;
+        font-size: 13px;
+        color: #1565c0;
+        font-weight: 500;
+        border-bottom: 1px solid #e1f5fe;
+    }
+
+    .popup-info {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+        color: #37474f;
+        transition: all 0.2s ease;
+    }
+
+    .popup-info:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .popup-info:hover {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        margin: 8px -20px;
+        padding: 8px 20px;
+        border-radius: 6px;
+    }
+
+    .popup-info i {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border-radius: 50%;
+        font-size: 10px;
+        color: #1976d2 !important;
+        flex-shrink: 0;
+    }
+
+    .popup-info strong {
+        color: #1565c0;
+        margin-right: 8px;
+        min-width: 60px;
+        font-weight: 600;
+    }
+
+    /* Leaflet popup customization */
+    .leaflet-popup-content-wrapper {
+        background: transparent;
+        border-radius: 12px;
+        box-shadow: none;
+        padding: 0;
+    }
+
     .leaflet-popup-content {
-        margin: 8px 12px;
+        margin: 0;
+        border-radius: 12px;
+        overflow: hidden;
     }
-        border-top: 1px solid #ddd;
-        margin-top: 0;
-        background-color: #f8f9fa00;
+
+    .leaflet-popup-tip {
+        background: #1976d2;
+        box-shadow: none;
+        border: 2px solid #e3f2fd;
+    }
+
+    .leaflet-popup-close-button {
+        color: white !important;
+        font-size: 20px !important;
+        font-weight: bold;
+        width: 30px !important;
+        height: 30px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        margin: 8px 8px 0 0;
+        transition: all 0.3s ease;
+        top: 0 !important;
+        right: 0 !important;
+        z-index: 1000;
+        text-decoration: none !important;
+    }
+
+    .leaflet-popup-close-button:hover {
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.1);
+        color: #ffeb3b !important;
+    }
+    /* Enhanced Property Cards and General Styling */
+    .property-details-card,
+    .map-card,
+    .property-table-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+    }
+
+    .property-details-card:hover,
+    .map-card:hover,
+    .property-table-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    .property-details-card .card-header,
+    .map-card .card-header,
+    .property-table-card .card-header {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        border-bottom: none;
+        color: white;
+        padding: 15px 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .property-details-card .card-header::before,
+    .map-card .card-header::before,
+    .property-table-card .card-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .property-details-card .card-header h6,
+    .map-card .card-header h6,
+    .property-table-card .card-header h6 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .property-details-card .card-header i,
+    .map-card .card-header i,
+    .property-table-card .card-header i {
+        margin-right: 8px;
+        opacity: 0.9;
+    }
+
+    /* Property Information Cards */
+    .info-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+        border: 1px solid #e3f2fd;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: #1976d2;
+    }
+
+    .info-card-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1565c0;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e3f2fd;
+        display: flex;
+        align-items: center;
+    }
+
+    .info-card-title i {
+        color: #1976d2;
+        margin-right: 10px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border-radius: 50%;
+        font-size: 12px;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        padding: 8px 0;
+        transition: all 0.2s ease;
+        border-radius: 6px;
+    }
+
+    .info-item:hover {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 8px 12px;
+        margin: 12px -12px;
+    }
+
+    .info-item:not(:last-child) {
+        border-bottom: 1px solid #f0f4f8;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #37474f;
+        flex: 0 0 auto;
+        margin-right: 15px;
+        display: flex;
+        align-items: center;
+        min-width: 120px;
+    }
+
+    .info-label i {
+        margin-right: 8px;
+        color: #1976d2;
+        width: 16px;
+    }
+
+    .info-value {
+        color: #546e7a;
+        text-align: right;
+        flex: 1;
+        word-break: break-word;
+        font-weight: 500;
+    }
+
+    /* Property Badges */
+    .property-badges {
+        margin-top: 15px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .property-badges .badge {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .property-badges .badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .property-id-badge {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%) !important;
+        color: #1565c0 !important;
+        border-color: #1976d2 !important;
+    }
+
+    .badge-rent {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        color: white !important;
+        border-color: #f5576c !important;
+    }
+
+    .badge-sale {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+        color: white !important;
+        border-color: #00f2fe !important;
+    }
+
+    /* Owner Details Enhancement */
+    .owner-details {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+        border: 1px solid #dee2e6;
+    }
+
+    .owner-details .info-item {
+        background: rgba(255,255,255,0.7);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        border-bottom: none;
+    }
+
+    .owner-details .info-item:hover {
+        background: rgba(255,255,255,0.9);
+        transform: none;
+        margin: 8px 0;
+    }
     }
 
     .nav-tabs .nav-link {
@@ -1868,33 +2527,116 @@ document.addEventListener('DOMContentLoaded', function() {
         border-left: 3px solid #ffc107;
     }
 
-    /* Table styles */
+    /* Enhanced Table Styling */
     .table {
         border-collapse: separate;
         border-spacing: 0;
-        border-radius: 8px;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         margin-bottom: 1rem;
+        background: white;
     }
 
     .table thead th {
-        background-color: #0056b3;
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
         color: #ffffff;
-        font-weight: 500;
+        font-weight: 600;
         text-transform: uppercase;
         font-size: 0.85rem;
-        padding: 12px;
+        padding: 15px 12px;
         border-bottom: none;
         position: sticky;
         top: 0;
         z-index: 10;
+        letter-spacing: 0.5px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .table tbody td {
+        padding: 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f4f8;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+    .property-row {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+    }
+
+    .property-row:hover {
+        background: linear-gradient(135deg, #f8fdff 0%, #e3f2fd 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(25, 118, 210, 0.1);
+    }
+
+    .property-row:hover td {
+        background: transparent;
+    }
+
+    .highlighted-row {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%) !important;
+        border-left: 4px solid #1976d2;
+        box-shadow: 0 4px 15px rgba(25, 118, 210, 0.15);
+    }
+
+    .highlighted-row td {
+        background: transparent !important;
+    }
+
+    .pending-property {
+        border-left: 4px solid #ff9800;
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    }
+
+    /* Property Title Styling */
+    .property-title {
+        font-weight: 600;
+        color: #1565c0;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-block;
+    }
+
+    .property-title:hover {
+        color: #0d47a1;
+        transform: translateX(2px);
+    }
+
+    /* Action Buttons Enhancement */
+    .action-buttons-container {
+        opacity: 0.7;
+        transition: all 0.3s ease;
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+    }
+
+    .property-row:hover .action-buttons-container {
+        opacity: 1;
+        transform: scale(1.05);
     }
 
     .btn-group {
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 8px;
         overflow: hidden;
+    }
+
+    .btn-group .btn {
+        border: none;
+        padding: 6px 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-group .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     /* Property table header */
@@ -1968,7 +2710,144 @@ document.addEventListener('DOMContentLoaded', function() {
     /* Responsive layout for view toggle */
     @media (max-width: 991.98px) {
         .map-column.d-none {
-            display: none !important;
+            /* Enhanced Map Info Panel Styling */
+    .map-info-panel {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .map-stat {
+        padding: 0.5rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Enhanced Map Controls */
+    .map-controls .btn {
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        margin-left: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .map-controls .btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(255,255,255,0.3);
+    }
+
+    /* Property Details Panel Enhancement */
+    .property-notifications-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 12px;
+        min-height: 500px;
+        border: 1px solid #e9ecef;
+    }
+
+    .no-selection {
+        background: linear-gradient(135deg, #f1f3f4 0%, #ffffff 100%);
+        border-radius: 12px;
+        border: 2px dashed #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+    .no-selection:hover {
+        border-color: #1976d2;
+        box-shadow: 0 4px 15px rgba(25, 118, 210, 0.1);
+    }
+
+    /* Enhanced Card Styling */
+    .property-details-card,
+    .map-card,
+    .property-table-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .property-details-card:hover,
+    .map-card:hover,
+    .property-table-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+
+    .property-details-card .card-header,
+    .map-card .card-header,
+    .property-table-card .card-header {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        border-bottom: none;
+        color: white;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .property-details-card .card-header h6,
+    .map-card .card-header h6,
+    .property-table-card .card-header h6 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    /* Google Map Enhancement */
+    #googleMap {
+        border: 3px solid #fff;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        transition: all 0.3s ease;
+    }
+
+    #googleMap:hover {
+        box-shadow: 0 12px 35px rgba(0,0,0,0.2) !important;
+    }
+
+    /* Responsive Design Improvements */
+    @media (max-width: 991.98px) {
+        .property-details-card,
+        .map-card {
+            margin-bottom: 1.5rem;
+        }
+
+        .map-info-panel {
+            margin-bottom: 1rem;
+        }
+
+        #googleMap {
+            height: 350px !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .property-details-card .card-header,
+        .map-card .card-header {
+            padding: 1rem;
+        }
+
+        .map-controls .btn {
+            width: 32px;
+            height: 32px;
+        }
+    }
+
+    display: none !important;
         }
 
         .property-list-column.d-none {
@@ -2149,7 +3028,484 @@ document.addEventListener('DOMContentLoaded', function() {
         color: #721c24;
         border: 1px solid #f5c6cb;
     }
+
+    /* Property Details Modal Styling */
+    #propertyDetailsModal .modal-dialog {
+        max-width: 900px;
+    }
+
+    #propertyDetailsModal .modal-header {
+        background: linear-gradient(135deg, #0d6efd, #0056b3);
+        color: white;
+        border-bottom: none;
+    }
+
+    #propertyDetailsModal .modal-header .modal-title {
+        font-weight: 600;
+    }
+
+    #propertyDetailsModal .property-id-badge {
+        background: rgba(255,255,255,0.2) !important;
+        color: white !important;
+        border: 1px solid rgba(255,255,255,0.3);
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+    }
+
+    /* Modal badges styling */
+    .property-badges .badge-rent {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        color: white !important;
+        border: none;
+    }
+
+    .property-badges .badge-sale {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+        color: white !important;
+        border: none;
+    }
+
+    .property-badges .badge-unknown {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important;
+        color: #8b4513 !important;
+        border: none;
+    }
+
+    .property-badges .badge-approved {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important;
+        color: #22c55e !important;
+        border: none;
+    }
+
+    .property-badges .badge-pending {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%) !important;
+        color: #f59e0b !important;
+        border: none;
+    }
+
+    .property-badges .badge-rejected {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%) !important;
+        color: #ef4444 !important;
+        border: none;
+    }
+
+    /* Property tabs in modal */
+    .property-tabs-container {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .property-nav-tabs {
+        border-bottom: none;
+        padding: 0 1rem;
+    }
+
+    .property-nav-tabs .nav-link {
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        font-weight: 600;
+        font-size: 0.875rem;
+        padding: 1rem 1.5rem;
+        position: relative;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .property-nav-tabs .nav-link:hover {
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(0, 86, 179, 0.1) 100%);
+        color: #0d6efd;
+        transform: translateY(-2px);
+    }
+
+    .property-nav-tabs .nav-link.active {
+        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+        color: white !important;
+        border-radius: 25px 25px 0 0;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+    }
+
+    /* Info cards in modal */
+    .info-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+
+    .info-card-title {
+        color: #495057;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        align-items: center;
+    }
+
+    .info-card-title i {
+        color: #0d6efd;
+        margin-right: 0.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0;
+    }
+
+    .info-item:not(:last-child) {
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        flex: 0 0 auto;
+        margin-right: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .info-value {
+        color: #6c757d;
+        text-align: right;
+        flex: 1;
+        word-break: break-word;
+    }
+
+    /* Owner details styling in modal */
+    .owner-details .info-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .owner-details .info-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+
+    .owner-details .info-label {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .owner-details .info-value {
+        font-size: 1rem;
+        color: #495057;
+        font-weight: 500;
+        text-align: left;
+    }
+
+    /* User avatar in modal */
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border: 3px solid white;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+    }
+
+    /* Media gallery in modal */
+    .media-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .media-item img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .media-item img:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .video-container video,
+    .video-container iframe {
+        width: 100%;
+        height: 120px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .image-caption,
+    .video-caption {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .upload-date {
+        font-size: 0.7rem;
+        color: #adb5bd;
+        text-align: center;
+        margin-top: 0.25rem;
+    }
+
+    .empty-media-message {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    /* Tab content animation */
+    .tab-content .tab-pane {
+        animation: fadeInUp 0.4s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Modal responsive design */
+    @media (max-width: 768px) {
+        #propertyDetailsModal .modal-dialog {
+            max-width: 95%;
+            margin: 1rem;
+        }
+
+        .property-nav-tabs .nav-link {
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .property-nav-tabs .nav-link i {
+            display: none;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+        }
+
+        .info-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .info-label {
+            margin-bottom: 0.25rem;
+            margin-right: 0;
+        }
+
+        .info-value {
+            text-align: left;
+        }
+
+        .media-gallery {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced property selection with animation
+    const propertyRows = document.querySelectorAll('.property-row');
+    const propertyDetailsArea = document.getElementById('property-notifications-area');
+    
+    // Initialize map refresh button
+    const refreshMapBtn = document.getElementById('refreshMapBtn');
+    if (refreshMapBtn) {
+        refreshMapBtn.addEventListener('click', function() {
+            this.classList.add('fa-spin');
+            setTimeout(() => {
+                this.classList.remove('fa-spin');
+                if (typeof PropertyManagement !== 'undefined') {
+                    PropertyManagement.refreshMap();
+                }
+            }, 1000);
+        });
+    }
+
+    // Enhanced property row interaction
+    propertyRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 8px 25px rgba(25, 118, 210, 0.15)';
+        });
+
+        row.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('highlighted-row')) {
+                this.style.transform = '';
+                this.style.boxShadow = '';
+            }
+        });
+
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('.btn')) {
+                return;
+            }
+
+            // Remove highlight from other rows
+            propertyRows.forEach(r => r.classList.remove('highlighted-row'));
+            
+            // Add highlight to clicked row
+            this.classList.add('highlighted-row');
+
+            // Animate property details panel
+            if (propertyDetailsArea) {
+                propertyDetailsArea.style.opacity = '0.5';
+                setTimeout(() => {
+                    propertyDetailsArea.style.opacity = '1';
+                }, 300);
+            }
+
+            // Update visible properties counter
+            updateVisiblePropertiesCount();
+        });
+    });
+
+    // Update map statistics
+    function updateVisiblePropertiesCount() {
+        const visibleCount = document.querySelectorAll('.property-row:not(.d-none)').length;
+        const visiblePropertiesElement = document.getElementById('visibleProperties');
+        if (visiblePropertiesElement) {
+            visiblePropertiesElement.textContent = visibleCount;
+            
+            // Animate counter
+            visiblePropertiesElement.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                visiblePropertiesElement.style.transform = 'scale(1)';
+            }, 200);
+        }
+    }
+
+    // Enhanced map interaction
+    if (typeof PropertyManagement !== 'undefined') {
+        // Override the original selectPropertyOnMap function for better UX
+        const originalSelectProperty = window.selectPropertyOnMap;
+        window.selectPropertyOnMap = function(propertyId, lat, lng, address) {
+            // Call original function
+            if (originalSelectProperty) {
+                originalSelectProperty(propertyId, lat, lng, address);
+            }
+
+            // Add visual feedback
+            const mapElement = document.getElementById('googleMap');
+            if (mapElement) {
+                mapElement.style.border = '3px solid #1976d2';
+                setTimeout(() => {
+                    mapElement.style.border = '3px solid #fff';
+                }, 1000);
+            }
+
+            // Show notification
+            showMapNotification('Đã chọn bất động sản trên bản đồ', 'success');
+        };
+    }
+
+    // Map notification system
+    function showMapNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} notification-toast`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            animation: slideInRight 0.3s ease;
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 3000);
+    }
+
+    // Initialize counters
+    updateVisiblePropertiesCount();
+
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        .notification-toast {
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .fa-spin {
+            animation: fa-spin 1s infinite linear;
+        }
+        @keyframes fa-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
 
 <script src="{{ asset('js/agent-sorting.js') }}"></script>
 

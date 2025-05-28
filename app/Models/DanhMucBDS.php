@@ -15,7 +15,7 @@ class DanhMucBDS extends Model
 
     public function properties()
     {
-        return $this->hasMany(Property::class, 'ProtypeType', 'Protype_ID'); // Nếu khóa chính không phải là số nguyên tự động tăng
+        return $this->hasMany(Property::class, 'PropertyType', 'Protype_ID'); // Sửa tên khóa ngoại phù hợp với model Property
     }
 
     protected $fillable = [

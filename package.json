@@ -17,6 +17,7 @@
         "@popperjs/core": "^2.11.8",
         "bootstrap": "^5.3.6",
         "chart.js": "^4.4.9",
+        "firebase": "^11.8.1",
         "google-maps": "^4.3.3",
         "jquery": "^3.7.1",
         "leaflet": "^1.9.4",
