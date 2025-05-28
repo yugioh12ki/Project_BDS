@@ -9,7 +9,65 @@
 @section('appointments')
 <style>
     .content-wrapper {
+        padding: 70px 25px 40px;
+        min-height: 100vh;
+        overflow-x: auto;
+        background-color: #f8f9fa;
+    }
+    
+    /* Header section styling - Cải thiện hiển thị phần đầu */
+    .page-header {
+        margin-bottom: 1.5rem;
+        background-color: white;
+        border-radius: 10px;
         padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+    
+    .page-header h4 {
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.8rem;
+        font-size: 1.75rem;
+        line-height: 1.3;
+    }
+    
+    .page-header .text-muted {
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    
+    .btn-create-appointment {
+        white-space: nowrap;
+        min-width: 180px;
+        padding: 12px 20px;
+        font-weight: 600;
+        font-size: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-create-appointment:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+    }
+    
+    /* Đảm bảo header không bị khuất */
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .header-text {
+        flex: 1;
+        min-width: 300px;
     }
     
     .search-container {
@@ -225,12 +283,34 @@
     }
     
     .agent-tab-nav {
-        margin-bottom: 20px;
+        margin-bottom: 15px;
+        background-color: white;
+        border-radius: 10px;
+        padding: 5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
     }
     
     .agent-tab-nav .nav-link {
-        color: #555;
-        padding: 10px 16px;
+        color: #6c757d;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin: 2px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        background: transparent;
+    }
+    
+    .agent-tab-nav .nav-link:hover {
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+    
+    .agent-tab-nav .nav-link.active {
+        background-color: #007bff;
+        color: white;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.3);
     }
     
     /* Thêm style cho phần tìm kiếm */
@@ -275,12 +355,20 @@
         color: #6c757d;
     }
 
-    /* Style mới cho giao diện giống hình */
+    /* Style mới cho giao diện appointment cards */
     .appointment-card {
-        border-radius: 8px;
-        margin-bottom: 15px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
         overflow: hidden;
+        background-color: white;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .appointment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 25px rgba(0,0,0,0.12);
     }
     
     .appointment-header {
@@ -358,7 +446,13 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
+        background-color: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+        gap: 20px;
     }
     
     .search-box {
@@ -481,22 +575,146 @@
     }
     
     .empty-filtered {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 30px;
+        background-color: white;
+        border-radius: 12px;
+        padding: 40px;
         text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+    
+    /* Style cho tab content */
+    .tab-content {
+        background-color: transparent;
+    }
+    
+    .tab-pane {
+        min-height: 200px;
+    }
+    
+    /* Style cho empty state */
+    .empty-state-container {
+        background-color: white;
+        border-radius: 12px;
+        padding: 30px 20px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+    
+    .empty-state-container i {
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-container p {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+    
+    /* Responsive adjustments - Cải thiện responsive */
+    @media (max-width: 768px) {
+        .content-wrapper {
+            padding: 60px 15px 30px;
+        }
+        
+        .page-header {
+            margin-bottom: 1rem;
+            padding: 15px;
+        }
+        
+        .page-header h4 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .header-content {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 15px;
+        }
+        
+        .header-text {
+            min-width: auto;
+        }
+        
+        .btn-create-appointment {
+            width: 100%;
+            min-width: auto;
+            justify-content: center;
+            padding: 15px 20px;
+            font-size: 16px;
+        }
+        
+        .filter-wrapper {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch !important;
+        }
+        
+        .search-input-container {
+            max-width: none !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .content-wrapper {
+            padding: 55px 10px 25px;
+        }
+        
+        .page-header {
+            padding: 12px;
+            margin-bottom: 0.75rem;
+        }
+        
+        .page-header h4 {
+            font-size: 1.3rem;
+            line-height: 1.2;
+        }
+        
+        .page-header .text-muted {
+            font-size: 0.9rem;
+        }
+        
+        .btn-create-appointment {
+            padding: 12px 16px;
+            font-size: 14px;
+        }
+    }
+    
+    /* Đảm bảo không có overflow trên màn hình nhỏ */
+    @media (max-width: 480px) {
+        .content-wrapper {
+            padding: 50px 8px 20px;
+        }
+        
+        .page-header {
+            padding: 10px;
+        }
+        
+        .page-header h4 {
+            font-size: 1.2rem;
+            word-wrap: break-word;
+        }
+        
+        .page-header .text-muted {
+            font-size: 0.85rem;
+        }
     }
 </style>
 
 <div class="content-wrapper">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="mb-0">Quản lý lịch hẹn</h4>
-            <p class="text-muted mb-0">Quản lý lịch hẹn giữa chủ sở hữu và khách hàng</p>
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-text">
+                <h4 class="mb-0">Quản lý lịch hẹn</h4>
+                <p class="text-muted mb-0">Quản lý lịch hẹn giữa chủ sở hữu và khách hàng</p>
+            </div>
+            <button class="btn btn-primary btn-create-appointment" data-bs-toggle="modal" data-bs-target="#createAppointmentModal">
+                <i class="bi bi-plus me-2"></i>Tạo lịch hẹn mới
+            </button>
         </div>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAppointmentModal">
-            <i class="bi bi-plus"></i> Tạo lịch hẹn mới
-        </button>
     </div>
 
     <!-- Tabs điều hướng -->
@@ -589,10 +807,6 @@
                             <i class="bi bi-buildings me-1"></i>
                             {{ $appointment->property->Title ?? 'Bất động sản không xác định' }}
                         </div>
-                        <div class="customer-name">
-                            <i class="bi bi-person me-1"></i>
-                            Khách hàng: {{ $appointment->cusUser->Name ?? 'Không xác định' }}
-                        </div>
                     </div>
                     <div class="appointment-actions">
                         @if($appointment->Status == 'Chờ xử lý')
@@ -621,8 +835,8 @@
                 </div>
             </div>
             @empty
-            <div class="p-4 text-center text-muted">
-                <i class="bi bi-calendar-x mb-2" style="font-size: 2rem;"></i>
+            <div class="empty-state-container">
+                <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
                 <p>Không có lịch hẹn nào</p>
             </div>
             @endforelse
@@ -678,8 +892,8 @@
                 </div>
             </div>
             @empty
-            <div class="p-4 text-center text-muted">
-                <i class="bi bi-calendar-x mb-2" style="font-size: 2rem;"></i>
+            <div class="empty-state-container">
+                <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
                 <p>Không có lịch hẹn chờ xử lý</p>
             </div>
             @endforelse
@@ -717,8 +931,8 @@
                 </div>
             </div>
             @empty
-            <div class="p-4 text-center text-muted">
-                <i class="bi bi-calendar-x mb-2" style="font-size: 2rem;"></i>
+            <div class="empty-state-container">
+                <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
                 <p>Không có lịch hẹn đã xác nhận</p>
             </div>
             @endforelse
@@ -756,8 +970,8 @@
                 </div>
             </div>
             @empty
-            <div class="p-4 text-center text-muted">
-                <i class="bi bi-calendar-x mb-2" style="font-size: 2rem;"></i>
+            <div class="empty-state-container">
+                <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
                 <p>Không có lịch hẹn đã hủy</p>
             </div>
             @endforelse
@@ -795,8 +1009,8 @@
                 </div>
             </div>
             @empty
-            <div class="p-4 text-center text-muted">
-                <i class="bi bi-calendar-x mb-2" style="font-size: 2rem;"></i>
+            <div class="empty-state-container">
+                <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
                 <p>Không có lịch hẹn hoàn thành</p>
             </div>
             @endforelse
@@ -831,8 +1045,30 @@
                         <select class="form-select" id="propertySelect" name="PropertyID">
                             <option value="">-- Chọn bất động sản --</option>
                         </select>
-                        <div class="form-text">Chọn bất động sản của chủ sở hữu để tạo lịch hẹn</div>
+                        <div class="form-text d-flex justify-content-between align-items-center">
+                            <span>Chọn bất động sản của chủ sở hữu để tạo lịch hẹn</span>
+                            <span id="propertySelectFeedback"></span>
+                        </div>
                     </div>
+                    
+                    <div id="propertyDetailSection" class="mb-3 p-3 border rounded bg-light" style="display:none">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-building me-2 fs-5"></i>
+                            <h6 class="mb-0 fw-bold" id="propertyDetailTitle">Tiêu đề bất động sản</h6>
+                        </div>
+                        <div class="text-muted mb-2">
+                            <i class="bi bi-geo-alt me-1"></i> 
+                            <span id="propertyDetailAddress">Địa chỉ bất động sản</span>
+                        </div>
+                        <div id="propertyExtraInfo" class="mt-2">
+                            <!-- Các badge thông tin sẽ được thêm vào đây bằng JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Lưu trữ thông tin bất động sản và các ID quan hệ liên kết -->
+                    <input type="hidden" id="appointmentPropertyInfo" name="appointmentPropertyInfo" value="">
+                    <!-- Biến này sẽ được tự động cập nhật từ component owner-autocomplete -->
+                    <input type="hidden" id="ownerSearchId" name="OwnerID" value="">
 
                     <div class="mb-3 position-relative">
                         <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
@@ -1180,15 +1416,23 @@
         $('#appointmentForm').on('submit', function(e) {
             e.preventDefault();
             
-            // Check required fields - use owner autocomplete
-            const ownerAutocompleteEl = document.getElementById('ownerAutocomplete');
-            const ownerId = ownerAutocompleteEl ? ownerAutocompleteEl.value : '';
+            // Ensure owner ID is set correctly - get from the hidden input field
+            const ownerId = $('#ownerSearchId').val();
             const propertyId = $('#propertySelect').val();
             const customerId = $('#customerId').val();
             const startDate = $('#appointmentDateStart').val();
             const endDate = $('#appointmentDateEnd').val();
             const title = $('#appointmentTitle').val();
             const description = $('textarea[name="DescAppoint"]').val();
+            
+            console.log('Form submission values:', {
+                ownerId,
+                propertyId,
+                customerId,
+                startDate,
+                endDate,
+                title
+            });
             
             // Validation messages
             let errors = [];
@@ -1231,6 +1475,19 @@
                 return false;
             }
             
+            // Đảm bảo tính nhất quán giữa 2 trường chứa Owner ID (double-check)
+            $('input[name="OwnerID"]').val(ownerId);
+            
+            // Ghi log thông tin cuối cùng trước khi gửi form
+            console.log('Submitting appointment with data:', {
+                'PropertyID': propertyId,
+                'OwnerID': ownerId,
+                'CusID': customerId,
+                'StartDate': startDate,
+                'EndDate': endDate,
+                'Title': title
+            });
+            
             // If all validation passes, submit the form
             this.submit();
         });
@@ -1255,40 +1512,347 @@
     @vite(['resources/js/owner-autocomplete.js'])
     <script>
         // Initialize owner search functionality to match the component
-        $('#ownerAutocomplete').on('owner:selected', function(event, ownerId, ownerName) {
-            console.log('Owner selected:', ownerId, ownerName);
+        $('#ownerAutocomplete').on('owner:selected', function(event, ownerId, ownerName, properties, owner) {
+            console.log('Event owner:selected received:', { ownerId, ownerName, properties, owner });
             
-            // Load properties for selected owner
-            loadOwnerProperties(ownerId);
+            // Xử lý dữ liệu bất động sản đã được truyền từ component
+            if (properties && properties.length > 0) {
+                populatePropertyDropdown(properties, owner);
+            } else {
+                // Nếu không có dữ liệu, thử gọi API một lần nữa
+                loadOwnerProperties(ownerId);
+            }
         });
         
-        // Function to load properties for selected owner
+        // Lưu trữ dữ liệu bất động sản và chủ sở hữu
+        let propertiesData = [];
+        let ownerData = null;
+        
+        // Function to populate property dropdown với dữ liệu đã có
+        function populatePropertyDropdown(properties, owner) {
+            console.log('Populating property dropdown with:', properties);
+            
+            const $propertySelect = $('#propertySelect');
+            $propertySelect.empty().append('<option value="">-- Chọn bất động sản --</option>');
+            $('#propertySelectionSection').show();
+            $('#propertyDetailSection').hide();
+            
+            // Lưu dữ liệu
+            propertiesData = properties || [];
+            ownerData = owner || null;
+            
+            // Đảm bảo owner ID được cập nhật
+            if (ownerData && ownerData.id) {
+                $('#ownerSearchId').val(ownerData.id);
+            }
+            
+            if (propertiesData.length > 0) {
+                console.log('Hiển thị ' + propertiesData.length + ' bất động sản trong dropdown');
+                
+                // Thêm từng bất động sản vào dropdown
+                propertiesData.forEach(function(property, index) {
+                    console.log(`Property ${index + 1}:`, property);
+                    
+                    const title = property.title || 'Không có tiêu đề';
+                    let optionLabel = title;
+                    
+                    // Thêm loại bất động sản nếu có
+                    if (property.categoryName) {
+                        optionLabel += ` (${property.categoryName})`;
+                    }
+                    
+                    // Thêm địa chỉ nếu có
+                    if (property.fullAddress || property.address) {
+                        optionLabel += ` - ${property.fullAddress || property.address}`;
+                    }
+                    
+                    $propertySelect.append(`<option value="${property.id}">${optionLabel}</option>`);
+                });
+                
+                // Thông báo thành công
+                $('#propertySelectFeedback').html(`<span class="text-success">
+                    <i class="bi bi-check-circle"></i> ${propertiesData.length} bất động sản có sẵn
+                </span>`);
+            } else {
+                // Không có bất động sản
+                $('#propertySelectFeedback').html(`<span class="text-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Chủ sở hữu này chưa có bất động sản nào
+                </span>`);
+            }
+        }
+        
+        // Backup function to load properties via API (nếu cần thiết)
         function loadOwnerProperties(ownerId) {
+            console.log('Gọi API backup để lấy bất động sản cho ownerId:', ownerId);
+            
+            const $propertySelect = $('#propertySelect');
+            $propertySelect.empty().append('<option value="">Đang tải dữ liệu...</option>');
+            $('#propertySelectionSection').show();
+            $('#propertyDetailSection').hide();
+            
+            // Đảm bảo giá trị OwnerID luôn được cập nhật ngay lập tức
+            $('#ownerSearchId').val(ownerId);
+            
             $.ajax({
                 url: '{{ route("agent.owner.properties") }}',
                 method: 'GET',
                 data: { ownerId: ownerId },
                 success: function(response) {
-                    const $propertySelect = $('#propertySelect');
+                    console.log('API Response:', response);
                     $propertySelect.empty().append('<option value="">-- Chọn bất động sản --</option>');
                     
-                    if (response.properties && response.properties.length > 0) {
-                        response.properties.forEach(function(property) {
-                            $propertySelect.append(`
-                                <option value="${property.id}">${property.title} - ${property.address || 'Không có địa chỉ'}</option>
-                            `);
-                        });
-                        $('#propertySelectionSection').show();
+                    // Lưu lại dữ liệu chủ sở hữu và bất động sản để sử dụng sau
+                    propertiesData = response.properties || [];
+                    ownerData = response.owner || null;
+                    
+                    console.log('Số lượng bất động sản:', propertiesData.length);
+                    if (propertiesData.length > 0) {
+                        console.log('Bất động sản đầu tiên:', propertiesData[0]);
+                    }
+                    
+                    // Đảm bảo ID chủ sở hữu luôn được lưu đúng
+                    if (ownerData && ownerData.id) {
+                        $('#ownerSearchId').val(ownerData.id);
                     } else {
-                        $('#propertySelectionSection').hide();
-                        alert('Chủ sở hữu này chưa có bất động sản nào.');
+                        // Sử dụng ownerId từ tham số nếu không có trong phản hồi
+                        $('#ownerSearchId').val(ownerId);
+                    }
+                    
+                    if (propertiesData.length > 0) {
+                        console.log('Hiển thị ' + propertiesData.length + ' bất động sản trong dropdown');
+                        // Đã có bất động sản, thêm vào dropdown với thông tin chi tiết hơn
+                        propertiesData.forEach(function(property) {
+                            // Log chi tiết từng bất động sản
+                            console.log('Rendering property:', property);
+                            
+                            // Đảm bảo property.title không null
+                            const title = property.title || 'Không có tiêu đề';
+                            
+                            // Tạo nhãn hiển thị thông tin chi tiết
+                            let optionLabel = title;
+                            
+                            // Thêm loại bất động sản nếu có
+                            if (property.categoryName) {
+                                optionLabel += ` (${property.categoryName})`;
+                            }
+                            
+                            // Thêm địa chỉ nếu có
+                            if (property.fullAddress || property.address) {
+                                optionLabel += ` - ${property.fullAddress || property.address}`;
+                            }
+                            
+                            // Thêm giá nếu có
+                            if (property.formattedPrice) {
+                                optionLabel += ` - ${property.formattedPrice}`;
+                            }
+                            
+                            // Thêm trạng thái nếu không active
+                            if (property.status && property.status !== 'active') {
+                                optionLabel += ` [${property.status}]`;
+                            }
+                            
+                            $propertySelect.append(`<option value="${property.id}" 
+                                data-property='${JSON.stringify(property)}'>${optionLabel}</option>`);
+                        });
+                        
+                        // Thông báo thành công
+                        $('#propertySelectFeedback').html(`<span class="text-success">
+                            <i class="bi bi-check-circle"></i> ${propertiesData.length} bất động sản có sẵn
+                        </span>`);
+                        
+                        // Nếu chỉ có một bất động sản, tự động chọn nó
+                        if (propertiesData.length === 1) {
+                            $propertySelect.val(propertiesData[0].id);
+                            $propertySelect.trigger('change');
+                        }
+                    } else {
+                        // Không có bất động sản
+                        $('#propertySelectFeedback').html(`<span class="text-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Chủ sở hữu này chưa có bất động sản nào
+                        </span>`);
                     }
                 },
-                error: function() {
-                    console.error('Error loading properties');
-                    alert('Lỗi khi tải danh sách bất động sản');
+                error: function(xhr, status, error) {
+                    console.error('Error loading properties:', error);
+                    console.error('Response:', xhr.responseText);
+                    
+                    propertiesData = [];
+                    ownerData = null;
+                    $propertySelect.empty().append('<option value="">-- Chọn bất động sản --</option>');
+                    $('#propertySelectFeedback').html(`<span class="text-danger">
+                        <i class="bi bi-x-circle"></i> Lỗi khi tải danh sách bất động sản: ${error}
+                    </span>`);
                 }
             });
+        }
+        
+        // Xử lý khi người dùng chọn một bất động sản
+        $('#propertySelect').change(function() {
+            const propertyId = $(this).val();
+            if (!propertyId) {
+                $('#propertyDetailSection').hide();
+                return;
+            }
+            
+            console.log('Chọn bất động sản ID:', propertyId);
+            
+            // Lấy dữ liệu được nhúng trong option
+            const selectedOption = $(this).find('option:selected');
+            let selectedProperty;
+            
+            try {
+                // Thử lấy dữ liệu từ data attribute trước
+                selectedProperty = selectedOption.data('property');
+                if (typeof selectedProperty === 'string') {
+                    selectedProperty = JSON.parse(selectedProperty);
+                }
+            } catch (e) {
+                console.error('Lỗi khi parse dữ liệu property từ option:', e);
+            }
+            
+            // Nếu không có dữ liệu từ data attribute, tìm từ propertiesData
+            if (!selectedProperty) {
+                console.log('Tìm dữ liệu bất động sản từ danh sách đã lưu');
+                selectedProperty = propertiesData.find(p => p.id == propertyId);
+            }
+            
+            console.log('Bất động sản được chọn:', selectedProperty);
+            
+            if (selectedProperty) {
+                // Hiển thị thông tin chi tiết bất động sản
+                const title = selectedProperty.title || 'Không có tiêu đề';
+                $('#propertyDetailTitle').text(title);
+                
+                // Hiển thị địa chỉ đầy đủ nếu có
+                const addressText = selectedProperty.fullAddress || selectedProperty.address || 'Không có địa chỉ';
+                $('#propertyDetailAddress').text(addressText);
+                
+                // Hiển thị thêm thông tin giá và loại nếu có
+                let extraInfo = [];
+                
+                if (selectedProperty.categoryName) {
+                    extraInfo.push(`<span class="badge bg-info me-1">${selectedProperty.categoryName}</span>`);
+                }
+                
+                if (selectedProperty.formattedPrice) {
+                    extraInfo.push(`<span class="badge bg-success">${selectedProperty.formattedPrice}</span>`);
+                }
+                
+                if (selectedProperty.area) {
+                    extraInfo.push(`<span class="badge bg-secondary">${selectedProperty.area} m²</span>`);
+                }
+                
+                if (selectedProperty.bedroom) {
+                    extraInfo.push(`<span class="badge bg-secondary">${selectedProperty.bedroom} phòng ngủ</span>`);
+                }
+                
+                // Thêm trạng thái bất động sản
+                if (selectedProperty.status) {
+                    let statusClass = 'bg-secondary';
+                    if (selectedProperty.status === 'active') statusClass = 'bg-success';
+                    if (selectedProperty.status === 'pending') statusClass = 'bg-warning';
+                    if (selectedProperty.status === 'inactive') statusClass = 'bg-danger';
+                    
+                    const statusText = selectedProperty.status === 'active' ? 'Đang bán/cho thuê' : 
+                                      (selectedProperty.status === 'pending' ? 'Đang chờ duyệt' : 
+                                      (selectedProperty.status === 'inactive' ? 'Đã khóa' : selectedProperty.status));
+                    
+                    extraInfo.push(`<span class="badge ${statusClass}">${statusText}</span>`);
+                }
+                
+                // Thêm loại giao dịch (bán/thuê)
+                if (selectedProperty.type) {
+                    const typeText = selectedProperty.type === 'Rent' ? 'Cho thuê' : 'Bán';
+                    const typeClass = selectedProperty.type === 'Rent' ? 'bg-primary' : 'bg-danger';
+                    extraInfo.push(`<span class="badge ${typeClass}">${typeText}</span>`);
+                }
+                
+                // Cập nhật thông tin bổ sung
+                if (extraInfo.length > 0) {
+                    $('#propertyExtraInfo').html(extraInfo.join(' ')).show();
+                } else {
+                    $('#propertyExtraInfo').hide();
+                }
+                
+                $('#propertyDetailSection').show();
+                
+                // Cập nhật thông tin liên quan cho cuộc hẹn
+                updateAppointmentPropertyInfo(selectedProperty);
+            } else {
+                console.error('Không tìm thấy dữ liệu cho bất động sản ID:', propertyId);
+                $('#propertyDetailSection').hide();
+                $('#propertySelectFeedback').html(`<span class="text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Không tìm thấy thông tin chi tiết về bất động sản
+                </span>`);
+            }
+        });
+        
+        // Cập nhật thông tin cuộc hẹn dựa trên bất động sản đã chọn
+        function updateAppointmentPropertyInfo(property) {
+            if (!property) {
+                console.error('updateAppointmentPropertyInfo called with null/undefined property');
+                return;
+            }
+            
+            console.log('Cập nhật thông tin cuộc hẹn với bất động sản:', property);
+            
+            // Đảm bảo không có giá trị null/undefined
+            const title = property.title || 'Không có tiêu đề';
+            const address = property.fullAddress || property.address || 'Không có địa chỉ';
+            const propertyType = property.categoryName || property.type || '';
+            const price = property.formattedPrice || '';
+            
+            // Tự động điền tiêu đề cuộc hẹn dựa trên thông tin bất động sản
+            const appointmentTitle = $('#appointmentTitle');
+            if (!appointmentTitle.val()) {
+                let titleText = 'Tham quan bất động sản';
+                if (propertyType) {
+                    titleText += `: ${propertyType}`;
+                }
+                titleText += ` - ${title}`;
+                appointmentTitle.val(titleText);
+            }
+            
+            // Tự động điền mô tả nếu trống
+            const appointmentDesc = $('textarea[name="DescAppoint"]');
+            if (!appointmentDesc.val()) {
+                let description = `Cuộc hẹn xem bất động sản ${title}`;
+                if (propertyType) {
+                    description += ` loại ${propertyType}`;
+                }
+                description += ` tại ${address}`;
+                if (price) {
+                    description += `. Giá: ${price}`;
+                }
+                appointmentDesc.val(description);
+            }
+            
+            // Đảm bảo ownerId được lưu đúng từ nhiều nguồn có thể có
+            let selectedOwnerId = $('#ownerSearchId').val();
+            if (!selectedOwnerId) {
+                selectedOwnerId = property.ownerId || (ownerData ? ownerData.id : null);
+                if (selectedOwnerId) {
+                    $('#ownerSearchId').val(selectedOwnerId);
+                }
+            }
+            
+            console.log('Owner ID đã chọn:', selectedOwnerId);
+            
+            if (!selectedOwnerId) {
+                console.error('Không tìm thấy Owner ID hợp lệ!');
+            }
+            
+            // Lưu thông tin bất động sản và chủ sở hữu vào form để xử lý khi submit
+            $('#appointmentPropertyInfo').val(JSON.stringify({
+                id: property.id,
+                title: title,
+                address: address,
+                ownerId: selectedOwnerId,
+                type: property.type,
+                price: property.price,
+                formattedPrice: price,
+                categoryName: propertyType
+            }));
         }
     </script>
 @endpush

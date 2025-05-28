@@ -171,6 +171,8 @@ Route::middleware(['auth'])->group(function () {
         // API endpoints cho tìm kiếm chủ sở hữu
         Route::get('/search/owners', [AgentController::class, 'searchOwners'])->name('search.owners');
         Route::get('/owner/properties', [AgentController::class, 'getOwnerProperties'])->name('owner.properties');
+        // Thêm route mới với tên đúng để tương thích với code đã viết
+        Route::get('/owner-properties', [AgentController::class, 'getOwnerProperties'])->name('agent.owner.properties');
         
         // API endpoint cho tìm kiếm khách hàng
         Route::get('/search/customers', [AgentController::class, 'searchCustomersForAppointment'])->name('search.customers');

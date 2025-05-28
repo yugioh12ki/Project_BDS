@@ -7,8 +7,10 @@ use App\Models\Property;
 use App\Models\profile_agent;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Models\DetailProperty;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AgentController extends Controller
 {
@@ -124,6 +126,7 @@ class AgentController extends Controller
         $request->validate([
             'PropertyID' => 'required|exists:properties,PropertyID',
             'CusID' => 'required|exists:user,UserID',
+            'OwnerID' => 'required|exists:user,UserID',
             'TitleAppoint' => 'required|string|max:255',
             'DescAppoint' => 'required|string',
             'AppointmentDateStart' => 'required|date',
@@ -131,18 +134,30 @@ class AgentController extends Controller
         ]);
 
         $agent = Auth::user();
-        $property = Property::findOrFail($request->PropertyID);
+        
+        // Lấy thông tin bất động sản từ ID
+        $property = Property::with('owner')->findOrFail($request->PropertyID);
 
         // Kiểm tra xem agent có được phân công cho BĐS này không
         if ($property->AgentID !== $agent->UserID) {
             return back()->with('error', 'Bạn không được phân công cho bất động sản này');
         }
+        
+        // Kiểm tra xem OwnerID trong request có khớp với OwnerID của bất động sản không
+        if ($property->OwnerID != $request->OwnerID) {
+            \Log::warning('Owner ID mismatch', [
+                'PropertyOwnerID' => $property->OwnerID,
+                'RequestOwnerID' => $request->OwnerID
+            ]);
+            return back()->with('error', 'Chủ sở hữu không khớp với bất động sản đã chọn');
+        }
 
+        // Tạo cuộc hẹn mới với đảm bảo thông tin chính xác từ cơ sở dữ liệu
         $appointment = new Appointment();
-        $appointment->PropertyID = $request->PropertyID;
+        $appointment->PropertyID = $property->PropertyID; // Lấy từ bất động sản đã tìm thấy
         $appointment->AgentID = $agent->UserID;
         $appointment->CusID = $request->CusID;
-        $appointment->OwnerID = $property->OwnerID;
+        $appointment->OwnerID = $property->OwnerID; // Lấy từ bất động sản đã tìm thấy
         $appointment->TitleAppoint = $request->TitleAppoint;
         $appointment->DescAppoint = $request->DescAppoint;
         $appointment->AppointmentDateStart = $request->AppointmentDateStart;
@@ -150,6 +165,17 @@ class AgentController extends Controller
         $appointment->Status = 'Chờ xử lý';
 
         $appointment->save();
+        
+        // Log thông tin cuộc hẹn để debug
+        \Log::info('Appointment created successfully', [
+            'AppointmentID' => $appointment->AppointmentID,
+            'PropertyID' => $property->PropertyID,
+            'PropertyTitle' => $property->Title,
+            'OwnerID' => $property->OwnerID,
+            'OwnerName' => $property->owner->Name ?? 'Không xác định',
+            'AgentID' => $agent->UserID,
+            'CusID' => $request->CusID
+        ]);
 
         return back()->with('success', 'Tạo lịch hẹn thành công');
     }
@@ -267,7 +293,15 @@ class AgentController extends Controller
         $agent = Auth::user();
         $ownerId = $request->query('ownerId');
         
+        // Log đầu vào để debug
+        \Log::info('getOwnerProperties called', [
+            'agent_id' => $agent ? $agent->UserID : null,
+            'owner_id' => $ownerId,
+            'request_params' => $request->all()
+        ]);
+        
         if (!$ownerId) {
+            \Log::warning('Missing ownerId parameter');
             return response()->json(['error' => 'OwnerID is required'], 400);
         }
         
@@ -280,16 +314,59 @@ class AgentController extends Controller
             return response()->json(['error' => 'Không tìm thấy chủ sở hữu'], 404);
         }
         
-        // Lấy danh sách properties của owner này mà agent được phân công
-        $properties = Property::where('OwnerID', $ownerId)
-                              ->where('AgentID', $agent->UserID)
-                              ->where('Status', 'active')
-                              ->select('PropertyID as id', 'Title as title', 'Address as address')
-                              ->orderBy('Title')
-                              ->get();
+        // Debug để kiểm tra ID chủ sở hữu
+        \Log::debug('Finding properties for owner', ['ownerId' => $ownerId]);
+        
+        // Truy vấn trực tiếp bảng properties
+        $properties = DB::table('properties')
+                        ->where('OwnerID', $ownerId)
+                        ->get();
+        
+        // Ghi log số lượng bất động sản tìm thấy
+        \Log::debug('Raw Properties Found', [
+            'ownerID' => $ownerId,
+            'properties_count' => $properties->count(),
+            'first_property' => $properties->first(),
+            'all_property_ids' => $properties->pluck('PropertyID')->toArray()
+        ]);
+        
+        // Định dạng dữ liệu trả về cho frontend
+        $formattedProperties = $properties->map(function($property) {
+            // Lấy thông tin danh mục nếu có
+            $category = null;
+            if (!empty($property->PropertyType)) {
+                $category = DB::table('protype_bds')->where('Protype_ID', $property->PropertyType)->first();
+            }
+            
+            return [
+                'id' => $property->PropertyID,
+                'title' => $property->Title ?? 'Không có tiêu đề',
+                'address' => $property->Address,
+                'district' => $property->District,
+                'ward' => $property->Ward,
+                'type' => $property->TypePro,
+                'price' => $property->Price,
+                'formattedPrice' => isset($property->Price) 
+                    ? (($property->TypePro == 'Rent') 
+                        ? number_format($property->Price) . ' VNĐ/tháng'
+                        : number_format($property->Price) . ' VNĐ')
+                    : '',
+                'fullAddress' => implode(', ', array_filter([$property->Address, $property->Ward, $property->District])),
+                'ownerId' => $property->OwnerID,
+                'categoryId' => $property->PropertyType,
+                'categoryName' => $category ? $category->ten_pro : null,
+                'status' => $property->Status
+            ];
+        });
         
         return response()->json([
-            'properties' => $properties
+            'owner' => [
+                'id' => $owner->UserID,
+                'name' => $owner->Name,
+                'phone' => $owner->Phone,
+                'email' => $owner->Email
+            ],
+            'properties' => $formattedProperties
         ]);
     }
 
