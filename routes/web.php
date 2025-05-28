@@ -2,6 +2,7 @@
 
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\OwnerController;
@@ -98,6 +99,27 @@ Route::get('/property-cards-demo', function () {
     return view('owners.property.index', compact('properties', 'categories', 'owners'));
 });
 
+// Test route for owner search API (no authentication required)
+Route::get('/test/search/owners', function(Request $request) {
+    $searchTerm = $request->query('term');
+    
+    if (!$searchTerm || strlen($searchTerm) < 2) {
+        return response()->json(['owners' => []]);
+    }
+    
+    // Tìm kiếm chủ sở hữu theo tên hoặc email
+    $owners = \App\Models\User::where('Role', 'Owner')
+        ->where(function ($query) use ($searchTerm) {
+            $query->where('Name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('Email', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('Phone', 'like', '%' . $searchTerm . '%');
+        })
+        ->take(10)
+        ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
+    
+    return response()->json(['owners' => $owners]);
+})->name('test.search.owners');
+
 Route::middleware(['auth'])->group(function () {
 
     // Admin routes
@@ -134,17 +156,24 @@ Route::middleware(['auth'])->group(function () {
 
     // Agent routes
     Route::middleware(['checkRole:Agent'])->prefix('agent')->name('agent.')->group(function () {
-        Route::get('/', [AgentController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
         Route::get('/brokers', [AgentController::class, 'brokers'])->name('brokers');
         Route::get('/appointments', [AgentController::class, 'appointments'])->name('appointments');
-        Route::post('/appointments/create', [AgentController::class, 'createAppointment'])->name('appointments.create');
-        Route::put('/appointments/{id}/update-status', [AgentController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
-        Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions');
         Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
-        Route::post('/profile', [AgentController::class, 'updateProfile'])->name('profile.update');
-        Route::get('/search-properties', [AgentController::class, 'searchProperties']);
-        Route::get('/get-related-customers/{propertyId}', [AgentController::class, 'getRelatedCustomers']);
+        Route::post('/profile/update', [AgentController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/appointments/create', [AgentController::class, 'createAppointment'])->name('appointments.create');
+        Route::put('/appointments/{id}/status', [AgentController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
+        Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions');
+        Route::get('/properties/search', [AgentController::class, 'searchProperties'])->name('properties.search');
         Route::get('/customers/search', [AgentController::class, 'searchCustomers'])->name('customers.search');
+        Route::get('/properties/{id}/customers', [AgentController::class, 'getRelatedCustomers'])->name('properties.customers');
+        
+        // API endpoints cho tìm kiếm chủ sở hữu
+        Route::get('/search/owners', [AgentController::class, 'searchOwners'])->name('search.owners');
+        Route::get('/owner/properties', [AgentController::class, 'getOwnerProperties'])->name('owner.properties');
+        
+        // API endpoint cho tìm kiếm khách hàng
+        Route::get('/search/customers', [AgentController::class, 'searchCustomersForAppointment'])->name('search.customers');
     });
 
     // Route đăng xuất (áp dụng chung cho tất cả quyền)
@@ -227,4 +256,13 @@ Route::middleware(['auth'])->group(function () {
             echo "<p style='color: red;'>Error: " . $e->getMessage() . "</p>";
         }
     })->name('test.properties.api');
+
+    // Owner Autocomplete Demo Routes
+    Route::get('/examples/owner-autocomplete', function() {
+        return view('examples.owner-autocomplete');
+    })->name('examples.owner-autocomplete');
+    
+    Route::get('/demo/owner-autocomplete', function() {
+        return response()->file(resource_path('views/demos/owner-autocomplete-demo.html'));
+    })->name('demo.owner-autocomplete');
 });

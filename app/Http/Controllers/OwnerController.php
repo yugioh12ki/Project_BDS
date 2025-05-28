@@ -48,8 +48,8 @@ class OwnerController extends Controller
         $owners = User::all();
 
         // Log để debug
-        \Log::info('Properties count: ' . $properties->count());
-        \Log::info('Pending properties count: ' . $ownerProperties->count());
+        Log::info('Properties count: ' . $properties->count());
+        Log::info('Pending properties count: ' . $ownerProperties->count());
 
         return view('owners.property.index', compact(
             'properties',       
@@ -200,16 +200,16 @@ class OwnerController extends Controller
         // Phân loại các cuộc hẹn
         $upcomingAppointments = $appointments->filter(function($appointment) {
             return $appointment->AppointmentDateStart >= Carbon::today() &&
-                  ($appointment->Status == 'pending' ||
-                   $appointment->Status == 'confirmed');
+                  ($appointment->Status == Appointment::STATUS_PENDING ||
+                   $appointment->Status == Appointment::STATUS_CONFIRMED);
         });
 
         $completedAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == 'completed' || $appointment->Status == 'Hoàn Thành';
+            return $appointment->Status == Appointment::STATUS_COMPLETED;
         });
 
         $cancelledAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == 'cancelled' || $appointment->Status == 'Đã Hủy';
+            return $appointment->Status == Appointment::STATUS_CANCELLED;
         });
 
         return view('owners.appointment.appointments', compact(
@@ -482,7 +482,7 @@ class OwnerController extends Controller
                 ->where('Status', 'pending')
                 ->get();
 
-            \Log::info('Found ' . $ownerProperties->count() . ' pending properties for owner ' . $ownerId);
+            Log::info('Found ' . $ownerProperties->count() . ' pending properties for owner ' . $ownerId);
 
             // Transform data to include required fields
             $propertiesData = $ownerProperties->map(function($property) {
@@ -521,7 +521,7 @@ class OwnerController extends Controller
 
             return response()->json($propertiesData);
         } catch (\Exception $e) {
-            \Log::error('Error in getPropertiesForListing: ' . $e->getMessage());
+            Log::error('Error in getPropertiesForListing: ' . $e->getMessage());
             return response()->json(['error' => 'Có lỗi xảy ra khi tải dữ liệu'], 500);
         }
     }

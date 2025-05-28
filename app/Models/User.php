@@ -41,6 +41,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(Property::class, 'OwnerID', 'UserID');
     }
+    
+    public function properties()
+    {
+        return $this->hasMany(Property::class, 'OwnerID', 'UserID');
+    }
 
     public function moigioi()
     {

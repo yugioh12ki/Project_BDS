@@ -76,6 +76,7 @@ class AgentController extends Controller
                 'ownerName' => $property->owner ? $property->owner->Name : 'Không xác định',
                 'address' => $property->Address ?? '',
                 'district' => $property->District ?? '',
+                'ward' => $property->Ward ?? '',
             ];
         }
 
@@ -201,7 +202,7 @@ class AgentController extends Controller
     public function updateAppointmentStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|string|in:Thành công,Đã hủy,Hoàn thành,Chờ xử lý'
+            'status' => 'required|string|in:Thành công,Đã hủy,Hoàn Thành,Chờ xử lý'
         ]);
 
         $appointment = Appointment::findOrFail($id);
@@ -232,5 +233,87 @@ class AgentController extends Controller
         return response()->json([
             'customers' => $customers
         ]);
+    }
+    
+    /**
+     * Tìm kiếm chủ sở hữu bất động sản theo tên hoặc email
+     */
+    public function searchOwners(Request $request)
+    {
+        $searchTerm = $request->query('term');
+        
+        if (!$searchTerm || strlen($searchTerm) < 2) {
+            return response()->json(['owners' => []]);
+        }
+        
+        // Tìm kiếm chủ sở hữu theo tên hoặc email
+        $owners = User::where('Role', 'Owner')
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('Name', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('Email', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('Phone', 'like', '%' . $searchTerm . '%');
+            })
+            ->take(10)
+            ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
+        
+        return response()->json(['owners' => $owners]);
+    }
+    
+    /**
+     * Lấy danh sách bất động sản của một chủ sở hữu
+     */
+    public function getOwnerProperties(Request $request)
+    {
+        $agent = Auth::user();
+        $ownerId = $request->query('ownerId');
+        
+        if (!$ownerId) {
+            return response()->json(['error' => 'OwnerID is required'], 400);
+        }
+        
+        // Tìm chủ sở hữu
+        $owner = User::where('UserID', $ownerId)
+                     ->where('Role', 'Owner')
+                     ->first();
+        
+        if (!$owner) {
+            return response()->json(['error' => 'Không tìm thấy chủ sở hữu'], 404);
+        }
+        
+        // Lấy danh sách properties của owner này mà agent được phân công
+        $properties = Property::where('OwnerID', $ownerId)
+                              ->where('AgentID', $agent->UserID)
+                              ->where('Status', 'active')
+                              ->select('PropertyID as id', 'Title as title', 'Address as address')
+                              ->orderBy('Title')
+                              ->get();
+        
+        return response()->json([
+            'properties' => $properties
+        ]);
+    }
+
+    /**
+     * Tìm kiếm khách hàng theo tên hoặc email để tạo appointment
+     */
+    public function searchCustomersForAppointment(Request $request)
+    {
+        $searchTerm = $request->query('term');
+        
+        if (!$searchTerm || strlen($searchTerm) < 2) {
+            return response()->json(['customers' => []]);
+        }
+        
+        // Tìm kiếm khách hàng theo tên hoặc email
+        $customers = User::where('Role', 'Customer')
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('Name', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('Email', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('Phone', 'like', '%' . $searchTerm . '%');
+            })
+            ->take(10)
+            ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
+        
+        return response()->json(['customers' => $customers]);
     }
 }

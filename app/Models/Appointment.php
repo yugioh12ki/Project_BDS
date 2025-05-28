@@ -29,9 +29,9 @@ class Appointment extends Model
     ];
 
     // Status constants
-    const STATUS_PENDING = 'pending';
-    const STATUS_CONFIRMED = 'confirmed';
-    const STATUS_CANCELLED = 'Đã Hủy';
+    const STATUS_PENDING = 'Chờ xử lý';
+    const STATUS_CONFIRMED = 'Thành công';
+    const STATUS_CANCELLED = 'Đã hủy';
     const STATUS_COMPLETED = 'Hoàn Thành';
 
     // Scopes
@@ -43,6 +43,16 @@ class Appointment extends Model
     public function scopeConfirmed($query)
     {
         return $query->where('Status', self::STATUS_CONFIRMED);
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('Status', self::STATUS_COMPLETED);
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('Status', self::STATUS_CANCELLED);
     }
 
     public function scopeToday($query)
@@ -75,8 +85,7 @@ class Appointment extends Model
 
     public function property()
     {
-        return $this->belongsTo(Property::class, 'ProID', 'PropertyID');
-        // Thay 'ProID' bằng tên cột thật trong bảng appointments của bạn
+        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
     }
 
     public function user()

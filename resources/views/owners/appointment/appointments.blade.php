@@ -522,7 +522,7 @@
                                                         <td>{{ $appointment->TitleAppoint }}</td>
                                                         <td>{{ $appointment->AppointmentDateStart ? date('d/m/Y H:i', strtotime($appointment->AppointmentDateStart)) : 'N/A' }}</td>
                                                         <td>{{ $appointment->AppointmentDateEnd ? date('d/m/Y H:i', strtotime($appointment->AppointmentDateEnd)) : 'N/A' }}</td>
-                                                        <td><span class="badge bg-success">Hoàn Thành</span></td>
+                                                        <td><span class="badge bg-success">Hoàn thành</span></td>
                                                         <td>{{ $appointment->DescAppoint }}</td>
                                                     </tr>
                                                 @endforeach

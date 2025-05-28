@@ -1,0 +1,155 @@
+/* Owner Autocomplete Styles - Matches existing form design */
+.owner-autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.owner-autocomplete-input {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    padding: 0.375rem 0.75rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.owner-autocomplete-input:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Use the same styling pattern as existing property/customer dropdowns */
+.owner-autocomplete-dropdown {
+    position: absolute;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 9999 !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    top: 100%;
+    left: 0;
+    margin-top: 2px;
+    transition: all 0.2s ease-in-out;
+    display: none;
+}
+
+.owner-autocomplete-dropdown.show {
+    display: block !important;
+}
+
+/* Use the same option styling as existing form */
+.owner-autocomplete-dropdown .dropdown-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+    border: none;
+    background: none;
+}
+
+.owner-autocomplete-dropdown .dropdown-item:hover,
+.owner-autocomplete-dropdown .dropdown-item.active {
+    background-color: #f0f7ff;
+}
+
+.owner-autocomplete-dropdown .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.owner-autocomplete-dropdown .dropdown-item:active {
+    background-color: #e9ecef;
+}
+
+.owner-autocomplete-dropdown .owner-option {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.owner-autocomplete-dropdown .owner-info {
+    flex: 1;
+}
+
+.owner-autocomplete-dropdown .owner-name {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.owner-autocomplete-dropdown .owner-details {
+    font-size: 0.875rem;
+    color: #6c757d;
+    line-height: 1.2;
+}
+
+.owner-autocomplete-dropdown .owner-details i {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.owner-autocomplete-dropdown mark {
+    background-color: #fff3cd;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+/* Loading state */
+.owner-autocomplete-dropdown .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.1rem;
+}
+
+/* No results state */
+.owner-autocomplete-dropdown .text-muted {
+    color: #6c757d !important;
+}
+
+/* Error state */
+.owner-autocomplete-dropdown .text-danger {
+    color: #dc3545 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .owner-autocomplete-dropdown {
+        max-height: 250px;
+    }
+    
+    .owner-autocomplete-dropdown .dropdown-item {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .owner-autocomplete-dropdown .owner-details {
+        font-size: 0.75rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .owner-autocomplete-dropdown {
+        background-color: #212529;
+        border-color: #495057;
+    }
+    
+    .owner-autocomplete-dropdown .dropdown-item:hover,
+    .owner-autocomplete-dropdown .dropdown-item.active {
+        background-color: #495057;
+    }
+    
+    .owner-autocomplete-dropdown .owner-name {
+        color: #f8f9fa;
+    }
+    
+    .owner-autocomplete-dropdown .owner-details {
+        color: #adb5bd;
+    }
+    
+    .owner-autocomplete-dropdown mark {
+        background-color: #664d03;
+        color: #fff;
+    }
+}
