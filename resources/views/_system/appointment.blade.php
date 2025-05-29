@@ -16,6 +16,22 @@
     </div>
 @else
 
+<!-- Page Header -->
+<div class="page-header mb-4">
+    <div class="header-content">
+        <div class="header-info">
+            <h1><i class="fas fa-calendar-alt me-3"></i>Quản lý Cuộc hẹn</h1>
+            <p class="text-muted mb-0">Tìm kiếm, xem chi tiết và quản lý các cuộc hẹn của môi giới</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalAppointments">0</div>
+                <div class="stat-label">Tổng cuộc hẹn</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Layout chính 2 cột -->
 <div class="appointment-main-layout">
     <div class="row g-4">
@@ -221,6 +237,84 @@
 
 <style>
 /* Modern appointment management styling */
+
+/* Page Header */
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+    margin-bottom: 2rem;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-info h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-info h1 i {
+    color: rgba(255,255,255,0.9);
+}
+
+.header-info p {
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+}
+
+.header-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.8);
+    margin-top: 0.25rem;
+}
+
+/* Responsive header */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .header-info h1 {
+        font-size: 1.8rem;
+    }
+
+    .page-header {
+        padding: 1.5rem;
+    }
+}
 
 /* Search filters panel */
 .search-filters-panel .card {
@@ -949,6 +1043,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const html = `
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0">
+                    <i class="fas fa-home me-2"></i>
+                    Thông tin Bất động sản
+                </h6>
+            </div>
             <div class="property-info-card">
                 ${propertyImage ? `<img src="${propertyImage}" alt="${property.Title || 'Property'}" class="property-image" onerror="this.style.display='none'">` : ''}
                 <div class="property-details">
@@ -1021,6 +1121,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateAppointmentCount(count) {
         appointmentCount.textContent = count;
+        // Cập nhật số liệu trong header
+        const totalAppointments = document.getElementById('totalAppointments');
+        if (totalAppointments) {
+            totalAppointments.textContent = count;
+        }
     }
 
     function handleDeleteButtonClick() {

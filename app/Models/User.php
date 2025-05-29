@@ -123,6 +123,11 @@ class User extends Authenticatable
 
     // Mối quan hệ với bảng 'profile_*' của bảng
 
+    public function profile_admin()
+    {
+        return $this->hasOne(profile_admin::class, 'UserID', 'UserID');
+    }
+
     public function profile_agent()
     {
         return $this->hasOne(profile_agent::class, 'UserID', 'UserID');
