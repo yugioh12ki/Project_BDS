@@ -99,12 +99,26 @@ class User extends Authenticatable
     // Mối quan hệ với bảng 'feedback'
     public function feedback_agent()
     {
-        return $this->hasMany(Feedback::class, 'AgentID', 'UserID');
+        return $this->hasManyThrough(
+            feedback::class,
+            profile_agent::class,
+            'UserID', // Khóa ngoại trên bảng profile_agent
+            'AgentID', // Khóa ngoại trên bảng feedback
+            'UserID', // Khóa chính trên bảng user
+            'UserID' // Khóa chính trên bảng profile_agent
+        );
     }
 
     public function feedback_customer()
     {
-        return $this->hasMany(Feedback::class, 'CusID', 'UserID');
+        return $this->hasManyThrough(
+            feedback::class,
+            profile_customer::class,
+            'UserID', // Khóa ngoại trên bảng profile_customer
+            'CusID', // Khóa ngoại trên bảng feedback
+            'UserID', // Khóa chính trên bảng user
+            'UserID' // Khóa chính trên bảng profile_customer
+        );
     }
 
     // Mối quan hệ với bảng 'profile_*' của bảng

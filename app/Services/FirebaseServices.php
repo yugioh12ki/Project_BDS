@@ -24,7 +24,7 @@ class FirebaseServices
                 ->withServiceAccount(config('firebase.credentials_file'))
                 ->withDatabaseUri(config('firebase.database_uri'));
 
-            
+
 
             return $factory->createDatabase();
         } catch (FirebaseException $e) {

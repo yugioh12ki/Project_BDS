@@ -1656,12 +1656,15 @@ class SystemController extends Controller
     public function getFeedback()
     {
         $columns = Schema::getColumnListing('feedbacks');
-        $feedbacks = feedback::with(['user_Cus', 'user_Agent'])->paginate(10);
+        $feedbacks = feedback::with(['user_Cus.user', 'user_Agent.user', 'agent_user', 'customer_user'])->paginate(10);
+        $agents = User::where('Role', 'Agent')->with('profile_agent')->get();
+        $customers = User::where('Role', 'Customer')->get();
+
         if ($columns === null || $feedbacks->isEmpty()) {
             $error = '404 Error: Lỗi lấy dữ liệu'; // Thông báo lỗi
-            return view('_system.feedback', compact('error')); // Truyền thông báo lỗi sang view
+            return view('_system.feedback', compact('error', 'agents', 'customers')); // Truyền thông báo lỗi sang view
         }
-        return view('_system.feedback', compact('columns','feedbacks')); // Đảm bảo biến truyền vào view là $users
+        return view('_system.feedback', compact('columns','feedbacks', 'agents', 'customers')); // Đảm bảo biến truyền vào view là $users
     }
 
     // Hàm lọc phản hồi theo trạng thái và số sao
@@ -1728,623 +1731,169 @@ class SystemController extends Controller
         return redirect()->route('admin.feedback')->with('success', 'Phản hồi đã được xóa thành công.');
     }
 
-    //
-    // Phần này của commission
-    //
-
-    public function getCommission()
-    {
-        $columns = Schema::getColumnListing('commission');
-        $commissions = Commission::with(['comm_agent', 'comm_trans'])->paginate(10);
-        $transactions = Transaction::where('TranStatus', 'Paid')->get();
-
-        if ($columns === null || $commissions->isEmpty()) {
-            $error = '404 Error: Lỗi lấy dữ liệu';
-            return view('_system.commission', compact('error'));
-        }
-
-        return view('_system.commission', compact('columns', 'commissions', 'transactions'));
-    }
-
-    // Hiển thị form tạo mới commission
-    public function createCommissionForm()
-    {
-        $transactions = Transaction::where('TranStatus', 'Paid')->get(); // Lấy danh sách giao dịch đã thanh toán
-
-        return view('_system.partialview.create_commission', compact('transactions'));
-    }
-
-    // Xử lý lưu commission mới
-    public function createCommission(Request $request)
-    {
-
-        $validated = $request->validate([
-            'TransactionID' => 'required|exists:transactions,TransactionID',
-            'RentMonth' => 'nullable|integer',
-            'Percentage' => 'required|numeric',
-            'StatusCommission' => 'required|in:Success,Pending,Cancel',
-            'PaidDate' => 'nullable|date',
-        ]);
-
-        // Lấy thông tin Transaction
-        $transaction = Transaction::with('trans_agent')->where('TransactionID', $validated['TransactionID'])->where('TranStatus', 'Paid')->first();
-
-        if (!$transaction) {
-            return redirect()->back()->withErrors(['error' => 'Giao dịch không hợp lệ hoặc chưa được thanh toán.']);
-        }
-
-        // Tạo Commission mới
-        $commission = new Commission();
-
-        $commission->AgentID = $transaction->AgentID; // Lấy AgentID từ Transaction
-        $commission->TransactionID = $validated['TransactionID'];
-        $commission->StatusCommission = $validated['StatusCommission'];
-
-        if (isset($validated['RentMonth'])) {
-            $commission->RentMonth = $validated['RentMonth'];
-        }
-
-        if (isset($validated['Percentage'])) {
-            $commission->Percentage = $validated['Percentage'];
-        }
-
-        // Xử lý PaidDate theo trạng thái
-        if ($validated['StatusCommission'] === 'Success') {
-            $commission->PaidDate = now();
-        } else {
-            $commission->PaidDate = null;
-        }
-
-        $commission->save();
-
-        return redirect()->route('admin.commission')->with('success', 'Hoa hồng đã được tạo thành công.');
-    }
-
-
-    // Xử lý cập nhật commission
-    public function updateCommission(Request $request, $id)
-    {
-        $commission = Commission::find($id);
-
-        if (!$commission) {
-            return redirect()->back()->withErrors(['error' => 'Không tìm thấy hoa hồng.']);
-        }
-
-        $validated = $request->validate([
-            'StatusCommission' => 'required|in:Success,Pending,Cancel',
-            'PaidDate' => 'nullable|date',
-        ]);
-
-        // Chỉ cập nhật StatusCommission và PaidDate, không động đến TransactionID, AgentID, RentMonth, Percentage
-        $commission->StatusCommission = $validated['StatusCommission'];
-        if ($validated['StatusCommission'] === 'Success') {
-            $commission->PaidDate = now();
-        }
-        else {
-            $commission->PaidDate = null; // Hoặc null nếu bạn muốn xóa giá trị
-        }
-        $commission->update();
-
-        return redirect()->route('admin.commission')->with('success', 'Hoa hồng đã được cập nhật thành công.');
-    }
-
-    // Xử lý xóa commission
-    public function deleteCommission($id)
-    {
-        try {
-            $commission = Commission::find($id);
-
-            if (!$commission) {
-                return redirect()->back()->withErrors(['error' => 'Không tìm thấy hoa hồng.']);
-            }
-
-            $commission->delete();
-
-            return redirect()->route('admin.commission')->with('success', 'Hoa hồng đã được xóa thành công.');
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Không thể xóa hoa hồng. ' . $e->getMessage()]);
-        }
-    }
-
-    // Lọc commission theo trạng thái
-
-    public function getCommissionByStatus(Request $request, $status)
-    {
-        $columns = Schema::getColumnListing('commission');
-        $paidDate = $request->input('paid_date');
-
-        $query = Commission::with(['comm_agent', 'comm_trans']);
-        if ($status != 'all') {
-            $query->where('StatusCommission', $status);
-        }
-        if ($paidDate) {
-            $query->whereDate('PaidDate', $paidDate);
-        }
-        $commissions = $query->paginate(10);
-
-        if ($columns === null || $commissions->isEmpty()) {
-            $error = 'Không tìm thấy hoa hồng nào với trạng thái: ' . $status . ($paidDate ? (' và ngày thanh toán: ' . $paidDate) : '');
-            return view('_system.commission', compact('error', 'columns', 'commissions', 'status', 'paidDate'));
-        }
-
-        return view('_system.commission', compact('columns', 'commissions', 'status', 'paidDate'));
-    }
-
-    // Lấy chi tiết commission
-    public function getCommissionById($id)
-    {
-        $commission = Commission::with(['comm_agent', 'comm_trans'])->find($id);
-
-        if (!$commission) {
-            return redirect()->back()->withErrors(['error' => 'Không tìm thấy hoa hồng.']);
-        }
-
-        $columns = Schema::getColumnListing('commission');
-        $commissions = Commission::with(['comm_agent', 'comm_trans'])->get();
-
-        return view('_system.commission', compact('commission'));
-    }
-
-    // Tìm kiếm commission
-    public function searchCommission(Request $request)
-    {
-        $keyword = $request->input('keyword');
-        $paidDate = $request->input('paid_date');
-
-        $columns = Schema::getColumnListing('commission');
-
-        $query = Commission::with(['comm_agent', 'comm_trans']);
-
-        if ($paidDate) {
-            // Lọc theo ngày thanh toán (PaidDate)
-            $query->whereDate('PaidDate', $paidDate);
-        } elseif ($keyword) {
-            // Tìm kiếm với các quan hệ (dùng with để eager loading)
-            $query->where(function($q) use ($keyword) {
-                $q->where('CommissionID', 'LIKE', "%$keyword%")
-                  ->orWhere('AgentID', 'LIKE', "%$keyword%")
-                  ->orWhere('TransactionID', 'LIKE', "%$keyword%")
-                  ->orWhere('Amount', 'LIKE', "%$keyword%")
-                  ->orWhere('TypeCom', 'LIKE', "%$keyword%")
-                  ->orWhere('StatusCommission', 'LIKE', "%$keyword%")
-                  ;
-            })
-            ->orWhereHas('comm_agent', function($q) use ($keyword) {
-                $q->where('Name', 'LIKE', "%$keyword%") ;
-            });
-        }
-
-        $commissions = $query->get();
-
-        if ($columns === null || $commissions->isEmpty()) {
-            $error = $paidDate ? ('Không tìm thấy hoa hồng nào với ngày thanh toán: ' . $paidDate) : ('Không tìm thấy hoa hồng nào phù hợp với từ khóa: ' . $keyword);
-            return view('_system.commission', compact('error', 'columns', 'commissions', 'keyword', 'paidDate'));
-        }
-
-        return view('_system.commission', compact('columns', 'commissions', 'keyword', 'paidDate'));
-    }
-
-
-
-    private function fetchProvinces()
-    {
-        // Gọi API để lấy danh sách tỉnh
-        $response = Http::get('https://provinces.open-api.vn/api/?depth=2');
-        return $response->json();
-    }
-
-    public function viewDocument($id)
-    {
-        // Kiểm tra xác thực người dùng
-        if (!Auth::check()) {
-            abort(403, 'Vui lòng đăng nhập để truy cập tài liệu.');
-        }
-
-        // Tìm tài liệu
-        $document = Document::with(['transaction'])->find($id);
-
-        if (!$document) {
-            return back()->with('error', 'Không tìm thấy tài liệu');
-        }
-
-        // Kiểm tra quyền truy cập
-        $user = Auth::user();
-        $transaction = $document->transaction;
-
-        // Chỉ cho phép admin, agent liên quan, chủ sở hữu và khách hàng liên quan đến giao dịch này truy cập
-        $hasAccess = false;
-
-        if ($user->Role == 'Admin') {
-            $hasAccess = true;
-        } elseif ($user->Role == 'Agent' && $transaction->AgentID == $user->UserID) {
-            $hasAccess = true;
-        } elseif ($user->Role == 'Owner' && $transaction->OwnerID == $user->UserID) {
-            $hasAccess = true;
-        } elseif ($user->Role == 'Customer' && $transaction->CusID == $user->UserID) {
-            $hasAccess = true;
-        }
-
-        if (!$hasAccess) {
-            abort(403, 'Bạn không có quyền xem tài liệu này.');
-        }
-
-        // Ghi log truy cập
-        Log::info('User ' . $user->UserID . ' accessed document ' . $id . ' at ' . now());
-
-        // Sử dụng đường dẫn private trong storage thay vì public
-        $filePath = storage_path('app/' .$document->FilePath);
-
-        if (!file_exists($filePath)) {
-            return back()->with('error', 'Tài liệu không tồn tại trên hệ thống');
-        }
-
-        // Trả về file thông qua response để tránh truy cập trực tiếp
-        return response()->file($filePath);
-    }
-
-    public function downloadDocument($id)
-    {
-        // Kiểm tra xác thực người dùng
-        if (!Auth::check()) {
-            abort(403, 'Vui lòng đăng nhập để tải tài liệu.');
-        }
-
-        // Tìm tài liệu
-        $document = Document::with(['transaction'])->find($id);
-
-        if (!$document) {
-            return back()->with('error', 'Không tìm thấy tài liệu');
-        }
-
-        // Kiểm tra quyền truy cập giống như viewDocument
-        $user = Auth::user();
-        $transaction = $document->transaction;
-
-        $hasAccess = false;
-        if ($user->Role == 'Admin') {
-            $hasAccess = true;
-        } elseif ($user->Role == 'Agent' && $transaction->AgentID == $user->UserID) {
-            $hasAccess = true;
-        } elseif ($user->Role == 'Owner' && $transaction->OwnerID == $user->UserID) {
-            $hasAccess = true;
-        } elseif ($user->Role == 'Customer' && $transaction->CusID == $user->UserID) {
-            $hasAccess = true;
-        }
-
-        if (!$hasAccess) {
-            abort(403, 'Bạn không có quyền tải tài liệu này.');
-        }
-
-
-        // Đường dẫn file trong storage private
-        $filePath = storage_path('app/' . $document->FilePath);
-
-        if (!file_exists($filePath)) {
-            return back()->with('error', 'Tài liệu không tồn tại trên hệ thống');
-        }
-
-        // Tạo tên file download
-        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
-        $downloadName = $document->DocumentType . '.' . $extension;
-
-        // Trả về response download
-        return response()->download($filePath, $downloadName);
-    }
-
-
-
-    public function addDocument(Request $request, $transactionId)
-    {
-        if ($request->hasFile('document')) {
-        $fileSize = $request->file('document')->getSize();
-        $maxSize = 10 * 1024 * 1024; // 10MB
-
-        if ($fileSize > $maxSize) {
-            return back()->with('error', 'Tập tin quá lớn! Kích thước tối đa cho phép là 10MB. Tập tin của bạn: ' .
-                round($fileSize / (1024 * 1024), 2) . 'MB');
-        }
-    }
-        $validator = Validator::make($request->all(), [
-            'document' => 'required|file|max:10240', // Max 10MB
-            'DocumentType' => 'required|string',
-        ],[
-            'document.max' => 'Kích thước file không được vượt quá 10MB',
-        ]);
-
-        if($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $transaction = Transaction::find($transactionId);
-        if (!$transaction) {
-            return back()->with('error', 'Không tìm thấy giao dịch');
-        }
-
-        try {
-
-            $transactionFolder = 'documents/trans_' . $transactionId;
-            // Xử lý upload file vào storage private
-            $file = $request->file('document');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-
-            // Lưu vào thư mục private
-            $filePath = $file->storeAs($transactionFolder, $fileName);
-
-            // Tạo bản ghi tài liệu mới
-            $document = new Document();
-
-            $document->TransactionID = $transactionId;
-            $document->DocumentType = $request->DocumentType;
-            $document->FilePath = $filePath; // Chỉ lưu tên file, không lưu đường dẫn đầy đủ
-            $document->UploadedDate = now();
-            $document->save();
-
-            Log::info('Document added successfully for transaction: ' . $transactionId);
-
-            return back()->with('success', 'Tải lên tài liệu thành công!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Lỗi khi tải tài liệu: ' . $e->getMessage());
-        }
-    }
-
-    public function deleteDocument($id)
-    {
-        // Kiểm tra xác thực người dùng
-        if (!Auth::check()) {
-            abort(403, 'Vui lòng đăng nhập để thực hiện thao tác này.');
-        }
-
-        // Tìm tài liệu
-        $document = Document::with(['transaction'])->find($id);
-
-        if (!$document) {
-            return back()->with('error', 'Không tìm thấy tài liệu');
-        }
-
-        // Kiểm tra quyền xóa - chỉ Admin và Agent liên quan mới được xóa
-        $user = Auth::user();
-        $transaction = $document->transaction;
-
-        $hasAccess = false;
-        if ($user->Role == 'Admin') {
-            $hasAccess = true;
-        } elseif ($user->Role == 'Agent' && $transaction->AgentID == $user->UserID) {
-            $hasAccess = true;
-        }
-
-        if (!$hasAccess) {
-            abort(403, 'Bạn không có quyền xóa tài liệu này.');
-        }
-
-        try {
-            // Đường dẫn file trong storage
-            $filePath = storage_path('app/' . $document->FilePath);
-
-            // Xóa file từ storage nếu tồn tại
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
-
-
-            // Xóa bản ghi từ cơ sở dữ liệu
-            $document->delete();
-
-            return back()->with('success', 'Xóa tài liệu thành công!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Lỗi khi xóa tài liệu: ' . $e->getMessage());
-        }
-    }
-
     /**
-     * Lấy dữ liệu thống kê giao dịch theo tháng để hiển thị trên biểu đồ
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * Search feedbacks with filters and get agents/customers for autocomplete
      */
-    public function getMonthlyStats()
+    public function getFeedbackSearch(Request $request)
     {
         try {
-            $currentYear = date('Y');
+            // If it's a user search request (agents and customers)
+            if ($request->has('q')) {
+                $query = $request->query('q');
 
-            // Lấy dữ liệu theo tháng cho năm hiện tại
-            $monthlyStats = DB::table('transactions')
-                ->select(
-                    DB::raw('MONTH(TransactionDate) as month'),
-                    DB::raw('COUNT(*) as count'),
-                    DB::raw('SUM(TotalPrice) as total')
-                )
-                ->whereYear('TransactionDate', $currentYear)
-                ->groupBy(DB::raw('MONTH(TransactionDate)'))
-                ->orderBy('month')
-                ->get();
+                // Search agents
+                $agents = User::where('Role', 'Agent')
+                    ->where(function($q) use ($query) {
+                        $q->where('Name', 'LIKE', "%{$query}%")
+                          ->orWhere('UserID', 'LIKE', "%{$query}%")
+                          ->orWhere('Email', 'LIKE', "%{$query}%");
+                    })
+                    ->with('profile_agent')
+                    ->limit(5)
+                    ->get()
+                    ->map(function($agent) {
+                        return [
+                            'UserID' => $agent->UserID,
+                            'FullName' => $agent->Name,
+                            'Email' => $agent->Email,
+                            'Role' => 'Agent',
+                            'Province' => $agent->profile_agent->ProvinceAgent ?? 'N/A'
+                        ];
+                    });
 
-            // Tạo mảng labels và dữ liệu theo tháng
-            $labels = [];
-            $transactionCounts = array_fill(0, 12, 0); // Khởi tạo mảng với 12 phần tử là 0
-            $totalPrices = array_fill(0, 12, 0);
+                // Search customers
+                $customers = User::where('Role', 'Customer')
+                    ->where(function($q) use ($query) {
+                        $q->where('Name', 'LIKE', "%{$query}%")
+                          ->orWhere('UserID', 'LIKE', "%{$query}%")
+                          ->orWhere('Email', 'LIKE', "%{$query}%");
+                    })
+                    ->limit(5)
+                    ->get()
+                    ->map(function($customer) {
+                        return [
+                            'UserID' => $customer->UserID,
+                            'FullName' => $customer->Name,
+                            'Email' => $customer->Email,
+                            'Role' => 'Customer',
+                            'Province' => $customer->Province ?? 'N/A'
+                        ];
+                    });
 
-            // Tên các tháng trong tiếng Việt
-            $monthNames = [
-                1 => 'Tháng 1', 2 => 'Tháng 2', 3 => 'Tháng 3', 4 => 'Tháng 4',
-                5 => 'Tháng 5', 6 => 'Tháng 6', 7 => 'Tháng 7', 8 => 'Tháng 8',
-                9 => 'Tháng 9', 10 => 'Tháng 10', 11 => 'Tháng 11', 12 => 'Tháng 12'
-            ];
+                // Combine results
+                $users = $agents->concat($customers);
 
-            // Lấy tên các tháng cho labels
-            for ($i = 1; $i <= 12; $i++) {
-                $labels[] = $monthNames[$i];
-            }
-
-            // Điền dữ liệu vào mảng
-            foreach ($monthlyStats as $stat) {
-                $monthIndex = $stat->month - 1; // Chuyển từ 1-12 sang 0-11 để phù hợp với index mảng
-                $transactionCounts[$monthIndex] = $stat->count;
-                $totalPrices[$monthIndex] = $stat->total;
-            }
-
-            // Trả về dữ liệu dưới dạng JSON
-            return response()->json([
-                'labels' => $labels,
-                'transactionCounts' => $transactionCounts,
-                'totalPrices' => $totalPrices,
-                'year' => $currentYear
-            ]);
-        } catch (\Exception $e) {
-            // Log lỗi và trả về response lỗi
-            Log::error('Error getting monthly stats: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Không thể lấy dữ liệu thống kê theo tháng.',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Search owners for autocomplete
-     */
-    public function searchOwners(Request $request)
-    {
-        try {
-            $query = $request->input('query', '');
-
-            if (strlen($query) < 2) {
-                return response()->json([]);
-            }
-
-            $owners = User::where('Role', 'Owner')
-                ->where(function($q) use ($query) {
-                    $q->where('Name', 'LIKE', "%{$query}%")
-                      ->orWhere('Phone', 'LIKE', "%{$query}%")
-                      ->orWhere('Email', 'LIKE', "%{$query}%");
-                })
-                ->select('UserID', 'Name', 'Phone', 'Email', 'Address')
-                ->limit(10)
-                ->get();
-
-            return response()->json($owners);
-        } catch (\Exception $e) {
-            Log::error('Error searching owners: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Không thể tìm kiếm chủ sở hữu.',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get owner details by ID
-     */
-    public function getOwnerDetails($id)
-    {
-        try {
-            $owner = User::where('Role', 'Owner')
-                ->where('UserID', $id)
-                ->select('UserID', 'Name', 'Phone', 'Email', 'Address')
-                ->first();
-
-            if (!$owner) {
-                return response()->json([
-                    'error' => 'Không tìm thấy chủ sở hữu.'
-                ], 404);
-            }
-
-            return response()->json($owner);
-        } catch (\Exception $e) {
-            Log::error('Error getting owner details: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Không thể lấy thông tin chủ sở hữu.',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Toggle user status between active and inactive
-     */
-    public function toggleUserStatus(Request $request, $userId)
-    {
-        try {
-            $user = User::findOrFail($userId);
-            $newStatus = $request->input('status');
-
-            // Validate status
-            if (!in_array($newStatus, ['active', 'inactive'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Trạng thái không hợp lệ.'
-                ], 400);
-            }
-
-            $user->StatusUser = $newStatus;
-            $user->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => "User đã được {$newStatus}.",
-                'user' => $user
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error toggling user status: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi cập nhật trạng thái user.'
-            ], 500);
-        }
-    }
-
-    /**
-     * Search users by name, email, or phone only
-     */
-    public function searchUsers(Request $request)
-    {
-        try {
-            $query = User::query();
-
-            // Search only in Name, Email, Phone as requested
-            if ($request->has('keyword') && !empty($request->keyword)) {
-                $keyword = $request->keyword;
-                $query->where(function($q) use ($keyword) {
-                    $q->where('Name', 'LIKE', "%{$keyword}%")
-                      ->orWhere('Email', 'LIKE', "%{$keyword}%")
-                      ->orWhere('Phone', 'LIKE', "%{$keyword}%");
-                });
-            }
-
-            // Filter by role if specified
-            if ($request->has('role') && $request->role !== 'all') {
-                $query->where('Role', $request->role);
-            }
-
-            // Filter by status if specified
-            if ($request->has('status') && !empty($request->status)) {
-                $query->where('StatusUser', $request->status);
-            }
-
-            $users = $query->orderBy('Name')->get();
-
-            // Return JSON for AJAX requests
-            if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'users' => $users,
-                    'total' => $users->count()
+                    'users' => $users
                 ]);
             }
 
-            // Return view for regular requests
-            return view('_system.partialview.user_table', compact('users'));
+            // If it's a feedback search with filters
+            $query = feedback::with(['user_Cus.user', 'user_Agent.user', 'agent_user', 'customer_user']);
 
-        } catch (\Exception $e) {
-            Log::error('Error searching users: ' . $e->getMessage());
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra khi tìm kiếm.'
-                ], 500);
+            // Filter by user (agent or customer)
+            if ($request->has('user_id') && !empty($request->user_id)) {
+                $query->where(function($q) use ($request) {
+                    $q->where('AgentID', $request->user_id)
+                      ->orWhere('CusID', $request->user_id);
+                });
             }
 
-            return back()->with('error', 'Có lỗi xảy ra khi tìm kiếm.');
+            // Legacy support: Filter by agent only
+            if ($request->has('agent_id') && !empty($request->agent_id)) {
+                $query->where('AgentID', $request->agent_id);
+            }
+
+            // Filter by date
+            if ($request->has('date') && !empty($request->date)) {
+                $query->whereDate('FeedbackDate', $request->date);
+            }
+
+            // Filter by rating
+            if ($request->has('rating') && !empty($request->rating)) {
+                $query->where('Rating', $request->rating);
+            }
+
+            $feedbacks = $query->get();
+
+            // Separate by status
+            $pending = $feedbacks->where('Status', 'Chờ duyệt')->values();
+            $approved = $feedbacks->where('Status', 'Đã duyệt')->values();
+
+            return response()->json([
+                'success' => true,
+                'pending' => $pending,
+                'approved' => $approved
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in getFeedbackSearch: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tìm kiếm phản hồi.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get cancelled feedbacks for history modal
+     */
+    public function getCancelledFeedback(Request $request)
+    {
+        try {
+            $cancelled = feedback::with(['user_Cus.user', 'user_Agent.user', 'agent_user', 'customer_user'])
+                ->where('Status', 'Hủy bỏ')
+                ->orderBy('FeedbackDate', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'cancelled' => $cancelled
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in getCancelledFeedback: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải lịch sử phản hồi đã hủy.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update feedback status via AJAX
+     */
+    public function updateFeedbackStatus(Request $request, $id)
+    {
+        try {
+            $feedback = feedback::find($id);
+
+            if (!$feedback) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Phản hồi không tồn tại.'
+                ], 404);
+            }
+
+            $validated = $request->validate([
+                'status' => 'required|in:Chờ duyệt,Đã duyệt,Hủy bỏ',
+            ]);
+
+            $feedback->Status = $validated['status'];
+            $feedback->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Trạng thái phản hồi đã được cập nhật thành công.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in updateFeedbackStatus: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật trạng thái phản hồi.'
+            ], 500);
         }
     }
 

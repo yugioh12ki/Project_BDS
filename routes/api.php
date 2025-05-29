@@ -39,8 +39,14 @@ Route::get('/agents-by-transaction/{transactionId}', function ($transactionId) {
 });
 
 // API nhận câu hỏi và trả về câu trả lời từ chatbot
-// Route::post('/chatbot/answer', [ChatbotController::class, 'answer']);
+Route::post('/chatbot/answer', [ChatbotController::class, 'answerChatbot']);
 
+// Chat API routes
 Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
-Route::get('/chat/user/{user_id}', [ChatbotController::class, 'getUserConversations']);
+Route::get('/chat/conversations', [ChatbotController::class, 'getConversations']);
+Route::get('/chat/messages/{conversationId}', [ChatbotController::class, 'getMessages']);
 Route::post('/chat/admin-reply', [ChatbotController::class, 'adminReply']);
+
+// Admin routes - for backward compatibility
+Route::get('/chat/pending-conversations', [ChatbotController::class, 'getConversations']);
+Route::get('/chat/conversation/{conversation_id}/messages', [ChatbotController::class, 'getMessages']);

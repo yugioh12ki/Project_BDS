@@ -139,8 +139,37 @@ Route::middleware(['auth'])->group(function()
             // Route điều hướng đến trang quản lý đánh giá khách hàng tới môi giới
             Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');
             Route::get('/feedback/filter', [SystemController::class, "getFeedbackByStatusRating"])->name('feedback.filter');
+            Route::get('/feedback/search', [SystemController::class, "getFeedbackSearch"])->name('feedback.search');
+            Route::get('/feedback/cancelled', [SystemController::class, "getCancelledFeedback"])->name('feedback.cancelled');
+
+            // Debug route
+            Route::get('/feedback/debug', function() {
+                $feedback = App\Models\feedback::with(['user_Cus.user', 'user_Agent.user'])->first();
+
+                $result = [
+                    'feedback_id' => $feedback->FeedbackID,
+                    'cus_id' => $feedback->CusID,
+                    'agent_id' => $feedback->AgentID,
+                    'customer_data' => $feedback->user_Cus ? [
+                        'profile_exists' => true,
+                        'user_exists' => $feedback->user_Cus->user ? true : false,
+                        'user_name' => $feedback->user_Cus->user ? $feedback->user_Cus->user->Name : 'null'
+                    ] : ['profile_exists' => false],
+                    'agent_data' => $feedback->user_Agent ? [
+                        'profile_exists' => true,
+                        'user_exists' => $feedback->user_Agent->user ? true : false,
+                        'user_name' => $feedback->user_Agent->user ? $feedback->user_Agent->user->Name : 'null'
+                    ] : ['profile_exists' => false],
+                    'all_agents' => App\Models\User::where('Role', 'Agent')->pluck('Name', 'UserID'),
+                    'all_profile_agents' => App\Models\profile_agent::pluck('UserID'),
+                ];
+
+                return response()->json($result, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            })->name('feedback.debug');
+
             Route::get('/feedback/{id}', [SystemController::class, "getFeedbackById"])->name('feedback.id');
             Route::patch('/feedback/{id}', [SystemController::class, "updateFeedback"])->name('feedback.update');
+            Route::patch('/feedback/{id}/status', [SystemController::class, "updateFeedbackStatus"])->name('feedback.updateStatus');
             Route::delete('/feedback/{id}', [SystemController::class, "deleteFeedback"])->name('feedback.delete');
 
             // Route điều hướng đến trang quản lý hoa hồng
@@ -164,6 +193,9 @@ Route::middleware(['auth'])->group(function()
 
             // Route quản lý chatbot
             Route::prefix('chatbot')->name('chatbot.')->group(function () {
+                // Route demo
+                Route::get('/demo', [ChatbotController::class, 'demo'])->name('demo');
+
                 Route::prefix('questions')->name('questions.')->group(function () {
                     Route::get('/', [ChatbotController::class, 'index'])->name('index');
                     Route::get('/create', [ChatbotController::class, 'create'])->name('create');
@@ -171,6 +203,23 @@ Route::middleware(['auth'])->group(function()
                     Route::get('/edit/{id}', [ChatbotController::class, 'edit'])->name('edit');
                     Route::put('/update/{id}', [ChatbotController::class, 'update'])->name('update');
                     Route::delete('/destroy/{id}', [ChatbotController::class, 'destroy'])->name('destroy');
+                });
+
+                // Route quản lý chat admin
+                Route::get('/admin', [ChatbotController::class, 'index'])->name('admin');
+
+                // Route gửi tin nhắn
+                Route::post('/send-to-user', [ChatbotController::class, 'sendToUser'])->name('sendToUser');
+                Route::post('/broadcast', [ChatbotController::class, 'sendBroadcast'])->name('broadcast');
+                Route::get('/users-list', [ChatbotController::class, 'getUsersList'])->name('usersList');
+                Route::get('/default-users', [ChatbotController::class, 'getDefaultUsers'])->name('defaultUsers');
+
+                // Route quản lý FAQ
+                Route::prefix('faq')->name('faq.')->group(function () {
+                    Route::get('/', [ChatbotController::class, 'manageFAQ'])->name('index');
+                    Route::post('/add', [ChatbotController::class, 'addFAQ'])->name('add');
+                    Route::put('/update/{index}', [ChatbotController::class, 'updateFAQ'])->name('update');
+                    Route::delete('/delete/{index}', [ChatbotController::class, 'deleteFAQ'])->name('delete');
                 });
             });
         });
@@ -185,7 +234,25 @@ Route::middleware(['auth'])->group(function()
 
     Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
 
+    // Route cho user chat (guest và user đã đăng nhập)
+    Route::get('/chat', [ChatbotController::class, 'userChat'])->name('user.chat');
+
 });
 
 // Route API cho chatbot
 Route::post('/api/chatbot', [ChatbotController::class, 'answer'])->name('chatbot.answer');
+
+// Test routes cho Gemini AI - chỉ dùng trong development
+Route::prefix('test')->name('test.')->group(function () {
+    Route::get('/gemini', [ChatbotController::class, 'showTestPage'])->name('gemini');
+    Route::post('/gemini/ask', [ChatbotController::class, 'testGemini'])->name('gemini.ask');
+    Route::get('/gemini/faq', [ChatbotController::class, 'testFAQ'])->name('gemini.faq');
+    Route::post('/gemini/full', [ChatbotController::class, 'testFullChatbot'])->name('gemini.full');
+
+    // Database integration test routes
+    Route::post('/gemini/database', [ChatbotController::class, 'testDatabaseSearch'])->name('gemini.database');
+    Route::post('/gemini/smart-search', [ChatbotController::class, 'testSmartSearch'])->name('gemini.smartsearch');
+    Route::get('/gemini/scenarios', [ChatbotController::class, 'testSearchScenarios'])->name('gemini.scenarios');
+    Route::get('/gemini/db-connection', [ChatbotController::class, 'testDatabaseConnection'])->name('gemini.dbconnection');
+    Route::get('/gemini/status', [ChatbotController::class, 'getDatabaseIntegrationStatus'])->name('gemini.status');
+});
