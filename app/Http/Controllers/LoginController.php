@@ -80,11 +80,13 @@ class LoginController extends Controller
 
             session(['name' => $user->Name]);
 
+            session(['name' => $user->Name]);
+
             // Điều hướng theo vai trò
             return match ($user->Role) {
                 'Admin' => redirect()->route('admin.dashboard'),
-                'Owner', 'Agent' => redirect()->route('agent.dashboard'),
-                'User' => redirect()->route('trangchu.index'),
+                // 'Owner', 'Agent' => redirect()->route('agent.dashboard'),
+                'Customer' => redirect()->route('customer.home'),
                 default => redirect()->route('login')->withErrors(['role' => 'Vai trò không hợp lệ.']),
             };
         }

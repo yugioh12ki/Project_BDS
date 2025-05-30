@@ -41,26 +41,27 @@ class Property extends Model
     {
         return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }
-
     public function moigioi()
     {
         return $this->belongsTo(User::class, 'AgentID', 'UserID');
     }
-
     public function quantri()
     {
         return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
     }
 
+    // Thêm mới quan hệ với video
+    public function videos()
+    {
+        return $this->hasMany(Video::class, 'PropertyID', 'PropertyID');
+    }
+
+    // Thêm quan hệ với ảnh
     public function images()
     {
         return $this->hasMany(Image::class, 'PropertyID', 'PropertyID');
     }
 
-    public function videos()
-    {
-        return $this->hasMany(Video::class, 'PropertyID', 'PropertyID');
-    }
 
     protected $fillable = [
          'OwnerID',

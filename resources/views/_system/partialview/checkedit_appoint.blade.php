@@ -3,12 +3,12 @@
     <div class="mb-2">
         <span class="badge bg-secondary">ID: {{ $appointment->AppointmentID }}</span>
     </div>
-    
+
     <!-- Thông tin chính cuộc hẹn -->
     <div class="mb-3">
         <h6 class="text-primary fw-bold mb-0">{{ $appointment->TitleAppoint ?? 'Không có tiêu đề' }}</h6>
         <small class="text-muted">
-            Trạng thái: 
+            Trạng thái:
             <span class="badge {{ strtolower($appointment->Status) === 'hoàn thành' ? 'bg-success' : (strtolower($appointment->Status) === 'đang chờ' ? 'bg-warning' : 'bg-secondary') }}">
                 {{ $appointment->Status ?? 'ĐANG CHỜ' }}
             </span>
@@ -26,7 +26,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-6">
             <div class="d-flex align-items-center">
                 <i class="fas fa-calendar-check text-primary me-2"></i>
@@ -37,7 +37,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Các bên tham gia -->
     <div class="row g-3 mb-3">
         <div class="col-md-6">
@@ -49,7 +49,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-6">
             <div class="d-flex align-items-center">
                 <i class="fas fa-user text-primary me-2"></i>
@@ -73,7 +73,7 @@
         </div>
     </div>
     @endif
-    
+
     <!-- Mô tả cuộc hẹn -->
     <div class="mb-0">
         <div class="small fw-bold text-muted mb-2">Mô tả chi tiết:</div>

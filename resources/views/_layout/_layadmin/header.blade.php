@@ -15,7 +15,7 @@
             <div class="dropdown-menu">
               <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="dropdown-item" style="width: 100%;">Đăng xuất</button>
+                <button type="submit" class="dropdown-item">Đăng xuất</button>
               </form>
             </div>
           </div>

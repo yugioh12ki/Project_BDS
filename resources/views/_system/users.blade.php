@@ -2,6 +2,9 @@
 
 @section('user')
 
+
+
+
 <div class="users-container">
     <h1 class="users-title">Danh sách User</h1>
 
@@ -53,7 +56,11 @@
     @if(isset($error))
     <div class="alert alert-danger">{{ $error }}</div>
     @else
+    @if(isset($error))
+    <div class="alert alert-danger">{{ $error }}</div>
+    @else
     @include('_system.partialview.user_table', ['users' => $users, 'columns' => $columns])
+    @endif
     @endif
 </div>
 

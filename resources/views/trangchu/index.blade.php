@@ -1,102 +1,101 @@
 @extends('_layout._layhome.home')
 
 @section('home')
-<header class="hero">
-    <div class="search-box">
-        <div class="search-top">
-            <input type="text" placeholder="Nhập tìm kiếm tỉnh thành">
-          </div>
-          <div class="search-filters">
-            <select>
-              <option>Diện tích</option>
-              <option>25m²</option>
-              <option>50m²</option>
-              <option>75m²</option>
-              <option>100m²</option>
-            </select>
-            <select id="property-type" onchange="updatePriceOptions()">
-              <option value="">Loại hình</option>
-              <option value="ban">Cho Bán</option>
-              <option value="thue">Cho Thuê</option>
-            </select>
-            <select id="price-options">
-              <option>Giá tiền</option>
-            </select>
-            <button class="btn-search">Tìm kiếm</button>
-          </div>
+<div class="banner-section">
+    <div class="banner-slider" id="bannerSlider">
+        <div class="slide active" style="background-image: url('/storage/banner1.jpg')"></div>
+        <div class="slide" style="background-image: url('/storage/banner2.jpg')"></div>
+        <div class="slide" style="background-image: url('/storage/banner3.jpg')"></div>
+        
+        <button class="banner-nav prev">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <button class="banner-nav next">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+
+        <div class="slider-dots">
+            <button class="dot active" data-slide="0"></button>
+            <button class="dot" data-slide="1"></button>
+            <button class="dot" data-slide="2"></button>
         </div>
     </div>
-  </header>
-  <script>
-    function updatePriceOptions() {
-    const type = document.getElementById('property-type').value;
-    const priceSelect = document.getElementById('price-options');
-    priceSelect.innerHTML = '<option>Giá tiền</option>'; // Reset
 
-    let options = [];
-    if (type === 'ban') {
-      options = ['Dưới 1 tỷ', 'Từ 1 - 3 tỷ', 'Từ 3 - 5 tỷ', 'Trên 5 tỷ'];
-    } else if (type === 'thue') {
-      options = ['Dưới 2 triệu', 'Từ 2 - 3 triệu', 'Từ 3 - 5 triệu', 'Trên 5 triệu'];
-    }
+    <form action="{{ route('customer.search') }}" method="GET" class="search-box">
+        <div class="search-input">
+            <input type="text" name="keyword" placeholder="Nhập tìm kiếm tỉnh thành" value="{{ request('keyword') }}">
+        </div>
+        <div class="search-filters">
+            <select name="area">
+                <option value="">Diện tích</option>
+                <option value="1" {{ request('area') == 1 ? 'selected' : '' }}>Dưới 30m²</option>
+                <option value="2" {{ request('area') == 2 ? 'selected' : '' }}>30-50m²</option>
+                <option value="3" {{ request('area') == 3 ? 'selected' : '' }}>50-80m²</option>
+                <option value="4" {{ request('area') == 4 ? 'selected' : '' }}>Trên 80m²</option>
+            </select>
+            <select name="type">
+                <option value="">Loại hình</option>
+                @if(isset($danhmucs))
+                    @foreach($danhmucs as $dm)
+                        <option value="{{ $dm->Protype_ID }}" {{ request('type') == $dm->Protype_ID ? 'selected' : '' }}>{{ $dm->ten_pro }}</option>
+                    @endforeach
+                @endif
+            </select>
+            <select name="price">
+                <option value="">Giá tiền</option>
+                <option value="1" {{ request('price') == 1 ? 'selected' : '' }}>Dưới 1 tỷ</option>
+                <option value="2" {{ request('price') == 2 ? 'selected' : '' }}>1-3 tỷ</option>
+                <option value="3" {{ request('price') == 3 ? 'selected' : '' }}>3-5 tỷ</option>
+                <option value="4" {{ request('price') == 4 ? 'selected' : '' }}>Trên 5 tỷ</option>
+            </select>
+            <button type="submit" class="btn-search">Tìm kiếm</button>
+        </div>
+    </form>
+</div>
 
-    options.forEach(opt => {
-      const option = document.createElement('option');
-      option.textContent = opt;
-      priceSelect.appendChild(option);
-    });
-  }
-  </script>
-
-
-  <section class="properties">
+<section class="properties">
     <h2>Bất động sản dành cho bạn</h2>
     <div class="property-list">
-      <div class="property-card">
-        <h3>Căn hộ cao cấp Sunrise</h3>
-        <p>Quận 7, TP.HCM</p>
-        <span>2.5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Biệt thự vườn The Manor</h3>
-        <p>Quận 2, TP.HCM</p>
-        <span>5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Nhà phố Palm Residence</h3>
-        <p>Quận 9, TP.HCM</p>
-        <span>8.5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Penthouse Vinhomes Central</h3>
-        <p>Quận 1, TP.HCM</p>
-        <span>20 tỷ</span>
-      </div>
+        @foreach($recentProperties as $property)
+            <div class="property-card">
+                <div class="property-image">
+                    @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
+                        <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
+                    @else
+                        <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
+                    @endif
+                </div>
+                <h3>{{ $property->Title }}</h3>
+                <p>{{ $property->District }}, {{ $property->Province }}</p>
+                <span>{{ number_format($property->Price, 0, ',', '.') }} VND</span>
+                <a href="{{ route('property.detail', $property->PropertyID) }}" class="btn-view">Xem chi tiết</a>
+            </div>
+        @endforeach
     </div>
-  </section>
+</section>
 
-  <section class="featured-properties">
+<section class="featured-properties">
     <h2>Bất động sản nổi bật</h2>
     <div class="property-list">
-      <div class="property-card">
-        <h3>Empire City Luxury</h3>
-        <p>3 phòng ngủ · 150m²</p>
-        <span>12.5 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Palm Paradise Villa</h3>
-        <p>4 phòng ngủ · 300m²</p>
-        <span>25 tỷ</span>
-      </div>
-      <div class="property-card">
-        <h3>Sky Garden Penthouse</h3>
-        <p>5 phòng ngủ · 400m²</p>
-        <span>35 tỷ</span>
-      </div>
+        @foreach($featuredProperties as $property)
+            <div class="property-card">
+                <div class="property-image">
+                    @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
+                        <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
+                    @else
+                        <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
+                    @endif
+                </div>
+                <h3>{{ $property->Title }}</h3>
+                <p>{{ $property->chiTiet->first()->Bedroom ?? 0 }} phòng ngủ · {{ $property->chiTiet->first()->Area ?? 0 }}m²</p>
+                <span>{{ number_format($property->Price, 0, ',', '.') }} VND</span>
+                <a href="{{ route('property.detail', $property->PropertyID) }}" class="btn-view">Xem chi tiết</a>
+            </div>
+        @endforeach
     </div>
-  </section>
+</section>
 
-  <section class="utilities">
+<section class="utilities">
     <h2>Hỗ trợ tiện ích</h2>
     <div class="utility-list">
       <div class="utility-card">

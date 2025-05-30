@@ -4,12 +4,15 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\OwnerController;
+use App\Http\Controllers\AgentController;
 use App\Http\Controllers\RegisterController;
 use PHPUnit\Event\Telemetry\System;
 use App\Http\Controllers\SystemController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AdminQuestionController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,8 +29,12 @@ use App\Http\Controllers\ChatbotController;
 //     return view('welcome');
 // });
 
-//Trang chủ
-Route::get('/',[HomeController::class,"index"])->name('home');
+// Public routes - đặt trước middleware auth
+Route::get('/search', [CustomerController::class, 'search'])->name('customer.search');
+Route::get('/property/{id}', [CustomerController::class, 'propertyDetail'])->name('property.detail');
+
+// Đặt các route này ở đầu file, sau route trang chủ
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 //Đăng Nhập
 Route::get('/login',[LoginController::class,"login"])->name('login');
@@ -36,21 +43,62 @@ Route::post('/login', [LoginController::class, "authenticate"])->name('login.aut
 //Đăng Ký
 Route::get('/register',[RegisterController::class,"register"])->name('register');
 
-// Route::prefix('admin')->group(
-//     function () {
-//         Route::get('/dashboard', [SystemController::class, "admin"])->name('admin.dashboard');
-//         Route::get('/property', [SystemController::class, "getProperty"])->name('property');
-//         Route::get('/user', [SystemController::class, "getUser"])->name('users');
-//         Route::get('/user/role/{role}', [SystemController::class, 'getUserByRole'])->name('users.byRole');
-//         Route::get('/appointment', [SystemController::class, "getAppointment"])->name('appointment');
-//         Route::get('/transaction', [SystemController::class, "getTransaction"])->name('transaction');
-//         Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');
-//         Route::get('/commission', [SystemController::class, "getCommission"])->name('commission');
-//     }
-// );
+// Demo route - không cần auth
+Route::get('/property-cards-demo', function () {
+    // Tạo dữ liệu mẫu cho card BĐS
+    $properties = collect([
+        (object)[
+            'PropertyID' => 'P001',
+            'Title' => 'Căn hộ cao cấp, Trung tâm',
+            'Address' => '123 Nguyễn Huệ',
+            'Ward' => 'Quận 1',
+            'District' => 'Quận 1',
+            'Province' => 'TP.HCM',
+            'Price' => 5200000000,
+            'TypePro' => 'Sale',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Căn hộ'],
+            'chiTiet' => (object)['Area' => 85, 'Bedroom' => 2, 'Bath_WC' => 2]
+        ],
+        (object)[
+            'PropertyID' => 'P002',
+            'Title' => 'Nhà phố liền kề',
+            'Address' => '456 Lê Văn Lương',
+            'Ward' => 'Quận 7',
+            'District' => 'Quận 7',
+            'Province' => 'TP.HCM',
+            'Price' => 35000000,
+            'TypePro' => 'Rent',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Nhà phố'],
+            'chiTiet' => (object)['Area' => 120, 'Bedroom' => 3, 'Bath_WC' => 3]
+        ],
+        (object)[
+            'PropertyID' => 'P003',
+            'Title' => 'Biệt thự view sông',
+            'Address' => '789 Nguyễn Văn Linh',
+            'Ward' => 'Quận 7',
+            'District' => 'Quận 7',
+            'Province' => 'TP.HCM',
+            'Price' => 25000000000,
+            'TypePro' => 'Sale',
+            'images' => collect([
+                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
+            ]),
+            'danhMuc' => (object)['ten_pro' => 'Biệt thự'],
+            'chiTiet' => (object)['Area' => 350, 'Bedroom' => 5, 'Bath_WC' => 6]
+        ]
+    ]);
 
-Route::middleware(['auth'])->group(function()
-{
+    $categories = collect([
+        (object)['Protype_ID' => 1, 'ten_pro' => 'Căn hộ'],
+        (object)['Protype_ID' => 2, 'ten_pro' => 'Nhà phố'],
+        (object)['Protype_ID' => 3, 'ten_pro' => 'Biệt thự']
+    ]);
 
         // Routes danh cho người dùng đã đăng nhập không cần phải liên quan đến quyền
         Route::get('/document/view/{id}', [SystemController::class, 'viewDocument'])->name('admin.document.view');
@@ -142,30 +190,7 @@ Route::middleware(['auth'])->group(function()
             Route::get('/feedback/search', [SystemController::class, "getFeedbackSearch"])->name('feedback.search');
             Route::get('/feedback/cancelled', [SystemController::class, "getCancelledFeedback"])->name('feedback.cancelled');
 
-            // Debug route
-            Route::get('/feedback/debug', function() {
-                $feedback = App\Models\feedback::with(['user_Cus.user', 'user_Agent.user'])->first();
 
-                $result = [
-                    'feedback_id' => $feedback->FeedbackID,
-                    'cus_id' => $feedback->CusID,
-                    'agent_id' => $feedback->AgentID,
-                    'customer_data' => $feedback->user_Cus ? [
-                        'profile_exists' => true,
-                        'user_exists' => $feedback->user_Cus->user ? true : false,
-                        'user_name' => $feedback->user_Cus->user ? $feedback->user_Cus->user->Name : 'null'
-                    ] : ['profile_exists' => false],
-                    'agent_data' => $feedback->user_Agent ? [
-                        'profile_exists' => true,
-                        'user_exists' => $feedback->user_Agent->user ? true : false,
-                        'user_name' => $feedback->user_Agent->user ? $feedback->user_Agent->user->Name : 'null'
-                    ] : ['profile_exists' => false],
-                    'all_agents' => App\Models\User::where('Role', 'Agent')->pluck('Name', 'UserID'),
-                    'all_profile_agents' => App\Models\profile_agent::pluck('UserID'),
-                ];
-
-                return response()->json($result, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-            })->name('feedback.debug');
 
             Route::get('/feedback/{id}', [SystemController::class, "getFeedbackById"])->name('feedback.id');
             Route::patch('/feedback/{id}', [SystemController::class, "updateFeedback"])->name('feedback.update');
