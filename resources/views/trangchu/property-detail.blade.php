@@ -58,7 +58,7 @@
                     <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}" id="mainImage">
                 @endif
             </div>
-            
+
             <!-- Thumbnail gallery -->
             <div class="thumbnail-list">
                 @if($property->images->count() > 0)
@@ -130,7 +130,7 @@
                         <div class="card-body">
                         <div class="property-location-details">
                             <p><strong>Địa chỉ đầy đủ:</strong> {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}</p>
-                            
+
                             <div class="location-advantages">
                                 <h4>Thuận lợi di chuyển</h4>
                                 <ul>
@@ -140,7 +140,7 @@
                                     <li>Cách siêu thị/chợ: 300m</li>
                                 </ul>
                             </div>
-                            
+
                             <div class="surrounding-amenities">
                                 <h4>Tiện ích xung quanh</h4>
                                 <ul>
@@ -164,12 +164,12 @@
                                 $mapAddress = urlencode($property->Address . ', ' . $property->Ward . ', ' . $property->District . ', ' . $property->Province);
                                 $googleMapUrl = "https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=" . $mapAddress;
                             @endphp
-                            <iframe 
-                                src="{{ $googleMapUrl }}" 
-                                width="100%" 
-                                height="400" 
-                                style="border:0;" 
-                                allowfullscreen="" 
+                            <iframe
+                                src="{{ $googleMapUrl }}"
+                                width="100%"
+                                height="400"
+                                style="border:0;"
+                                allowfullscreen=""
                                 loading="lazy">
                             </iframe>
                         </div>
@@ -191,7 +191,7 @@
                                 <li><strong>Quy hoạch:</strong> Theo quy hoạch của thành phố</li>
                             </ul>
                         </div>
-                        
+
                         <div class="payment-schedule mt-4">
                             <h4>Tiến độ thanh toán</h4>
                             <div class="table-responsive">
@@ -269,7 +269,7 @@
                                 {!! nl2br(e($property->Description)) !!}
                             </div>
                         </div>
-                        
+
                         <div class="property-highlights mt-4">
                             <h4>Điểm nổi bật</h4>
                             <ul class="highlights-list">
@@ -309,7 +309,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="contact-details mt-3">
                                 <p><i class="bi bi-telephone-fill"></i> {{ substr($property->moigioi->phone, 0, 7) . '***' }}</p>
                                 <p><i class="bi bi-envelope-fill"></i> {{ $property->moigioi->email }}</p>
@@ -318,7 +318,7 @@
                         @else
                             <p>Không có thông tin môi giới.</p>
                         @endif
-                        
+
                         @auth
                         <div class="contact-form mt-4">
                             <h4>Liên hệ ngay</h4>
@@ -382,7 +382,7 @@
                                 <div class="property-details">
                                     <div class="detail">
                                         <i class="bi bi-rulers"></i>
-                                        <span>{{ $relatedProperty->chiTiet->first()->Area ?? 'N/A' }} m²</span>
+                                        <span>{{ optional($relatedProperty->chiTiet->first())->Area ?? 'N/A' }} m²</span>
                                     </div>
                                     <div class="detail">
                                         <i class="bi bi-building"></i>
@@ -408,7 +408,7 @@
 <script>
     function changeImage(imgSrc) {
         document.getElementById('mainImage').src = imgSrc;
-        
+
         // Update active thumbnail
         const thumbnails = document.querySelectorAll('.thumbnail');
         thumbnails.forEach(thumbnail => {

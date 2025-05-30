@@ -85,8 +85,8 @@ class LoginController extends Controller
             // Điều hướng theo vai trò
             return match ($user->Role) {
                 'Admin' => redirect()->route('admin.dashboard'),
-                // 'Owner', 'Agent' => redirect()->route('agent.dashboard'),
-                'Customer' => redirect()->route('customer.home'),
+                'Owner', 'Agent' => redirect()->route('home'),
+                'Customer' => redirect()->route('home'),
                 default => redirect()->route('login')->withErrors(['role' => 'Vai trò không hợp lệ.']),
             };
         }

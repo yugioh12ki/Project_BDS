@@ -29,11 +29,11 @@ use App\Http\Controllers\CustomerController;
 //     return view('welcome');
 // });
 
-// Public routes - đặt trước middleware auth
+// Public routes - có thể truy cập không cần đăng nhập
 Route::get('/search', [CustomerController::class, 'search'])->name('customer.search');
 Route::get('/property/{id}', [CustomerController::class, 'propertyDetail'])->name('property.detail');
 
-// Đặt các route này ở đầu file, sau route trang chủ
+// Trang chủ - cho phép tất cả người dùng truy cập (đã đăng nhập hoặc chưa)
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 //Đăng Nhập
@@ -99,6 +99,38 @@ Route::get('/property-cards-demo', function () {
         (object)['Protype_ID' => 2, 'ten_pro' => 'Nhà phố'],
         (object)['Protype_ID' => 3, 'ten_pro' => 'Biệt thự']
     ]);
+
+    return view('trangchu.search-results', compact('properties', 'categories'));
+});
+
+Route::middleware(['auth'])->group(function()
+    {
+        // Routes dành cho Owner đã đăng nhập
+        Route::middleware(['checkRole:Owner'])->prefix('owner')->name('owner.')->group(function () {
+            Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('dashboard');
+        });
+
+        // Routes dành cho Agent đã đăng nhập
+        Route::middleware(['checkRole:Agent'])->prefix('agent')->name('agent.')->group(function () {
+            Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
+        });
+
+        // Routes dành cho customer đã đăng nhập
+        Route::middleware(['checkRole:Customer'])->prefix('customer')->name('customer.')->group(function () {
+            Route::get('/', [CustomerController::class, 'index'])->name('home');
+            // Profile routes
+            Route::get('/profile', [CustomerController::class, 'showProfile'])->name('profile');
+            Route::put('/profile', [CustomerController::class, 'updateProfile'])->name('profile.update');
+            // Change password routes
+            Route::get('/change-password', [CustomerController::class, 'showChangePasswordForm'])->name('change-password');
+            Route::post('/change-password', [CustomerController::class, 'changePassword'])->name('password.change');
+            Route::get('/appointments', [CustomerController::class, 'showAppointments'])->name('appointments.index');
+            Route::post('/appointments/{id}/cancel', [CustomerController::class, 'cancelAppointment'])->name('appointments.cancel');
+
+            // Notification routes
+            Route::get('/notifications', [CustomerController::class, 'getNotifications'])->name('notifications');
+            Route::post('/notifications/{id}/mark-as-read', [CustomerController::class, 'markNotificationAsRead'])->name('notifications.mark-read');
+        });
 
         // Routes danh cho người dùng đã đăng nhập không cần phải liên quan đến quyền
         Route::get('/document/view/{id}', [SystemController::class, 'viewDocument'])->name('admin.document.view');
@@ -281,3 +313,4 @@ Route::prefix('test')->name('test.')->group(function () {
     Route::get('/gemini/db-connection', [ChatbotController::class, 'testDatabaseConnection'])->name('gemini.dbconnection');
     Route::get('/gemini/status', [ChatbotController::class, 'getDatabaseIntegrationStatus'])->name('gemini.status');
 });
+

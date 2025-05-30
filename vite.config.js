@@ -7,6 +7,7 @@ export default defineConfig({
             input: [
                 'resources/sass/app.scss',
                 'resources/js/app.js',
+                'resources/sass/apphome.scss',
                 'resources/js/dscactinh.js',
                 'resources/js/dscactinh_edit.js',
                 'resources/js/google-maps.js',

@@ -1790,7 +1790,7 @@ class SystemController extends Controller
             }
 
             // If it's a feedback search with filters
-            $query = feedback::with(['user_Cus.user', 'user_Agent.user', 'agent_user', 'customer_user']);
+            $query = feedback::with(['user_Cus', 'user_Agent']);
 
             // Filter by user (agent or customer)
             if ($request->has('user_id') && !empty($request->user_id)) {
@@ -1894,6 +1894,59 @@ class SystemController extends Controller
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi cập nhật trạng thái phản hồi.'
             ], 500);
+        }
+    }
+
+    /**
+     * Search owners for autocomplete functionality
+     */
+    public function searchOwners(Request $request)
+    {
+        try {
+            $query = $request->get('query', '');
+
+            if (strlen($query) < 2) {
+                return response()->json([]);
+            }
+
+            $owners = User::where('Role', 'Owner')
+                ->where(function($q) use ($query) {
+                    $q->where('Name', 'LIKE', "%{$query}%")
+                      ->orWhere('Phone', 'LIKE', "%{$query}%")
+                      ->orWhere('Email', 'LIKE', "%{$query}%");
+                })
+                ->select('UserID', 'Name', 'Phone', 'Email', 'Address')
+                ->limit(10)
+                ->get();
+
+            return response()->json($owners);
+
+        } catch (\Exception $e) {
+            Log::error('Error searching owners: ' . $e->getMessage());
+            return response()->json([], 500);
+        }
+    }
+
+    /**
+     * Get owner details by ID
+     */
+    public function getOwnerDetails($id)
+    {
+        try {
+            $owner = User::where('Role', 'Owner')
+                ->where('UserID', $id)
+                ->select('UserID', 'Name', 'Phone', 'Email', 'Address')
+                ->first();
+
+            if (!$owner) {
+                return response()->json(['error' => 'Owner not found'], 404);
+            }
+
+            return response()->json($owner);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting owner details: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error'], 500);
         }
     }
 

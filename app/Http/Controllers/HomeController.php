@@ -13,22 +13,24 @@ class HomeController extends Controller
     {
         // Lấy danh sách danh mục
         $danhmucs = DanhMucBDS::all();
-        
-        // Lấy BĐS mới nhất (active)
-        $recentProperties = Property::with(['danhMuc', 'chiTiet'])
+
+        // Lấy BĐS Bán nổi bật (4 properties with TypePro = 'Sale')
+        $saleProperties = Property::with(['danhMuc', 'chiTiet'])
             ->where('Status', 'active')
-            ->orderBy('PostedDate', 'desc')
+            ->where('TypePro', 'Sale')
+            ->orderBy('Price', 'desc')
             ->limit(4)
             ->get();
-        
-        // Lấy BĐS nổi bật - giá cao nhất (active)
-        $featuredProperties = Property::with(['danhMuc', 'chiTiet'])
+
+        // Lấy BĐS Thuê nổi bật (4 properties with TypePro = 'Rent')
+        $rentProperties = Property::with(['danhMuc', 'chiTiet'])
             ->where('Status', 'active')
+            ->where('TypePro', 'Rent')
             ->orderBy('Price', 'desc')
-            ->limit(3)
+            ->limit(4)
             ->get();
 
-        return view('trangchu.index', compact('danhmucs', 'recentProperties', 'featuredProperties'));
+        return view('trangchu.index', compact('danhmucs', 'saleProperties', 'rentProperties'));
     }
 
     public function getUser($id)

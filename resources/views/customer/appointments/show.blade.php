@@ -473,30 +473,30 @@
     .appointment-container {
         padding: 15px;
     }
-    
+
     .page-title {
         font-size: 2rem;
     }
-    
+
     .appointments-grid {
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
+
     .appointment-card {
         padding: 20px;
     }
-    
+
     .appointments-stats {
         grid-template-columns: 1fr;
     }
-    
+
     .modal-content {
         margin: 10% auto;
         padding: 20px;
         width: 95%;
     }
-    
+
     .back-to-home {
         bottom: 20px;
         right: 20px;
@@ -579,28 +579,28 @@
                                 {{ $appointment->property->Title ?? 'Không có thông tin' }}
                             </span>
                         </div>
-                        
+
                         <div class="info-row">
                             <span class="info-label">👤 Agent:</span>
                             <span class="info-value">
-                                {{ $appointment->agent->Name ?? 'Chưa phân công' }}
+                                {{ $appointment->user_agent->Name ?? 'Chưa phân công' }}
                             </span>
                         </div>
-                        
+
                         <div class="info-row">
                             <span class="info-label">🏡 Chủ sở hữu:</span>
                             <span class="info-value">
-                                {{ $appointment->owner->Name ?? 'Không có thông tin' }}
+                                {{ $appointment->user_owner->Name ?? 'Không có thông tin' }}
                             </span>
                         </div>
-                        
+
                         <div class="info-row">
                             <span class="info-label">📅 Bắt đầu:</span>
                             <span class="info-value">
                                 {{ $appointment->AppointmentDateStart ? \Carbon\Carbon::parse($appointment->AppointmentDateStart)->format('d/m/Y H:i') : 'Chưa xác định' }}
                             </span>
                         </div>
-                        
+
                         <div class="info-row">
                             <span class="info-label">⏰ Kết thúc:</span>
                             <span class="info-value">
@@ -658,12 +658,12 @@
 function showAppointmentDetails(appointmentId) {
     const appointments = @json($appointments ?? []);
     const appointment = appointments.find(app => app.AppointmentID == appointmentId);
-    
+
     if (!appointment) {
         alert('Không tìm thấy thông tin lịch hẹn');
         return;
     }
-    
+
     const modalContent = document.getElementById('modalContent');
     modalContent.innerHTML = `
         <div class="modal-info-grid">
@@ -681,11 +681,11 @@ function showAppointmentDetails(appointmentId) {
             </div>
             <div class="modal-info-row">
                 <span class="modal-info-label">Agent phụ trách:</span>
-                <span class="modal-info-value">${appointment.agent?.Name || 'Chưa phân công'}</span>
+                <span class="modal-info-value">${appointment.user_agent?.Name || 'Chưa phân công'}</span>
             </div>
             <div class="modal-info-row">
                 <span class="modal-info-label">Chủ sở hữu:</span>
-                <span class="modal-info-value">${appointment.owner?.Name || 'Không có thông tin'}</span>
+                <span class="modal-info-value">${appointment.user_owner?.Name || 'Không có thông tin'}</span>
             </div>
             <div class="modal-info-row">
                 <span class="modal-info-label">Thời gian bắt đầu:</span>
@@ -705,7 +705,7 @@ function showAppointmentDetails(appointmentId) {
             </div>
         </div>
     `;
-    
+
     document.getElementById('appointmentModal').style.display = 'block';
 }
 

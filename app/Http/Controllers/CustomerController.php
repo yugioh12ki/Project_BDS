@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\DB;
 use App\Models\Property;
 use App\Models\DanhMucBDS;
 use App\Models\DetailProperty;
 use App\Models\Appointment;
+use App\Models\User;
 use App\Notifications\NewAppointmentNotification;
 
 class CustomerController extends Controller
@@ -19,21 +21,21 @@ class CustomerController extends Controller
     {
         // Lấy danh sách danh mục BĐS để hiển thị trong dropdown tìm kiếm
         $danhmucs = DanhMucBDS::all();
-        
+
         // Lấy BĐS dành cho bạn (4 BĐS mới nhất đã được duyệt)
         $recentProperties = Property::with(['danhMuc', 'chiTiet'])
             ->where('Status', 1)
             ->orderBy('PostedDate', 'desc')
             ->limit(4)
             ->get();
-        
+
         // Lấy BĐS nổi bật (3 BĐS có giá cao nhất đã được duyệt)
         $featuredProperties = Property::with(['danhMuc', 'chiTiet'])
             ->where('Status', 1)
             ->orderBy('Price', 'desc')
             ->limit(3)
             ->get();
-        
+
         return view('trangchu.index', compact('danhmucs', 'recentProperties', 'featuredProperties'));
     }
 
@@ -44,21 +46,21 @@ class CustomerController extends Controller
 
     public function updateProfile(Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
-        
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:user,Email,' . $user->UserID . ',UserID'],
             'phone' => ['required', 'string', 'max:20'],
             'address' => ['required', 'string', 'max:255'],
         ]);
 
-        $user->update([
-            'Name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-        ]);
+        $user->Name = $request->name;
+        $user->Email = $request->email;
+        $user->Phone = $request->phone;
+        $user->Address = $request->address;
+        $user->save();
 
         return redirect()->route('customer.profile')->with('success', 'Thông tin cá nhân đã được cập nhật thành công.');
     }
@@ -75,10 +77,11 @@ class CustomerController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
+        /** @var User $user */
         $user = Auth::user();
-        
+
         $user->update([
-            'password' => Hash::make($request->password)
+            'PasswordHash' => Hash::make($request->password) // Sử dụng Hash::make thay vì md5
         ]);
 
         return redirect()->route('customer.change-password')
@@ -100,7 +103,7 @@ class CustomerController extends Controller
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
             Log::info('Searching with keyword: ' . $keyword);
-            
+
             $query->where(function($q) use ($keyword) {
                 $q->where('Province', 'like', '%'.$keyword.'%')
                   ->orWhere('District', 'like', '%'.$keyword.'%')
@@ -203,7 +206,7 @@ class CustomerController extends Controller
         try {
             // Debug
             Log::info('Accessing property detail with ID: ' . $id);
-            
+
             // Tìm property theo ID và đảm bảo load các relationships
             $property = Property::with(['danhMuc', 'chiTiet', 'chusohuu', 'moigioi', 'images'])
                 ->where('PropertyID', $id)
@@ -234,25 +237,25 @@ class CustomerController extends Controller
     {
         // Debug authentication
         $user = Auth::user();
-        Log::info('showAppointments called', [
-            'auth_check' => Auth::check(),
-            'user_id' => Auth::id(),
-            'user' => $user ? $user->toArray() : null
-        ]);
+        // Log::info('showAppointments called', [
+        //     'auth_check' => Auth::check(),
+        //     'user_id' => Auth::id(),
+        //     'user' => $user ? $user->toArray() : null
+        // ]);
 
         if (!Auth::check()) {
             Log::error('User not authenticated in showAppointments');
             return redirect()->route('login')->withErrors(['error' => 'Bạn cần đăng nhập để xem lịch hẹn']);
         }
 
-        $appointments = Appointment::with(['property', 'agent', 'owner'])
-            ->where('CusID', Auth::id())  // Sửa từ UserID thành CusID
-            ->orderBy('AppointmentDateStart', 'desc')  // Sửa thành AppointmentDateStart
+        $appointments = Appointment::with(['property', 'user_agent', 'user_owner'])
+            ->where('CusID', $user->UserID)  // Sử dụng $user->UserID thay vì Auth::id()
+            ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
         Log::info('Appointments found', [
             'count' => $appointments->count(),
-            'user_id' => Auth::id()
+            'user_id' => $user->UserID
         ]);
 
         return view('customer.appointments.show', compact('appointments'));
@@ -286,8 +289,9 @@ class CustomerController extends Controller
 
     public function markNotificationAsRead($id)
     {
+        $user = Auth::user();
         $appointment = Appointment::where('AppointmentID', $id)
-            ->where('CusID', Auth::id())
+            ->where('CusID', $user->UserID)
             ->first();
 
         if ($appointment) {
@@ -298,11 +302,12 @@ class CustomerController extends Controller
 
         return response()->json(['success' => false], 404);
     }
-    
+
     public function cancelAppointment($id)
     {
+        $user = Auth::user();
         $appointment = Appointment::where('AppointmentID', $id)
-            ->where('CusID', Auth::id())
+            ->where('CusID', $user->UserID)
             ->whereIn('Status', ['Pending', 'Confirmed'])
             ->first();
 
