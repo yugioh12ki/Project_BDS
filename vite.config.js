@@ -16,8 +16,10 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/home.js',
                 'resources/js/dscactinh.js',
+                'resources/js/notifications.js',
                 'resources/js/owner-autocomplete.js',
-                'resources/css/owner-autocomplete.css'
+                'resources/css/owner-autocomplete.css',
+                'resources/css/customer-autocomplete.css'
             ],
             refresh: true,
         }),

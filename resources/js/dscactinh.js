@@ -3,6 +3,12 @@ const provinceSelect = document.getElementById('province');
 const districtSelect = document.getElementById('district');
 const wardSelect = document.getElementById('ward');
 
+// Exit early if elements don't exist (not on a page that needs address selection)
+if (!provinceSelect || !districtSelect || !wardSelect) {
+  console.log('Address selection elements not found - skipping dscactinh.js initialization');
+  // Don't continue with the script if elements don't exist
+} else {
+
 async function fetchProvinces() {
   const res = await fetch('https://provinces.open-api.vn/api/?depth=1');
   const provinces = await res.json();
@@ -86,3 +92,5 @@ districtSelect.addEventListener('change', () => {
 document.addEventListener('DOMContentLoaded', () => {
   fetchProvinces();
 });
+
+} // End of address selection elements check

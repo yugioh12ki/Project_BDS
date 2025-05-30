@@ -102,6 +102,19 @@ Route::get('/property-cards-demo', function () {
 // Test route for owner search API (no authentication required)
 Route::get('/test/search/owners', function(Request $request) {
     $searchTerm = $request->query('term');
+    $getTop = $request->query('top', false);
+    
+    // Nếu yêu cầu danh sách top owners
+    if ($getTop) {
+        // Lấy giới hạn từ request, mặc định là 5 nếu không có
+        $limit = $request->query('limit', 5);
+        
+        $owners = \App\Models\User::where('Role', 'Owner')
+            ->orderBy('Name', 'asc') // Sắp xếp theo tên
+            ->take($limit)
+            ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
+        return response()->json(['owners' => $owners]);
+    }
     
     if (!$searchTerm || strlen($searchTerm) < 2) {
         return response()->json(['owners' => []]);
@@ -119,6 +132,55 @@ Route::get('/test/search/owners', function(Request $request) {
     
     return response()->json(['owners' => $owners]);
 })->name('test.search.owners');
+
+// Test route for customer search API (no authentication required)
+Route::get('/test/search/customers', function(Request $request) {
+    $searchTerm = $request->query('term');
+    $getTop = $request->query('top', false);
+    
+    // Nếu yêu cầu danh sách top customers
+    if ($getTop) {
+        // Lấy giới hạn từ request, mặc định là 5 nếu không có
+        $limit = $request->query('limit', 5);
+        
+        $customers = \App\Models\User::where('Role', 'Customer')
+            ->orderBy('UserID', 'desc') // Sắp xếp theo ID người dùng (mới nhất)
+            ->take($limit)
+            ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
+        
+        // Nếu không đủ 5 khách hàng gần đây, bổ sung thêm những khách hàng theo tên
+        if ($customers->count() < $limit) {
+            $remainingLimit = $limit - $customers->count();
+            $existingIds = $customers->pluck('id')->toArray();
+            
+            $additionalCustomers = \App\Models\User::where('Role', 'Customer')
+                ->whereNotIn('UserID', $existingIds)
+                ->orderBy('Name', 'asc')
+                ->take($remainingLimit)
+                ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
+                
+            $customers = $customers->concat($additionalCustomers);
+        }
+        
+        return response()->json(['customers' => $customers]);
+    }
+    
+    if (!$searchTerm || strlen($searchTerm) < 2) {
+        return response()->json(['customers' => []]);
+    }
+    
+    // Tìm kiếm khách hàng theo tên hoặc email
+    $customers = \App\Models\User::where('Role', 'Customer')
+        ->where(function ($query) use ($searchTerm) {
+            $query->where('Name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('Email', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('Phone', 'like', '%' . $searchTerm . '%');
+        })
+        ->take(10)
+        ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
+    
+    return response()->json(['customers' => $customers]);
+})->name('test.search.customers');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -145,7 +207,12 @@ Route::middleware(['auth'])->group(function () {
         // Route::get('/property/get-for-listing', [OwnerController::class, 'getPropertiesForListing'])->name('property.get-for-listing');
         Route::post('/property/listings', [OwnerController::class, 'storePropertyListing'])->name('property.listings.store');
         Route::get('/appointments', [OwnerController::class, 'appointments'])->name('appointments.index');
+        Route::get('/appointments/filter/{status}', [OwnerController::class, 'getAppointmentsByStatus'])->name('appointments.filter');
+        Route::post('/appointments/update-status', [OwnerController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
         Route::get('/transactions', [OwnerController::class, 'transactions'])->name('transactions.index');
+        
+        // Notifications route
+        Route::get('/notifications', [OwnerController::class, 'getNotifications'])->name('notifications');
 
         // Profile and Password routes
         Route::get('/profile', [OwnerController::class, 'showProfile'])->name('profile');
@@ -173,6 +240,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/owner/properties', [AgentController::class, 'getOwnerProperties'])->name('owner.properties');
         // Thêm route mới với tên đúng để tương thích với code đã viết
         Route::get('/owner-properties', [AgentController::class, 'getOwnerProperties'])->name('agent.owner.properties');
+        // Thêm route mới theo định dạng REST API
+        Route::get('/owners/{ownerId}/properties', [AgentController::class, 'getOwnerPropertiesByUrl']);
         
         // API endpoint cho tìm kiếm khách hàng
         Route::get('/search/customers', [AgentController::class, 'searchCustomersForAppointment'])->name('search.customers');
@@ -267,4 +336,106 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/demo/owner-autocomplete', function() {
         return response()->file(resource_path('views/demos/owner-autocomplete-demo.html'));
     })->name('demo.owner-autocomplete');
+});
+
+// Test route for notification system (no auth required for testing)
+Route::get('/test/notifications', function() {
+    try {
+        // Check if we have any users
+        $users = \App\Models\User::all();
+        $owners = \App\Models\User::where('Role', 'Owner')->get();
+        $appointments = \App\Models\Appointment::all();
+        $transactions = \App\Models\Transaction::all();
+        
+        return response()->json([
+            'total_users' => $users->count(),
+            'owners' => $owners->count(),
+            'appointments' => $appointments->count(),
+            'transactions' => $transactions->count(),
+            'sample_owner' => $owners->first(),
+            'sample_appointments' => $appointments->take(3),
+            'sample_transactions' => $transactions->take(3),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+});
+
+// Test notification functionality for a specific owner
+Route::get('/test/notifications/{ownerId}', function($ownerId) {
+    try {
+        // Simulate getting notifications for a specific owner
+        $owner = \App\Models\User::where('Role', 'Owner')->find($ownerId);
+        
+        if (!$owner) {
+            return response()->json(['error' => 'Owner not found'], 404);
+        }
+        
+        // Get appointments for this owner's properties
+        $appointments = \App\Models\Appointment::whereHas('property', function ($query) use ($ownerId) {
+            $query->where('OwnerID', $ownerId);
+        })
+        ->with(['property', 'customer', 'agent'])
+        ->where('Status', 'Pending')
+        ->orderBy('Created_at', 'desc')
+        ->get();
+
+        // Get completed transactions for this owner's properties  
+        $transactions = \App\Models\Transaction::whereHas('property', function ($query) use ($ownerId) {
+            $query->where('OwnerID', $ownerId);
+        })
+        ->with(['property', 'customer'])
+        ->where('Status', 'Completed')
+        ->where('Transaction_date', '>=', \Carbon\Carbon::now()->subDays(30))
+        ->orderBy('Transaction_date', 'desc')
+        ->get();
+
+        $notifications = collect();
+
+        // Add appointment notifications
+        foreach ($appointments as $appointment) {
+            $notifications->push([
+                'id' => 'appointment_' . $appointment->AppointmentID,
+                'type' => 'appointment',
+                'title' => 'Lịch hẹn mới được tạo',
+                'message' => 'Môi giới ' . $appointment->agent->Name . ' đã tạo lịch hẹn cho bạn về BĐS: ' . $appointment->property->Title,
+                'time' => \Carbon\Carbon::parse($appointment->Created_at)->diffForHumans(),
+                'timestamp' => \Carbon\Carbon::parse($appointment->Created_at)->timestamp,
+                'link' => '/owner/appointments'
+            ]);
+        }
+
+        // Add transaction notifications
+        foreach ($transactions as $transaction) {
+            $notifications->push([
+                'id' => 'transaction_' . $transaction->TransactionID,
+                'type' => 'transaction',
+                'title' => 'Giao dịch hoàn thành',
+                'message' => 'Giao dịch cho BĐS: ' . $transaction->property->Title . ' đã hoàn thành',
+                'time' => \Carbon\Carbon::parse($transaction->Transaction_date)->diffForHumans(),
+                'timestamp' => \Carbon\Carbon::parse($transaction->Transaction_date)->timestamp,
+                'link' => '/owner/transactions'
+            ]);
+        }
+
+        // Sort by timestamp descending
+        $notifications = $notifications->sortByDesc('timestamp')->values();
+
+        return response()->json([
+            'owner' => $owner->Name,
+            'notifications' => $notifications,
+            'count' => $notifications->count(),
+            'raw_appointments' => $appointments,
+            'raw_transactions' => $transactions
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
 });

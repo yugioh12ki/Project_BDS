@@ -3,10 +3,11 @@
 @section('title', 'Lịch Hẹn Xem Nhà')
 
 @push('styles')
-    @vite(['resources/css/owner-autocomplete.css'])
+    @vite(['resources/css/owner-autocomplete.css', 'resources/css/customer-autocomplete.css'])
 @endpush
 
 @section('appointments')
+
 <style>
     .content-wrapper {
         padding: 70px 25px 40px;
@@ -313,6 +314,29 @@
         box-shadow: 0 2px 8px rgba(0,123,255,0.3);
     }
     
+    /* Date Filter Styling */
+    .date-filter-container {
+        min-width: 150px;
+    }
+    
+    .date-filter-container .form-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .date-filter-container .form-control-sm {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+    
+    .date-filter-container .form-control-sm:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
     /* Thêm style cho phần tìm kiếm */
     #searchResults {
         position: absolute;
@@ -702,6 +726,92 @@
             font-size: 0.85rem;
         }
     }
+    
+    /* DEMO STYLES - Test các tính năng mới */
+    .demo-test-section {
+        transition: all 0.3s ease;
+    }
+    
+    .demo-test-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .fix-badge {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+    
+    .feature-highlight {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .property-selection-demo {
+        border: 2px dashed #dee2e6;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        margin: 15px 0;
+    }
+    
+    .loading-demo {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none;
+    }
+    
+    .demo-animation {
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .demo-animation.show {
+        opacity: 1;
+    }
+    
+    /* Enhancement cho loading spinner trong property selection */
+    #propertyLoadingSpinner {
+        z-index: 10;
+    }
+    
+    #propertySelectionSection {
+        transition: all 0.3s ease;
+    }
+    
+    #propertyDetailSection {
+        transition: all 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    
+    /* Success feedback styling */
+    .property-feedback-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 13px;
+    }
+    
+    .property-feedback-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 13px;
+    }
 </style>
 
 <div class="content-wrapper">
@@ -717,32 +827,89 @@
         </div>
     </div>
 
+    <!-- Message Display Area -->
+    <div id="messageContainer" class="mb-3" style="display: none;">
+        <div id="successMessage" class="alert alert-success alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span id="successText"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div id="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="errorText"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div id="warningMessage" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="warningText"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div id="infoMessage" class="alert alert-info alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span id="infoText"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+
+    <!-- Laravel Flash Messages -->
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    @if(session('warning'))
+    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ session('warning') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    @if($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Có lỗi xảy ra:</strong>
+        <ul class="mb-0 mt-2">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
     <!-- Tabs điều hướng -->
-    <ul class="nav nav-tabs agent-tab-nav mb-3">
-        <li class="nav-item">
-            <a class="nav-link active" href="#all-appointments" data-bs-toggle="tab">
-                Tất cả lịch hẹn
-            </a>
+    <ul class="nav nav-tabs agent-tab-nav mb-3" id="appointmentTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-appointments" type="button" role="tab" aria-controls="pending-appointments" aria-selected="true">
+                Khởi Tạo <span class="badge rounded-pill bg-warning text-dark">{{ $appointments->where('Status', 'Khởi Tạo')->count() }}</span>
+            </button>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#pending-appointments" data-bs-toggle="tab">
-                Chờ xác nhận <span class="badge rounded-pill bg-warning text-dark">{{ $appointments->where('Status', 'Chờ xử lý')->count() }}</span>
-            </a>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="confirmed-tab" data-bs-toggle="tab" data-bs-target="#confirmed-appointments" type="button" role="tab" aria-controls="confirmed-appointments" aria-selected="false">
+                Đang Thực Hiện <span class="badge rounded-pill bg-success text-white">{{ $appointments->where('Status', 'Đang Thực Hiện')->count() }}</span>
+            </button>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#confirmed-appointments" data-bs-toggle="tab">
-                Đã xác nhận <span class="badge rounded-pill bg-success text-white">{{ $appointments->where('Status', 'Thành công')->count() }}</span>
-            </a>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled-appointments" type="button" role="tab" aria-controls="cancelled-appointments" aria-selected="false">
+                Hủy Hẹn <span class="badge rounded-pill bg-danger text-white">{{ $appointments->where('Status', 'Hủy Hẹn')->count() }}</span>
+            </button>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#cancelled-appointments" data-bs-toggle="tab">
-                Đã hủy <span class="badge rounded-pill bg-danger text-white">{{ $appointments->where('Status', 'Đã hủy')->count() }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#completed-appointments" data-bs-toggle="tab">
-                Hoàn thành <span class="badge rounded-pill bg-info text-white">{{ $appointments->where('Status', 'Hoàn Thành')->count() }}</span>
-            </a>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-appointments" type="button" role="tab" aria-controls="completed-appointments" aria-selected="false">
+                Hoàn Thành <span class="badge rounded-pill bg-info text-white">{{ $appointments->where('Status', 'Hoàn Thành')->count() }}</span>
+            </button>
         </li>
     </ul>
 
@@ -759,6 +926,27 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Date Range Filter -->
+        <div class="d-flex align-items-center gap-3 mt-3">
+            <div class="date-filter-container">
+                <label class="form-label mb-1">Từ ngày:</label>
+                <input type="date" id="dateFrom" class="form-control form-control-sm" value="{{ date('Y-m-01') }}">
+            </div>
+            <div class="date-filter-container">
+                <label class="form-label mb-1">Đến ngày:</label>
+                <input type="date" id="dateTo" class="form-control form-control-sm" value="{{ date('Y-m-t') }}">
+            </div>
+            <div class="align-self-end">
+                <button class="btn btn-sm btn-primary" id="applyDateFilter">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" id="clearDateFilter">
+                    <i class="bi bi-x"></i> Xóa
+                </button>
+            </div>
+        </div>
+        
         <div>
             <span class="me-2">Lọc theo:</span>
             <select class="filter-dropdown" id="appointmentFilter">
@@ -772,34 +960,20 @@
     </div>
     
     <!-- Bảng phân công bất động sản -->
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="all-appointments">
-            @forelse($appointments as $appointment)
-            <div class="appointment-card" 
+    <div class="tab-content" id="appointmentTabContent">
+        <div class="tab-pane fade show active" id="pending-appointments" role="tabpanel" aria-labelledby="pending-tab" tabindex="0">
+            @forelse($appointments->where('Status', 'Khởi Tạo') as $appointment)
+            <div class="appointment-card"
                  data-property-id="{{ $appointment->PropertyID }}" 
                  data-owner-id="{{ $appointment->OwnerID }}"
-                 data-date="{{ $appointment->AppointmentDateStart }}">
+                 data-date="{{ $appointment->AppointmentDateStart }}"
+                 data-status="Khởi Tạo">
                 <div class="appointment-header">
                     <div class="appointment-date-time me-auto">
                         <span class="appointment-date">{{ date('d-m-Y', strtotime($appointment->AppointmentDateStart)) }}</span>
                         <span class="time-badge">{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</span>
                     </div>
-                    @switch($appointment->Status)
-                        @case('Chờ xử lý')
-                            <span class="badge-status pending">Chờ xử lý</span>
-                            @break
-                        @case('Thành công')
-                            <span class="badge-status success">Thành công</span>
-                            @break
-                        @case('Đã hủy')
-                            <span class="badge-status cancelled">Đã hủy</span>
-                            @break
-                        @case('Hoàn Thành')
-                            <span class="badge-status completed">Hoàn thành</span>
-                            @break
-                        @default
-                            <span class="badge-status">{{ $appointment->Status }}</span>
-                    @endswitch
+                    <span class="badge-status pending">Khởi tạo</span>
                 </div>
                 <div class="appointment-detail">
                     <div class="property-info">
@@ -807,27 +981,13 @@
                             <i class="bi bi-buildings me-1"></i>
                             {{ $appointment->property->Title ?? 'Bất động sản không xác định' }}
                         </div>
+                        <div class="appointment-meta">
+                            Chủ sở hữu: {{ $appointment->ownerUser->Name ?? 'Không xác định' }} |
+                            Khách hàng: {{ $appointment->cusUser->Name ?? 'Không xác định' }}
+                        </div>
                     </div>
                     <div class="appointment-actions">
-                        @if($appointment->Status == 'Chờ xử lý')
-                            <form method="POST" action="{{ route('agent.appointments.update-status', $appointment->AppointmentID) }}" class="d-inline">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="status" value="Thành công">
-                                <button type="submit" class="btn btn-action btn-confirm">
-                                    <i class="bi bi-check-lg me-1"></i> Xác nhận
-                                </button>
-                            </form>
-                            
-                            <form method="POST" action="{{ route('agent.appointments.update-status', $appointment->AppointmentID) }}" class="d-inline">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="status" value="Đã hủy">
-                                <button type="submit" class="btn btn-action btn-cancel">
-                                    <i class="bi bi-x-lg me-1"></i> Hủy bỏ
-                                </button>
-                            </form>
-                        @endif
+                        
                         <button class="btn btn-action btn-view" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal{{ $appointment->AppointmentID }}">
                             <i class="bi bi-eye me-1"></i> Chi tiết
                         </button>
@@ -837,23 +997,24 @@
             @empty
             <div class="empty-state-container">
                 <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
-                <p>Không có lịch hẹn nào</p>
+                <p>Không có lịch hẹn khởi tạo</p>
             </div>
             @endforelse
         </div>
 
-        <div class="tab-pane fade" id="pending-appointments">
-            @forelse($appointments->where('Status', 'Chờ xử lý') as $appointment)
+        <div class="tab-pane fade" id="confirmed-appointments" role="tabpanel" aria-labelledby="confirmed-tab" tabindex="0">
+            @forelse($appointments->where('Status', 'Đang Thực Hiện') as $appointment)
             <div class="appointment-card"
                  data-property-id="{{ $appointment->PropertyID }}" 
                  data-owner-id="{{ $appointment->OwnerID }}"
-                 data-date="{{ $appointment->AppointmentDateStart }}">
+                 data-date="{{ $appointment->AppointmentDateStart }}"
+                 data-status="Đang Thực Hiện">
                 <div class="appointment-header">
                     <div class="appointment-date-time me-auto">
                         <span class="appointment-date">{{ date('d-m-Y', strtotime($appointment->AppointmentDateStart)) }}</span>
                         <span class="time-badge">{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</span>
                     </div>
-                    <span class="badge-status pending">Chờ xử lý</span>
+                    <span class="badge-status success">Đang Thực Hiện</span>
                 </div>
                 <div class="appointment-detail">
                     <div class="property-info">
@@ -861,8 +1022,8 @@
                             <i class="bi bi-buildings me-1"></i>
                             {{ $appointment->property->Title ?? 'Bất động sản không xác định' }}
                         </div>
-                        <div class="customer-name">
-                            <i class="bi bi-person me-1"></i>
+                        <div class="appointment-meta">
+                            Chủ sở hữu: {{ $appointment->ownerUser->Name ?? 'Không xác định' }} |
                             Khách hàng: {{ $appointment->cusUser->Name ?? 'Không xác định' }}
                         </div>
                     </div>
@@ -870,18 +1031,9 @@
                         <form method="POST" action="{{ route('agent.appointments.update-status', $appointment->AppointmentID) }}" class="d-inline">
                             @csrf
                             @method('PUT')
-                            <input type="hidden" name="status" value="Thành công">
+                            <input type="hidden" name="status" value="Hoàn Thành">
                             <button type="submit" class="btn btn-action btn-confirm">
-                                <i class="bi bi-check-lg me-1"></i> Xác nhận
-                            </button>
-                        </form>
-                        
-                        <form method="POST" action="{{ route('agent.appointments.update-status', $appointment->AppointmentID) }}" class="d-inline">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="status" value="Đã hủy">
-                            <button type="submit" class="btn btn-action btn-cancel">
-                                <i class="bi bi-x-lg me-1"></i> Hủy bỏ
+                                <i class="bi bi-check-circle me-1"></i> Hoàn thành
                             </button>
                         </form>
                         
@@ -894,62 +1046,24 @@
             @empty
             <div class="empty-state-container">
                 <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
-                <p>Không có lịch hẹn chờ xử lý</p>
+                <p>Không có lịch hẹn đang thực hiện</p>
             </div>
             @endforelse
         </div>
 
-        <div class="tab-pane fade" id="confirmed-appointments">
-            @forelse($appointments->where('Status', 'Thành công') as $appointment)
+        <div class="tab-pane fade" id="cancelled-appointments" role="tabpanel" aria-labelledby="cancelled-tab" tabindex="0">
+            @forelse($appointments->where('Status', 'Hủy Hẹn') as $appointment)
             <div class="appointment-card"
                  data-property-id="{{ $appointment->PropertyID }}" 
                  data-owner-id="{{ $appointment->OwnerID }}"
-                 data-date="{{ $appointment->AppointmentDateStart }}">
+                 data-date="{{ $appointment->AppointmentDateStart }}"
+                 data-status="Hủy Hẹn">
                 <div class="appointment-header">
                     <div class="appointment-date-time me-auto">
                         <span class="appointment-date">{{ date('d-m-Y', strtotime($appointment->AppointmentDateStart)) }}</span>
                         <span class="time-badge">{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</span>
                     </div>
-                    <span class="badge-status success">Thành công</span>
-                </div>
-                <div class="appointment-detail">
-                    <div class="property-info">
-                        <div class="property-name">
-                            <i class="bi bi-buildings me-1"></i>
-                            {{ $appointment->property->Title ?? 'Bất động sản không xác định' }}
-                        </div>
-                        <div class="customer-name">
-                            <i class="bi bi-person me-1"></i>
-                            Khách hàng: {{ $appointment->cusUser->Name ?? 'Không xác định' }}
-                        </div>
-                    </div>
-                    <div class="appointment-actions">
-                        <button class="btn btn-action btn-view" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal{{ $appointment->AppointmentID }}">
-                            <i class="bi bi-eye me-1"></i> Chi tiết
-                        </button>
-                    </div>
-                </div>
-            </div>
-            @empty
-            <div class="empty-state-container">
-                <i class="bi bi-calendar-x mb-3" style="font-size: 3rem;"></i>
-                <p>Không có lịch hẹn đã xác nhận</p>
-            </div>
-            @endforelse
-        </div>
-
-        <div class="tab-pane fade" id="cancelled-appointments">
-            @forelse($appointments->where('Status', 'Đã hủy') as $appointment)
-            <div class="appointment-card"
-                 data-property-id="{{ $appointment->PropertyID }}" 
-                 data-owner-id="{{ $appointment->OwnerID }}"
-                 data-date="{{ $appointment->AppointmentDateStart }}">
-                <div class="appointment-header">
-                    <div class="appointment-date-time me-auto">
-                        <span class="appointment-date">{{ date('d-m-Y', strtotime($appointment->AppointmentDateStart)) }}</span>
-                        <span class="time-badge">{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</span>
-                    </div>
-                    <span class="badge-status cancelled">Đã hủy</span>
+                    <span class="badge-status cancelled">Hủy Hẹn</span>
                 </div>
                 <div class="appointment-detail">
                     <div class="property-info">
@@ -977,18 +1091,19 @@
             @endforelse
         </div>
         
-        <div class="tab-pane fade" id="completed-appointments">
+        <div class="tab-pane fade" id="completed-appointments" role="tabpanel" aria-labelledby="completed-tab" tabindex="0">
             @forelse($appointments->where('Status', 'Hoàn Thành') as $appointment)
             <div class="appointment-card"
                  data-property-id="{{ $appointment->PropertyID }}" 
                  data-owner-id="{{ $appointment->OwnerID }}"
-                 data-date="{{ $appointment->AppointmentDateStart }}">
+                 data-date="{{ $appointment->AppointmentDateStart }}"
+                 data-status="Hoàn Thành">
                 <div class="appointment-header">
                     <div class="appointment-date-time me-auto">
                         <span class="appointment-date">{{ date('d-m-Y', strtotime($appointment->AppointmentDateStart)) }}</span>
                         <span class="time-badge">{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</span>
                     </div>
-                    <span class="badge-status completed">Hoàn thành</span>
+                    <span class="badge-status completed">Hoàn Thành</span>
                 </div>
                 <div class="appointment-detail">
                     <div class="property-info">
@@ -1018,117 +1133,8 @@
     </div>
 </div>
 
-<!-- Create Appointment Modal -->
-<div class="modal fade" id="createAppointmentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Tạo lịch hẹn mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="appointmentForm" method="POST" action="{{ route('agent.appointments.create') }}">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label">Chủ sở hữu <span class="text-danger">*</span></label>
-                        <x-owner-autocomplete 
-                            id="ownerAutocomplete"
-                            name="OwnerID"
-                            placeholder="Nhập tên chủ sở hữu..."
-                            api-url="{{ route('agent.search.owners') }}"
-                            required="true"
-                        />
-                    </div>
-
-                    <div class="mb-3" id="propertySelectionSection" style="display: none;">
-                        <label class="form-label">Bất động sản <span class="text-danger">*</span></label>
-                        <select class="form-select" id="propertySelect" name="PropertyID">
-                            <option value="">-- Chọn bất động sản --</option>
-                        </select>
-                        <div class="form-text d-flex justify-content-between align-items-center">
-                            <span>Chọn bất động sản của chủ sở hữu để tạo lịch hẹn</span>
-                            <span id="propertySelectFeedback"></span>
-                        </div>
-                    </div>
-                    
-                    <div id="propertyDetailSection" class="mb-3 p-3 border rounded bg-light" style="display:none">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-building me-2 fs-5"></i>
-                            <h6 class="mb-0 fw-bold" id="propertyDetailTitle">Tiêu đề bất động sản</h6>
-                        </div>
-                        <div class="text-muted mb-2">
-                            <i class="bi bi-geo-alt me-1"></i> 
-                            <span id="propertyDetailAddress">Địa chỉ bất động sản</span>
-                        </div>
-                        <div id="propertyExtraInfo" class="mt-2">
-                            <!-- Các badge thông tin sẽ được thêm vào đây bằng JavaScript -->
-                        </div>
-                    </div>
-                    
-                    <!-- Lưu trữ thông tin bất động sản và các ID quan hệ liên kết -->
-                    <input type="hidden" id="appointmentPropertyInfo" name="appointmentPropertyInfo" value="">
-                    <!-- Biến này sẽ được tự động cập nhật từ component owner-autocomplete -->
-                    <input type="hidden" id="ownerSearchId" name="OwnerID" value="">
-
-                    <div class="mb-3 position-relative">
-                        <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="customerSearch" placeholder="Nhập tên khách hàng..." autocomplete="off">
-                        <input type="hidden" id="customerId" name="CusID">
-                        
-                        <!-- Dropdown gợi ý khách hàng -->
-                        <div id="customerDropdown" class="property-dropdown" style="display: none;">
-                            <div id="customerList"></div>
-                        </div>
-                        
-                        <!-- Thông tin khách hàng đã chọn -->
-                        <div id="selectedCustomerInfo" class="alert alert-info mt-2" style="display: none;">
-                            <i class="bi bi-person-check me-2"></i>
-                            Đã chọn: <strong><span id="selectedCustomerName"></span></strong>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Thời gian bắt đầu <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control" id="appointmentDateStart" name="AppointmentDateStart" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Thời gian kết thúc <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control" id="appointmentDateEnd" name="AppointmentDateEnd" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Tiêu đề <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="appointmentTitle" name="TitleAppoint" placeholder="Nhập tiêu đề lịch hẹn..." required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Nội dung <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="DescAppoint" rows="3" placeholder="Nhập nội dung cuộc hẹn..." required></textarea>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-info-circle-fill me-2"></i>
-                            <div>
-                                <strong>Lưu ý:</strong> Thời gian hẹn sẽ được tự động thông báo cho chủ sở hữu và khách hàng.
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="submit" form="appointmentForm" class="btn btn-primary">Tạo lịch hẹn</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Include Create Appointment Modal -->
+@include('agents.create-appointment-modal')
 
 <!-- Appointment Detail Modals -->
 @foreach($appointments as $appointment)
@@ -1139,418 +1145,167 @@
 <script>
     window.propertyList = {!! json_encode($propertyList) !!};
 </script>
-<script src="{{ asset('js/appointments.js') }}"></script>
 <script src="{{ asset('js/appointment-filters.js') }}"></script>
 <script>
     $(document).ready(function() {
-        // Setup AJAX với CSRF token
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
-
-        // Customer search functionality
-        const $customerSearch = $('#customerSearch');
-        const $customerId = $('#customerId');
-        const $customerDropdown = $('#customerDropdown');
-        const $customerList = $('#customerList');
-        const $selectedCustomerInfo = $('#selectedCustomerInfo');
-        const $selectedCustomerName = $('#selectedCustomerName');
+        // Initialize cross-component protection for autocomplete fields
+        console.log('Initializing cross-component protection for autocomplete fields');
         
-        $customerSearch.on('input', function() {
-            const searchTerm = $(this).val().toLowerCase().trim();
-            
-            if (searchTerm.length < 2) {
-                $customerDropdown.hide();
-                return;
+        // Create global storage for component data if not exists
+        window.autocompleteStorage = window.autocompleteStorage || {};
+        
+        // Function to safely initialize and access dropdown components
+        function initializeAutocompleteComponent(componentId) {
+            // Make sure we only initialize once
+            if (window.autocompleteStorage[componentId]) {
+                return window.autocompleteStorage[componentId];
             }
             
-            // Clear previous selection
-            $customerId.val('');
-            $selectedCustomerInfo.hide();
+            const $component = $('#' + componentId);
+            if ($component.length === 0) {
+                console.warn(`Autocomplete component ${componentId} not found in the DOM`);
+                return null;
+            }
             
-            // Search customers via AJAX
-            $.ajax({
-                url: '{{ route("agent.search.customers") }}',
-                method: 'GET',
-                data: { term: searchTerm },
-                success: function(response) {
-                    $customerList.empty();
-                    
-                    if (response.customers && response.customers.length > 0) {
-                        response.customers.forEach(function(customer) {
-                            const customerHtml = `
-                                <div class="owner-option" data-customer-id="${customer.id}" data-customer-name="${customer.name}">
-                                    <div class="owner-name">${customer.name}</div>
-                                    <div class="owner-details">
-                                        ${customer.phone ? 'SĐT: ' + customer.phone : ''} 
-                                        ${customer.email ? '• Email: ' + customer.email : ''}
-                                    </div>
-                                </div>
-                            `;
-                            $customerList.append(customerHtml);
-                        });
-                        $customerDropdown.show();
-                    } else {
-                        $customerDropdown.hide();
+            // Store reference to component
+            window.autocompleteStorage[componentId] = {
+                element: $component,
+                lastValue: $component.val(),
+                lastId: $('#' + componentId + 'Id').val()
+            };
+            
+            return window.autocompleteStorage[componentId];
+        }
+        
+        // Initialize both components
+        const ownerAutocomplete = initializeAutocompleteComponent('ownerAutocomplete');
+        const customerAutocomplete = initializeAutocompleteComponent('customerSearch');
+        
+        // Set up cross-component event handlers if both components exist
+        if (ownerAutocomplete && customerAutocomplete) {
+            console.log('Setting up cross-component event handlers for owner and customer autocomplete');
+            
+            // When clicking outside any autocomplete, ensure data preservation
+            $(document).on('click', function(e) {
+                // If clicked outside both autocomplete components
+                if (!$(e.target).closest('.position-relative').length) {
+                    // Make sure both components preserve their values
+                    if (window.selectedOwnerData && window.selectedOwnerData.id) {
+                        $('#ownerAutocompleteId').val(window.selectedOwnerData.id);
+                        $('#ownerSearchId').val(window.selectedOwnerData.id);
                     }
-                },
-                error: function() {
-                    console.error('Error searching customers');
-                    $customerDropdown.hide();
-                }
-            });
-        });
-        
-        // Handle customer selection
-        $(document).on('click', '.owner-option[data-customer-id]', function() {
-            const customerId = $(this).data('customer-id');
-            const customerName = $(this).data('customer-name');
-            
-            $customerSearch.val(customerName);
-            $customerId.val(customerId);
-            $selectedCustomerName.text(customerName);
-            $selectedCustomerInfo.show();
-            $customerDropdown.hide();
-        });
-        
-        // Hide customer dropdown when clicking outside
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('#customerSearch, #customerDropdown').length) {
-                $customerDropdown.hide();
-            }
-        });
-
-        // Tìm kiếm bất động sản hoặc chủ sở hữu
-        const $propertyOwnerSearch = $('#propertyOwnerSearch');
-        const $searchResults = $('#searchResults');
-        const $searchResultsList = $('#searchResultsList');
-        const $appointmentCards = $('.appointment-card');
-        const $clearSearchIcon = $('.clear-search-icon');
-        
-        // Ẩn icon xóa ban đầu
-        $clearSearchIcon.hide();
-        
-        // ...existing code...
-        
-        // Xử lý sự kiện khi nhập vào ô tìm kiếm
-        $propertyOwnerSearch.on('input', function() {
-            const searchTerm = $(this).val().toLowerCase().trim();
-            
-            // Hiển thị hoặc ẩn nút xóa
-            if(searchTerm.length > 0) {
-                $('.clear-search-icon').show();
-            } else {
-                $('.clear-search-icon').hide();
-            }
-            
-            if (searchTerm.length < 2) {
-                $searchResults.hide();
-                return;
-            }
-            
-            // Lọc danh sách bất động sản và chủ sở hữu
-            const filteredProperties = window.propertyList.filter(property => 
-                (property.title && property.title.toLowerCase().includes(searchTerm)) ||
-                (property.ownerName && property.ownerName.toLowerCase().includes(searchTerm)) ||
-                (property.address && property.address.toLowerCase().includes(searchTerm)) ||
-                (property.district && property.district.toLowerCase().includes(searchTerm)) ||
-                (property.ward && property.ward.toLowerCase().includes(searchTerm))
-            );
-            
-            // Hiển thị kết quả tìm kiếm
-            if (filteredProperties.length > 0) {
-                let html = '';
-                filteredProperties.forEach(property => {
-                    const ownerName = property.ownerName || 'Không xác định';
-                    const address = property.address ? `${property.address}, ${property.ward}, ${property.district}` : 'Không có địa chỉ';
                     
-                    html += `
-                        <li class="search-result-item" data-property-id="${property.id}" data-owner-id="${property.ownerId}">
-                            <div class="result-property-title">${property.title}</div>
-                            <div class="result-owner-name">
-                                <i class="bi bi-person"></i> Chủ sở hữu: ${ownerName}
-                            </div>
-                            <div class="small text-muted">
-                                <i class="bi bi-geo-alt"></i> ${address}
-                            </div>
-                        </li>
-                    `;
-                });
-                
-                $searchResultsList.html(html);
-                $searchResults.show();
-            } else {
-                $searchResultsList.html(`
-                    <li class="search-result-item">
-                        <div class="text-center py-3">
-                            <i class="bi bi-search text-muted mb-2" style="font-size: 1.5rem;"></i>
-                            <p class="mb-0">Không tìm thấy kết quả cho "${searchTerm}"</p>
-                        </div>
-                    </li>
-                `);
-                $searchResults.show();
-            }
-        });
-        
-        // Xử lý sự kiện khi click vào kết quả tìm kiếm
-        $(document).on('click', '.search-result-item', function() {
-            const propertyId = $(this).data('property-id');
-            const ownerId = $(this).data('owner-id');
-            
-            if (propertyId) {
-                filterAppointmentsByProperty(propertyId);
-            }
-            
-            if (ownerId) {
-                // Nếu cần lọc theo owner id
-                filterAppointmentsByOwner(ownerId);
-            }
-            
-            $searchResults.hide();
-            
-            // Hiển thị text đã chọn
-            const selectedText = $(this).find('.result-property-title').text();
-            $propertyOwnerSearch.val(selectedText);
-        });
-        
-        // Đóng kết quả tìm kiếm khi click bên ngoài
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('#propertyOwnerSearch, #searchResults').length) {
-                $searchResults.hide();
-            }
-        });
-        
-        // Xử lý nút Reset tìm kiếm
-        $clearSearchIcon.on('click', function() {
-            $propertyOwnerSearch.val('');
-            $searchResults.hide();
-            $appointmentCards.show();
-            $(this).hide();
-            $('.empty-filtered').hide();
-        });
-        
-        // Hàm lọc lịch hẹn theo bất động sản
-        function filterAppointmentsByProperty(propertyId) {
-            let foundAny = false;
-            
-            $appointmentCards.each(function() {
-                const cardPropertyId = $(this).data('property-id');
-                if (propertyId && cardPropertyId == propertyId) {
-                    $(this).show();
-                    foundAny = true;
-                } else {
-                    $(this).hide();
+                    if (window.selectedCustomerData && window.selectedCustomerData.id) {
+                        $('#customerSearchId').val(window.selectedCustomerData.id);
+                    }
                 }
             });
             
-            // Hiển thị thông báo nếu không tìm thấy lịch hẹn nào
-            const $tabPane = $appointmentCards.first().closest('.tab-pane');
-            const $emptyMessage = $tabPane.find('.empty-filtered');
-            
-            if (!foundAny) {
-                if ($emptyMessage.length === 0) {
-                    $tabPane.append(`
-                        <div class="empty-filtered p-4 text-center text-muted">
-                            <i class="bi bi-calendar-x mb-2" style="font-size: 2rem;"></i>
-                            <p>Không có lịch hẹn nào cho bất động sản này</p>
-                        </div>
-                    `);
-                } else {
-                    $emptyMessage.show();
-                }
-            } else {
-                $('.empty-filtered').hide();
-            }
-        }
-        
-        // Hàm lọc lịch hẹn theo chủ sở hữu
-        function filterAppointmentsByOwner(ownerId) {
-            $appointmentCards.each(function() {
-                const cardOwnerId = $(this).data('owner-id');
-                if (ownerId && cardOwnerId == ownerId) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
+            // Listen for any dropdown show/hide to make sure state is preserved
+            const dropdownEvents = ['show.bs.dropdown', 'hide.bs.dropdown', 'shown.bs.dropdown', 'hidden.bs.dropdown'];
+            dropdownEvents.forEach(event => {
+                $(document).on(event, function() {
+                    // Check for preservation of data when any dropdown opens or closes
+                    if (window.selectedOwnerData && window.selectedOwnerData.id) {
+                        $('#ownerAutocompleteId').val(window.selectedOwnerData.id);
+                        $('#ownerSearchId').val(window.selectedOwnerData.id);
+                    }
+                    
+                    if (window.selectedCustomerData && window.selectedCustomerData.id) {
+                        $('#customerSearchId').val(window.selectedCustomerData.id);
+                    }
+                });
             });
         }
-        
-
-        
-
-        
-        // Xử lý bộ lọc
-        $('#appointmentFilter').on('change', function() {
-            const filterValue = $(this).val();
-            
-            // Reset tìm kiếm
-            $appointmentCards.show();
-            $propertyRows.removeClass('active');
-            $propertyOwnerSearch.val('');
-            
-            if (filterValue === 'newest') {
-                // Sắp xếp theo ngày mới nhất
-                const sortedCards = $appointmentCards.toArray().sort(function(a, b) {
-                    const dateA = new Date($(a).data('date'));
-                    const dateB = new Date($(b).data('date'));
-                    return dateB - dateA; // Giảm dần
-                });
-                
-                $('#all-appointments').empty().append(sortedCards);
-                
-            } else if (filterValue === 'oldest') {
-                // Sắp xếp theo ngày cũ nhất
-                const sortedCards = $appointmentCards.toArray().sort(function(a, b) {
-                    const dateA = new Date($(a).data('date'));
-                    const dateB = new Date($(b).data('date'));
-                    return dateA - dateB; // Tăng dần
-                });
-                
-                $('#all-appointments').empty().append(sortedCards);
-            }
-        });
-        
-        // Form validation before submit
-        $('#appointmentForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            // Ensure owner ID is set correctly - get from the hidden input field
-            const ownerId = $('#ownerSearchId').val();
-            const propertyId = $('#propertySelect').val();
-            const customerId = $('#customerId').val();
-            const startDate = $('#appointmentDateStart').val();
-            const endDate = $('#appointmentDateEnd').val();
-            const title = $('#appointmentTitle').val();
-            const description = $('textarea[name="DescAppoint"]').val();
-            
-            console.log('Form submission values:', {
-                ownerId,
-                propertyId,
-                customerId,
-                startDate,
-                endDate,
-                title
-            });
-            
-            // Validation messages
-            let errors = [];
-            
-            if (!ownerId) {
-                errors.push('Vui lòng chọn chủ sở hữu');
-            }
-            
-            if (!propertyId) {
-                errors.push('Vui lòng chọn bất động sản');
-            }
-            
-            if (!customerId) {
-                errors.push('Vui lòng chọn khách hàng');
-            }
-            
-            if (!startDate) {
-                errors.push('Vui lòng chọn thời gian bắt đầu');
-            }
-            
-            if (!endDate) {
-                errors.push('Vui lòng chọn thời gian kết thúc');
-            }
-            
-            if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-                errors.push('Thời gian kết thúc phải sau thời gian bắt đầu');
-            }
-            
-            if (!title.trim()) {
-                errors.push('Vui lòng nhập tiêu đề lịch hẹn');
-            }
-            
-            if (!description.trim()) {
-                errors.push('Vui lòng nhập nội dung lịch hẹn');
-            }
-            
-            // Display errors or submit form
-            if (errors.length > 0) {
-                alert('Lỗi:\n' + errors.join('\n'));
-                return false;
-            }
-            
-            // Đảm bảo tính nhất quán giữa 2 trường chứa Owner ID (double-check)
-            $('input[name="OwnerID"]').val(ownerId);
-            
-            // Ghi log thông tin cuối cùng trước khi gửi form
-            console.log('Submitting appointment with data:', {
-                'PropertyID': propertyId,
-                'OwnerID': ownerId,
-                'CusID': customerId,
-                'StartDate': startDate,
-                'EndDate': endDate,
-                'Title': title
-            });
-            
-            // If all validation passes, submit the form
-            this.submit();
-        });
-        
-        // Handle form submission success
-        @if(session('success'))
-            $(document).ready(function() {
-                alert('{{ session('success') }}');
-                $('#createAppointmentModal').modal('hide');
-            });
-        @endif
-        
-        @if(session('error'))
-            $(document).ready(function() {
-                alert('{{ session('error') }}');
-            });
-        @endif
     });
-</script>
-
-@push('scripts')
+</script>    @push('scripts')
     @vite(['resources/js/owner-autocomplete.js'])
     <script>
         // Initialize owner search functionality to match the component
         $('#ownerAutocomplete').on('owner:selected', function(event, ownerId, ownerName, properties, owner) {
             console.log('Event owner:selected received:', { ownerId, ownerName, properties, owner });
             
+            // Cập nhật hidden input OwnerID ngay lập tức
+            $('#selectedOwnerId').val(ownerId);
+            console.log('Updated hidden input selectedOwnerId to:', ownerId);
+            
+            // Hiển thị section chọn bất động sản với loading
+            showPropertySelection();
+            
+            // Reset property selection
+            resetPropertySelection();
+            
             // Xử lý dữ liệu bất động sản đã được truyền từ component
             if (properties && properties.length > 0) {
-                populatePropertyDropdown(properties, owner);
+                populatePropertyCombobox(properties, owner);
             } else {
                 // Nếu không có dữ liệu, thử gọi API một lần nữa
-                loadOwnerProperties(ownerId);
+                loadOwnerPropertiesForCombobox(ownerId);
             }
         });
         
-        // Lưu trữ dữ liệu bất động sản và chủ sở hữu
-        let propertiesData = [];
-        let ownerData = null;
+        // Function to show property selection section
+        function showPropertySelection() {
+            $('#propertySelectionSection').slideDown(300);
+            $('#propertyCombobox').prop('disabled', false);
+        }
         
-        // Function to populate property dropdown với dữ liệu đã có
-        function populatePropertyDropdown(properties, owner) {
-            console.log('Populating property dropdown with:', properties);
-            
-            const $propertySelect = $('#propertySelect');
-            $propertySelect.empty().append('<option value="">-- Chọn bất động sản --</option>');
-            $('#propertySelectionSection').show();
+        // Function to hide property selection section
+        function hidePropertySelection() {
+            $('#propertySelectionSection').slideUp(300);
+            $('#propertyCombobox').prop('disabled', true);
             $('#propertyDetailSection').hide();
+        }
+        
+        // Function to reset property selection
+        function resetPropertySelection() {
+            const $propertyCombobox = $('#propertyCombobox');
+            $propertyCombobox.empty().append('<option value="">-- Đang tải dữ liệu bất động sản... --</option>');
+            $propertyCombobox.prop('disabled', true);
+            $('#propertySelectFeedback').empty();
+            $('#propertyDetailSection').hide();
+            showLoadingSpinner();
+        }
+        
+        // Function to show loading spinner
+        function showLoadingSpinner() {
+            $('#propertyLoadingSpinner').show();
+        }
+        
+        // Function to hide loading spinner
+        function hideLoadingSpinner() {
+            $('#propertyLoadingSpinner').hide();
+        }
+        
+        // Lưu trữ dữ liệu bất động sản và chủ sở hữu (Global scope)
+        window.propertiesData = [];
+        window.ownerData = null;
+        
+        // Function to populate property combobox với dữ liệu đã có
+        function populatePropertyCombobox(properties, owner) {
+            console.log('Populating property combobox with:', properties);
             
-            // Lưu dữ liệu
-            propertiesData = properties || [];
-            ownerData = owner || null;
+            const $propertyCombobox = $('#propertyCombobox');
+            
+            // Lưu dữ liệu vào global scope
+            window.propertiesData = properties || [];
+            window.ownerData = owner || null;
             
             // Đảm bảo owner ID được cập nhật
-            if (ownerData && ownerData.id) {
-                $('#ownerSearchId').val(ownerData.id);
+            if (window.ownerData && window.ownerData.id) {
+                $('#selectedOwnerId').val(window.ownerData.id);
             }
             
-            if (propertiesData.length > 0) {
-                console.log('Hiển thị ' + propertiesData.length + ' bất động sản trong dropdown');
+            // Clear combobox và ẩn loading
+            $propertyCombobox.empty();
+            hideLoadingSpinner();
+            
+            if (window.propertiesData.length > 0) {
+                // Thêm option mặc định
+                $propertyCombobox.append('<option value="">-- Chọn bất động sản --</option>');
                 
-                // Thêm từng bất động sản vào dropdown
-                propertiesData.forEach(function(property, index) {
+                // Thêm từng bất động sản vào combobox
+                window.propertiesData.forEach(function(property, index) {
                     console.log(`Property ${index + 1}:`, property);
                     
                     const title = property.title || 'Không có tiêu đề';
@@ -1566,15 +1321,46 @@
                         optionLabel += ` - ${property.fullAddress || property.address}`;
                     }
                     
-                    $propertySelect.append(`<option value="${property.id}">${optionLabel}</option>`);
+                    // Thêm giá nếu có
+                    if (property.formattedPrice) {
+                        optionLabel += ` - ${property.formattedPrice}`;
+                    }
+                    
+                    // Ensure property has ownerId if it doesn't already have one
+                    if (!property.ownerId && window.ownerData && window.ownerData.id) {
+                        property.ownerId = window.ownerData.id;
+                    }
+                    
+                    // Store complete property data in a data attribute for easier access
+                    $propertyCombobox.append(
+                        $('<option>')
+                            .val(property.id)
+                            .text(optionLabel)
+                            .data('property', property)
+                    );
                 });
+                
+                // Enable combobox
+                $propertyCombobox.prop('disabled', false);
                 
                 // Thông báo thành công
                 $('#propertySelectFeedback').html(`<span class="text-success">
-                    <i class="bi bi-check-circle"></i> ${propertiesData.length} bất động sản có sẵn
+                    <i class="bi bi-check-circle"></i> Tìm thấy ${window.propertiesData.length} bất động sản
                 </span>`);
+                
+                // Nếu chỉ có một bất động sản, tự động chọn
+                if (window.propertiesData.length === 1) {
+                    $propertyCombobox.val(window.propertiesData[0].id);
+                    console.log('Auto-selected property:', window.propertiesData[0].id);
+                    
+                    // Trigger change event để cập nhật UI
+                    $propertyCombobox.trigger('change');
+                }
             } else {
                 // Không có bất động sản
+                $propertyCombobox.append('<option value="">-- Chủ sở hữu này chưa có bất động sản nào --</option>');
+                $propertyCombobox.prop('disabled', true);
+                
                 $('#propertySelectFeedback').html(`<span class="text-warning">
                     <i class="bi bi-exclamation-triangle"></i> Chủ sở hữu này chưa có bất động sản nào
                 </span>`);
@@ -1582,16 +1368,14 @@
         }
         
         // Backup function to load properties via API (nếu cần thiết)
-        function loadOwnerProperties(ownerId) {
-            console.log('Gọi API backup để lấy bất động sản cho ownerId:', ownerId);
+        function loadOwnerPropertiesForCombobox(ownerId) {
+            console.log('Gọi API để lấy bất động sản cho ownerId:', ownerId);
             
-            const $propertySelect = $('#propertySelect');
-            $propertySelect.empty().append('<option value="">Đang tải dữ liệu...</option>');
-            $('#propertySelectionSection').show();
-            $('#propertyDetailSection').hide();
+            const $propertyCombobox = $('#propertyCombobox');
+            showLoadingSpinner();
             
             // Đảm bảo giá trị OwnerID luôn được cập nhật ngay lập tức
-            $('#ownerSearchId').val(ownerId);
+            $('#selectedOwnerId').val(ownerId);
             
             $.ajax({
                 url: '{{ route("agent.owner.properties") }}',
@@ -1599,86 +1383,38 @@
                 data: { ownerId: ownerId },
                 success: function(response) {
                     console.log('API Response:', response);
-                    $propertySelect.empty().append('<option value="">-- Chọn bất động sản --</option>');
                     
                     // Lưu lại dữ liệu chủ sở hữu và bất động sản để sử dụng sau
-                    propertiesData = response.properties || [];
-                    ownerData = response.owner || null;
+                    window.propertiesData = response.properties || [];
+                    window.ownerData = response.owner || null;
                     
-                    console.log('Số lượng bất động sản:', propertiesData.length);
-                    if (propertiesData.length > 0) {
-                        console.log('Bất động sản đầu tiên:', propertiesData[0]);
+                    console.log('Số lượng bất động sản:', window.propertiesData.length);
+                    if (window.propertiesData.length > 0) {
+                        console.log('Bất động sản đầu tiên:', window.propertiesData[0]);
                     }
                     
                     // Đảm bảo ID chủ sở hữu luôn được lưu đúng
-                    if (ownerData && ownerData.id) {
-                        $('#ownerSearchId').val(ownerData.id);
+                    if (window.ownerData && window.ownerData.id) {
+                        $('#selectedOwnerId').val(window.ownerData.id);
                     } else {
                         // Sử dụng ownerId từ tham số nếu không có trong phản hồi
-                        $('#ownerSearchId').val(ownerId);
+                        $('#selectedOwnerId').val(ownerId);
                     }
                     
-                    if (propertiesData.length > 0) {
-                        console.log('Hiển thị ' + propertiesData.length + ' bất động sản trong dropdown');
-                        // Đã có bất động sản, thêm vào dropdown với thông tin chi tiết hơn
-                        propertiesData.forEach(function(property) {
-                            // Log chi tiết từng bất động sản
-                            console.log('Rendering property:', property);
-                            
-                            // Đảm bảo property.title không null
-                            const title = property.title || 'Không có tiêu đề';
-                            
-                            // Tạo nhãn hiển thị thông tin chi tiết
-                            let optionLabel = title;
-                            
-                            // Thêm loại bất động sản nếu có
-                            if (property.categoryName) {
-                                optionLabel += ` (${property.categoryName})`;
-                            }
-                            
-                            // Thêm địa chỉ nếu có
-                            if (property.fullAddress || property.address) {
-                                optionLabel += ` - ${property.fullAddress || property.address}`;
-                            }
-                            
-                            // Thêm giá nếu có
-                            if (property.formattedPrice) {
-                                optionLabel += ` - ${property.formattedPrice}`;
-                            }
-                            
-                            // Thêm trạng thái nếu không active
-                            if (property.status && property.status !== 'active') {
-                                optionLabel += ` [${property.status}]`;
-                            }
-                            
-                            $propertySelect.append(`<option value="${property.id}" 
-                                data-property='${JSON.stringify(property)}'>${optionLabel}</option>`);
-                        });
-                        
-                        // Thông báo thành công
-                        $('#propertySelectFeedback').html(`<span class="text-success">
-                            <i class="bi bi-check-circle"></i> ${propertiesData.length} bất động sản có sẵn
-                        </span>`);
-                        
-                        // Nếu chỉ có một bất động sản, tự động chọn nó
-                        if (propertiesData.length === 1) {
-                            $propertySelect.val(propertiesData[0].id);
-                            $propertySelect.trigger('change');
-                        }
-                    } else {
-                        // Không có bất động sản
-                        $('#propertySelectFeedback').html(`<span class="text-warning">
-                            <i class="bi bi-exclamation-triangle"></i> Chủ sở hữu này chưa có bất động sản nào
-                        </span>`);
-                    }
+                    // Populate combobox với dữ liệu nhận được
+                    populatePropertyCombobox(window.propertiesData, window.ownerData);
                 },
                 error: function(xhr, status, error) {
                     console.error('Error loading properties:', error);
                     console.error('Response:', xhr.responseText);
                     
-                    propertiesData = [];
-                    ownerData = null;
-                    $propertySelect.empty().append('<option value="">-- Chọn bất động sản --</option>');
+                    window.propertiesData = [];
+                    window.ownerData = null;
+                    
+                    hideLoadingSpinner();
+                    $propertyCombobox.empty().append('<option value="">-- Lỗi khi tải dữ liệu --</option>');
+                    $propertyCombobox.prop('disabled', true);
+                    
                     $('#propertySelectFeedback').html(`<span class="text-danger">
                         <i class="bi bi-x-circle"></i> Lỗi khi tải danh sách bất động sản: ${error}
                     </span>`);
@@ -1686,9 +1422,10 @@
             });
         }
         
-        // Xử lý khi người dùng chọn một bất động sản
-        $('#propertySelect').change(function() {
+        // Xử lý khi người dùng chọn một bất động sản từ combobox
+        $('#propertyCombobox').change(function() {
             const propertyId = $(this).val();
+            
             if (!propertyId) {
                 $('#propertyDetailSection').hide();
                 return;
@@ -1710,71 +1447,24 @@
                 console.error('Lỗi khi parse dữ liệu property từ option:', e);
             }
             
-            // Nếu không có dữ liệu từ data attribute, tìm từ propertiesData
+            // Nếu không có dữ liệu từ data attribute, tìm từ window.propertiesData
             if (!selectedProperty) {
                 console.log('Tìm dữ liệu bất động sản từ danh sách đã lưu');
-                selectedProperty = propertiesData.find(p => p.id == propertyId);
+                selectedProperty = window.propertiesData.find(p => p.id == propertyId);
             }
             
             console.log('Bất động sản được chọn:', selectedProperty);
             
+            // CẬP NHẬT QUAN TRỌNG: Cập nhật OwnerID nếu chúng ta có thông tin chủ sở hữu từ property
+            if (propertyId && selectedProperty && selectedProperty.ownerId) {
+                $('#selectedOwnerId').val(selectedProperty.ownerId);
+                console.log('Đã cập nhật selectedOwnerId hidden input thành:', selectedProperty.ownerId);
+            } else {
+                console.warn('Không tìm thấy ownerId cho property này, kiểm tra dữ liệu property');
+            }
+            
             if (selectedProperty) {
-                // Hiển thị thông tin chi tiết bất động sản
-                const title = selectedProperty.title || 'Không có tiêu đề';
-                $('#propertyDetailTitle').text(title);
-                
-                // Hiển thị địa chỉ đầy đủ nếu có
-                const addressText = selectedProperty.fullAddress || selectedProperty.address || 'Không có địa chỉ';
-                $('#propertyDetailAddress').text(addressText);
-                
-                // Hiển thị thêm thông tin giá và loại nếu có
-                let extraInfo = [];
-                
-                if (selectedProperty.categoryName) {
-                    extraInfo.push(`<span class="badge bg-info me-1">${selectedProperty.categoryName}</span>`);
-                }
-                
-                if (selectedProperty.formattedPrice) {
-                    extraInfo.push(`<span class="badge bg-success">${selectedProperty.formattedPrice}</span>`);
-                }
-                
-                if (selectedProperty.area) {
-                    extraInfo.push(`<span class="badge bg-secondary">${selectedProperty.area} m²</span>`);
-                }
-                
-                if (selectedProperty.bedroom) {
-                    extraInfo.push(`<span class="badge bg-secondary">${selectedProperty.bedroom} phòng ngủ</span>`);
-                }
-                
-                // Thêm trạng thái bất động sản
-                if (selectedProperty.status) {
-                    let statusClass = 'bg-secondary';
-                    if (selectedProperty.status === 'active') statusClass = 'bg-success';
-                    if (selectedProperty.status === 'pending') statusClass = 'bg-warning';
-                    if (selectedProperty.status === 'inactive') statusClass = 'bg-danger';
-                    
-                    const statusText = selectedProperty.status === 'active' ? 'Đang bán/cho thuê' : 
-                                      (selectedProperty.status === 'pending' ? 'Đang chờ duyệt' : 
-                                      (selectedProperty.status === 'inactive' ? 'Đã khóa' : selectedProperty.status));
-                    
-                    extraInfo.push(`<span class="badge ${statusClass}">${statusText}</span>`);
-                }
-                
-                // Thêm loại giao dịch (bán/thuê)
-                if (selectedProperty.type) {
-                    const typeText = selectedProperty.type === 'Rent' ? 'Cho thuê' : 'Bán';
-                    const typeClass = selectedProperty.type === 'Rent' ? 'bg-primary' : 'bg-danger';
-                    extraInfo.push(`<span class="badge ${typeClass}">${typeText}</span>`);
-                }
-                
-                // Cập nhật thông tin bổ sung
-                if (extraInfo.length > 0) {
-                    $('#propertyExtraInfo').html(extraInfo.join(' ')).show();
-                } else {
-                    $('#propertyExtraInfo').hide();
-                }
-                
-                $('#propertyDetailSection').show();
+                showPropertyDetails(selectedProperty);
                 
                 // Cập nhật thông tin liên quan cho cuộc hẹn
                 updateAppointmentPropertyInfo(selectedProperty);
@@ -1786,6 +1476,66 @@
                 </span>`);
             }
         });
+        
+        // Function to show property details
+        function showPropertyDetails(selectedProperty) {
+            // Hiển thị thông tin chi tiết bất động sản
+            const title = selectedProperty.title || 'Không có tiêu đề';
+            $('#propertyDetailTitle').text(title);
+            
+            // Hiển thị địa chỉ đầy đủ nếu có
+            const addressText = selectedProperty.fullAddress || selectedProperty.address || 'Không có địa chỉ';
+            $('#propertyDetailAddress').text(addressText);
+            
+            // Hiển thị thêm thông tin giá và loại nếu có
+            let extraInfo = [];
+            
+            if (selectedProperty.categoryName) {
+                extraInfo.push(`<span class="badge bg-info me-1">${selectedProperty.categoryName}</span>`);
+            }
+            
+            if (selectedProperty.formattedPrice) {
+                extraInfo.push(`<span class="badge bg-success">${selectedProperty.formattedPrice}</span>`);
+            }
+            
+            if (selectedProperty.area) {
+                extraInfo.push(`<span class="badge bg-secondary">${selectedProperty.area} m²</span>`);
+            }
+            
+            if (selectedProperty.bedroom) {
+                extraInfo.push(`<span class="badge bg-secondary">${selectedProperty.bedroom} phòng ngủ</span>`);
+            }
+            
+            // Thêm trạng thái bất động sản
+            if (selectedProperty.status) {
+                let statusClass = 'bg-secondary';
+                if (selectedProperty.status === 'active') statusClass = 'bg-success';
+                if (selectedProperty.status === 'pending') statusClass = 'bg-warning';
+                if (selectedProperty.status === 'inactive') statusClass = 'bg-danger';
+                
+                const statusText = selectedProperty.status === 'active' ? 'Đang bán/cho thuê' : 
+                                  (selectedProperty.status === 'pending' ? 'Đang chờ duyệt' : 
+                                  (selectedProperty.status === 'inactive' ? 'Đã khóa' : selectedProperty.status));
+                
+                extraInfo.push(`<span class="badge ${statusClass}">${statusText}</span>`);
+            }
+            
+            // Thêm loại giao dịch (bán/thuê)
+            if (selectedProperty.type) {
+                const typeText = selectedProperty.type === 'Rent' ? 'Cho thuê' : 'Bán';
+                const typeClass = selectedProperty.type === 'Rent' ? 'bg-primary' : 'bg-danger';
+                extraInfo.push(`<span class="badge ${typeClass}">${typeText}</span>`);
+            }
+            
+            // Cập nhật thông tin bổ sung
+            if (extraInfo.length > 0) {
+                $('#propertyExtraInfo').html(extraInfo.join(' ')).show();
+            } else {
+                $('#propertyExtraInfo').hide();
+            }
+            
+            $('#propertyDetailSection').slideDown(300);
+        }
         
         // Cập nhật thông tin cuộc hẹn dựa trên bất động sản đã chọn
         function updateAppointmentPropertyInfo(property) {
@@ -1830,16 +1580,29 @@
             // Đảm bảo ownerId được lưu đúng từ nhiều nguồn có thể có
             let selectedOwnerId = $('#ownerSearchId').val();
             if (!selectedOwnerId) {
-                selectedOwnerId = property.ownerId || (ownerData ? ownerData.id : null);
+                selectedOwnerId = property.ownerId || (window.ownerData ? window.ownerData.id : null) || 
+                                  (window.currentAppointmentOwnerData ? window.currentAppointmentOwnerData.id : null);
                 if (selectedOwnerId) {
                     $('#ownerSearchId').val(selectedOwnerId);
                 }
+            }
+            
+            // Cập nhật hidden input cho OwnerID
+            if (selectedOwnerId) {
+                $('#selectedOwnerId').val(selectedOwnerId);
+                console.log('Updated hidden input selectedOwnerId to:', selectedOwnerId);
             }
             
             console.log('Owner ID đã chọn:', selectedOwnerId);
             
             if (!selectedOwnerId) {
                 console.error('Không tìm thấy Owner ID hợp lệ!');
+            }
+            
+            // Đảm bảo customer ID cũng được lưu đúng - lấy từ component
+            const customerData = window.getSelectedCustomerData ? window.getSelectedCustomerData() : null;
+            if (customerData && customerData.customerId) {
+                console.log('Customer ID đã chọn:', customerData.customerId);
             }
             
             // Lưu thông tin bất động sản và chủ sở hữu vào form để xử lý khi submit
@@ -1856,4 +1619,369 @@
         }
     </script>
 @endpush
+<script>
+    // Date filtering functionality
+    $('#applyDateFilter').on('click', function() {
+        const dateFrom = $('#dateFrom').val();
+        const dateTo = $('#dateTo').val();
+        
+        if (dateFrom && dateTo && dateFrom > dateTo) {
+            alert('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+            return;
+        }
+        
+        filterAppointmentsByDateRange(dateFrom, dateTo);
+    });
+    
+    $('#clearDateFilter').on('click', function() {
+        $('#dateFrom').val('{{ date('Y-m-01') }}');
+        $('#dateTo').val('{{ date('Y-m-t') }}');
+        showAllAppointments();
+    });
+    
+    // Function to filter appointments by date range
+    function filterAppointmentsByDateRange(dateFrom, dateTo) {
+        $('.appointment-card').each(function() {
+            const appointmentDate = $(this).data('date');
+            
+            if (appointmentDate) {
+                const formattedDate = new Date(appointmentDate).toISOString().split('T')[0];
+                const isInRange = (!dateFrom || formattedDate >= dateFrom) && 
+                                 (!dateTo || formattedDate <= dateTo);
+                
+                if (isInRange) {
+                    $(this).fadeIn(300);
+                } else {
+                    $(this).fadeOut(300);
+                }
+            }
+        });
+        
+        // Update empty state visibility
+        updateEmptyStates();
+    }
+    
+    // Function to show all appointments
+    function showAllAppointments() {
+        $('.appointment-card').fadeIn(300);
+        updateEmptyStates();
+    }
+    
+    // Function to update empty state visibility
+    function updateEmptyStates() {
+        $('.tab-pane').each(function() {
+            const visibleCards = $(this).find('.appointment-card:visible');
+            const emptyState = $(this).find('.empty-state-container');
+            
+            if (visibleCards.length === 0) {
+                emptyState.show();
+            } else {
+                emptyState.hide();
+            }
+        });
+    }
+
+    // NOTE: Form submission is handled in create-appointment-modal.blade.php
+    // to avoid duplicate submissions. This comment replaces the previous
+    // duplicate event handler that was causing appointments to be created twice.
+
+    // Initialize Bootstrap tabs functionality
+    $(document).ready(function() {
+        // Initialize Bootstrap Tab functionality
+        const triggerTabList = document.querySelectorAll('#appointmentTabs button[data-bs-toggle="tab"]');
+        triggerTabList.forEach(triggerEl => {
+            const tabTrigger = new bootstrap.Tab(triggerEl);
+            
+            triggerEl.addEventListener('click', event => {
+                event.preventDefault();
+                tabTrigger.show();
+            });
+        });
+
+        // Handle tab switching with proper filtering
+        $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            const target = $(e.target).attr('data-bs-target');
+            
+            // Reset any search/filter states when switching tabs
+            $('.empty-filtered').hide();
+            $('.property-group-header, .owner-group-header').remove();
+            
+            // Reset filter dropdown to default
+            $('#appointmentFilter').val('all');
+            
+            // Clear search if active
+            if ($('#propertyOwnerSearch').val()) {
+                $('#propertyOwnerSearch').val('');
+                $('.clear-search-icon').hide();
+            }
+            
+            // Show all appointments in the new active tab
+            $(target + ' .appointment-card').show();
+            
+            // Update empty states for the active tab
+            updateEmptyStates();
+            
+            // Reset date filters to current month
+            $('#dateFrom').val('{{ date("Y-m-01") }}');
+            $('#dateTo').val('{{ date("Y-m-t") }}');
+            
+            console.log('Tab switched to:', target);
+        });
+
+        // Enhanced search functionality that works with tabs
+        $('#propertyOwnerSearch').on('input', function() {
+            const searchTerm = $(this).val().toLowerCase().trim();
+            const activeTab = $('.tab-pane.active');
+            const clearIcon = $('.clear-search-icon');
+            
+            // Show/hide clear icon
+            if (searchTerm.length > 0) {
+                clearIcon.show();
+            } else {
+                clearIcon.hide();
+            }
+            
+            if (searchTerm.length < 2) {
+                $('#searchResults').hide();
+                // Show all appointments in active tab
+                activeTab.find('.appointment-card').show();
+                updateEmptyStates();
+                return;
+            }
+            
+            // Filter appointments in active tab only
+            let foundAny = false;
+            activeTab.find('.appointment-card').each(function() {
+                const propertyTitle = $(this).find('.property-name').text().toLowerCase();
+                const appointmentMeta = $(this).find('.appointment-meta').text().toLowerCase();
+                
+                // Extract owner and customer names from meta text
+                const metaParts = appointmentMeta.split('|');
+                const ownerText = metaParts[0] || '';
+                const customerText = metaParts[1] || '';
+                
+                if (propertyTitle.includes(searchTerm) || 
+                    ownerText.includes(searchTerm) || 
+                    customerText.includes(searchTerm) ||
+                    appointmentMeta.includes(searchTerm)) {
+                    $(this).show();
+                    foundAny = true;
+                } else {
+                    $(this).hide();
+                }
+            });
+            
+            // Show/hide empty state based on search results
+            updateEmptyStates();
+            
+            // Show search feedback
+            if (foundAny) {
+                const visibleCount = activeTab.find('.appointment-card:visible').length;
+                console.log(`Found ${visibleCount} appointments matching "${searchTerm}"`);
+            }
+        });
+
+        // Clear search functionality
+        $('#resetSearch').on('click', function() {
+            $('#propertyOwnerSearch').val('');
+            $('.tab-pane.active .appointment-card').show();
+            $('#searchResults').hide();
+            updateEmptyStates();
+        });
+    });
+
+    // Enhanced appointment filtering with date support
+    $(document).ready(function() {
+        // Filter dropdown functionality
+        $('#appointmentFilter').on('change', function() {
+            const filterValue = $(this).val();
+            const activeTab = $('.tab-pane.active');
+            const appointments = activeTab.find('.appointment-card');
+            
+            console.log('Filter changed to:', filterValue);
+            
+            // Reset all appointments visibility
+            appointments.show();
+            
+            switch(filterValue) {
+                case 'newest':
+                    sortAppointmentsByDate(appointments, 'desc');
+                    break;
+                case 'oldest':
+                    sortAppointmentsByDate(appointments, 'asc');
+                    break;
+                case 'property':
+                    sortAppointmentsByProperty(appointments);
+                    break;
+                case 'owner':
+                    sortAppointmentsByOwner(appointments);
+                    break;
+                case 'all':
+                default:
+                    // Reset to original order
+                    appointments.sort(function(a, b) {
+                        return $(a).data('original-index') - $(b).data('original-index');
+                    }).appendTo(activeTab);
+                    break;
+            }
+            
+            updateEmptyStates();
+        });
+        
+        // Date range filter functionality
+        $('#applyDateFilter').on('click', function() {
+            const dateFrom = $('#dateFrom').val();
+            const dateTo = $('#dateTo').val();
+            
+            if (!dateFrom || !dateTo) {
+                alert('Vui lòng chọn đầy đủ khoảng thời gian');
+                return;
+            }
+            
+            if (new Date(dateFrom) > new Date(dateTo)) {
+                alert('Ngày bắt đầu không thể lớn hơn ngày kết thúc');
+                return;
+            }
+            
+            filterAppointmentsByDateRange(dateFrom, dateTo);
+        });
+        
+        // Clear date filter
+        $('#clearDateFilter').on('click', function() {
+            $('#dateFrom').val('{{ date("Y-m-01") }}');
+            $('#dateTo').val('{{ date("Y-m-t") }}');
+            $('.tab-pane.active .appointment-card').show();
+            updateEmptyStates();
+        });
+        
+        // Store original order for reset functionality
+        $('.appointment-card').each(function(index) {
+            $(this).data('original-index', index);
+        });
+    });
+    
+    // Helper function to sort appointments by date
+    function sortAppointmentsByDate(appointments, order) {
+        appointments.sort(function(a, b) {
+            const dateA = new Date($(a).data('date'));
+            const dateB = new Date($(b).data('date'));
+            
+            if (order === 'desc') {
+                return dateB - dateA;
+            } else {
+                return dateA - dateB;
+            }
+        }).appendTo($('.tab-pane.active'));
+    }
+    
+    // Helper function to sort appointments by property
+    function sortAppointmentsByProperty(appointments) {
+        appointments.sort(function(a, b) {
+            const propertyA = $(a).find('.property-name').text().toLowerCase();
+            const propertyB = $(b).find('.property-name').text().toLowerCase();
+            return propertyA.localeCompare(propertyB);
+        }).appendTo($('.tab-pane.active'));
+    }
+    
+    // Helper function to sort appointments by owner
+    function sortAppointmentsByOwner(appointments) {
+        appointments.sort(function(a, b) {
+            const metaA = $(a).find('.appointment-meta').text().toLowerCase();
+            const metaB = $(b).find('.appointment-meta').text().toLowerCase();
+            
+            // Extract owner name from meta text (format: "Chủ sở hữu: Name | Khách hàng: Name")
+            const ownerA = metaA.split('|')[0].replace('chủ sở hữu:', '').trim();
+            const ownerB = metaB.split('|')[0].replace('chủ sở hữu:', '').trim();
+            
+            return ownerA.localeCompare(ownerB);
+        }).appendTo($('.tab-pane.active'));
+    }
+    
+    // Helper function to filter appointments by date range
+    function filterAppointmentsByDateRange(dateFrom, dateTo) {
+        const activeTab = $('.tab-pane.active');
+        const appointments = activeTab.find('.appointment-card');
+        let visibleCount = 0;
+        
+        appointments.each(function() {
+            const appointmentDate = new Date($(this).data('date'));
+            const fromDate = new Date(dateFrom);
+            const toDate = new Date(dateTo);
+            
+            // Set time to start and end of day for proper comparison
+            fromDate.setHours(0, 0, 0, 0);
+            toDate.setHours(23, 59, 59, 999);
+            
+            if (appointmentDate >= fromDate && appointmentDate <= toDate) {
+                $(this).show();
+                visibleCount++;
+            } else {
+                $(this).hide();
+            }
+        });
+        
+        updateEmptyStates();
+        
+        // Show feedback
+        const feedbackText = `Hiển thị ${visibleCount} lịch hẹn từ ${formatDate(dateFrom)} đến ${formatDate(dateTo)}`;
+        showMessage('info', feedbackText);
+    }
+    
+    // Helper function to format date for display
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    }
+    
+    // Function to show messages to user
+    function showMessage(type, message) {
+        const messageContainer = $('#messageContainer');
+        const messageElement = $(`#${type}Message`);
+        const textElement = $(`#${type}Text`);
+        
+        // Hide all messages first
+        messageContainer.find('.alert').hide();
+        
+        // Set the message text
+        textElement.text(message);
+        
+        // Show the specific message type
+        messageElement.show();
+        messageContainer.show();
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            messageElement.fadeOut();
+            if (messageContainer.find('.alert:visible').length === 0) {
+                messageContainer.hide();
+            }
+        }, 5000);
+    }
+    
+    // Function to update empty states for tabs
+    function updateEmptyStates() {
+        $('.tab-pane').each(function() {
+            const tabPane = $(this);
+            const visibleAppointments = tabPane.find('.appointment-card:visible');
+            const emptyState = tabPane.find('.empty-state-container');
+            
+            if (visibleAppointments.length === 0) {
+                if (emptyState.length === 0) {
+                    // Create empty state if it doesn't exist
+                    tabPane.append(`
+                        <div class="empty-state-container text-center py-5">
+                            <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+                            <h5 class="text-muted">Không có lịch hẹn nào</h5>
+                            <p class="text-muted">Chưa có lịch hẹn nào trong trạng thái này hoặc không có lịch hẹn nào phù hợp với bộ lọc hiện tại.</p>
+                        </div>
+                    `);
+                } else {
+                    emptyState.show();
+                }
+            } else {
+                emptyState.hide();
+            }
+        });
+    }
+</script>
 @endsection

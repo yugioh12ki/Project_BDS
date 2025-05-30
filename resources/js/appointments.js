@@ -20,6 +20,63 @@ $(document).ready(function() {
     const $resetSearch = $('#resetSearch');
     const $appointmentFilter = $('#appointmentFilter');
 
+    // Message display functions
+    function showMessage(type, message, duration = 5000) {
+        console.log(`Showing ${type} message:`, message);
+        
+        // Hide all messages first
+        hideAllMessages();
+        
+        // Show the container
+        $('#messageContainer').show();
+        
+        // Show the specific message type
+        const messageElement = $(`#${type}Message`);
+        const textElement = $(`#${type}Text`);
+        
+        textElement.text(message);
+        messageElement.show();
+        
+        // Auto-hide after duration
+        if (duration > 0) {
+            setTimeout(() => {
+                messageElement.fadeOut();
+                setTimeout(() => {
+                    $('#messageContainer').hide();
+                }, 300);
+            }, duration);
+        }
+    }
+
+    function showSuccess(message, duration = 5000) {
+        showMessage('success', message, duration);
+    }
+
+    function showError(message, duration = 8000) {
+        showMessage('error', message, duration);
+    }
+
+    function showWarning(message, duration = 6000) {
+        showMessage('warning', message, duration);
+    }
+
+    function showInfo(message, duration = 4000) {
+        showMessage('info', message, duration);
+    }
+
+    function hideAllMessages() {
+        $('#successMessage, #errorMessage, #warningMessage, #infoMessage').hide();
+    }
+
+    // Global functions for external access
+    window.appointmentMessages = {
+        showSuccess,
+        showError,
+        showWarning,
+        showInfo,
+        hideAll: hideAllMessages
+    };
+
     // Helper function để hiển thị thông tin chủ sở hữu
     function showOwnerInfo(property) {
         console.log('showOwnerInfo called with property:', property);
@@ -575,46 +632,9 @@ $(document).ready(function() {
         }
     });
     
-    // Form submission validation
-    $('#appointmentForm').on('submit', function(e) {
-        const propertyID = $('#propertyID').val();
-        const customerID = $('#customerId').val();
-        const startDate = $('#appointmentDateStart').val();
-        const endDate = $('#appointmentDateEnd').val();
-        const title = $('#appointmentTitle').val();
-        
-        if (!propertyID) {
-            e.preventDefault();
-            alert('Vui lòng chọn bất động sản trước khi tạo lịch hẹn');
-            return false;
-        }
-        
-        if (!customerID) {
-            e.preventDefault();
-            alert('Vui lòng chọn khách hàng trước khi tạo lịch hẹn');
-            return false;
-        }
-        
-        if (!startDate || !endDate) {
-            e.preventDefault();
-            alert('Vui lòng chọn thời gian bắt đầu và kết thúc cho lịch hẹn');
-            return false;
-        }
-        
-        if (new Date(startDate) >= new Date(endDate)) {
-            e.preventDefault();
-            alert('Thời gian kết thúc phải sau thời gian bắt đầu');
-            return false;
-        }
-        
-        if (!title.trim()) {
-            e.preventDefault();
-            alert('Vui lòng nhập tiêu đề cho lịch hẹn');
-            return false;
-        }
-        
-        return true;
-    });
+    // NOTE: Form submission handler removed from here to prevent duplicate submissions.
+    // Form validation and submission is now handled in create-appointment-modal.blade.php
+    // via the #submitAppointmentBtn click handler to ensure only ONE submission occurs.
     
     // --- Property search and filtering ---
     $propertyOwnerSearch.on('input', function() {
@@ -749,4 +769,9 @@ $(document).ready(function() {
             $('.empty-filtered').hide();
         }
     }
+
+    // DUPLICATE HANDLER REMOVED: Submit button handler was previously here 
+    // but caused duplicate appointment creation. Form submission is now handled 
+    // ONLY in create-appointment-modal.blade.php via #submitAppointmentBtn click 
+    // event to ensure single submission per user action.
 });

@@ -142,10 +142,14 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    @if($appointment->Status == 'pending')
-                                                        <span class="badge bg-warning">Chờ xác nhận</span>
-                                                    @elseif($appointment->Status == 'confirmed')
-                                                        <span class="badge bg-info">Đã xác nhận</span>
+                                                    @if($appointment->Status == 'Khởi Tạo')
+                                                        <span class="badge bg-warning">Chờ Xác Nhận</span>
+                                                    @elseif($appointment->Status == 'Đang Thực Hiện')
+                                                        <span class="badge bg-warning">Đang Thực Hiện</span>
+                                                    @elseif($appointment->Status == 'Hoàn Thành')
+                                                        <span class="badge bg-info">Đã Xác Nhận</span>
+                                                    @elseif($appointment->Status == 'Hủy Hẹn')
+                                                        <span class="badge bg-warning">Đã Hủy</span>
                                                     @endif
                                                 </td>
                                                 <td class="text-end">
@@ -317,17 +321,25 @@
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <div class="input-group">
-                                        <input type="text" class="form-control" placeholder="Tìm kiếm lịch hẹn...">
+                                        <input type="text" class="form-control" placeholder="Tìm kiếm lịch hẹn..." id="searchAppointment">
                                         <button class="btn btn-outline-secondary" type="button"><i class="fa fa-search"></i></button>
                                     </div>
                                 </div>
                                 <div class="col-md-8">
                                     <div class="float-end">
-                                        <div class="btn-group">
-                                            <button class="btn btn-outline-secondary active">Tất cả</button>
-                                            <button class="btn btn-outline-warning">Chờ xác nhận</button>
-                                            <button class="btn btn-outline-success">Đã xác nhận</button>
-                                            <button class="btn btn-outline-danger">Đã hủy</button>
+                                        <div class="btn-group" role="group" aria-label="Appointment Filters">
+                                            <button class="btn btn-outline-warning" data-filter="khoitao" data-count="{{ $appointments->where('Status', 'Khởi Tạo')->count() }}">
+                                                Chờ Xác Nhận ({{ $appointments->where('Status', 'Khởi Tạo')->count() }})
+                                            </button>
+                                            <button class="btn btn-outline-info" data-filter="dangthuchien" data-count="{{ $appointments->where('Status', 'Đang Thực Hiện')->count() }}">
+                                                Đang Thực Hiện ({{ $appointments->where('Status', 'Đang Thực Hiện')->count() }})
+                                            </button>
+                                            <button class="btn btn-outline-success" data-filter="hoanthanh" data-count="{{ $appointments->where('Status', 'Hoàn Thành')->count() }}">
+                                                Hoàn Thành ({{ $appointments->where('Status', 'Hoàn Thành')->count() }})
+                                            </button>
+                                            <button class="btn btn-outline-danger" data-filter="huyhen" data-count="{{ $appointments->where('Status', 'Hủy Hẹn')->count() }}">
+                                                Đã Hủy ({{ $appointments->where('Status', 'Hủy Hẹn')->count() }})
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -346,62 +358,79 @@
                                     </thead>
                                     <tbody>
                                         @forelse($appointments as $appointment)
-                                            <tr>
+                                            <tr data-status="{{ 
+                                                $appointment->Status == 'Khởi Tạo' ? 'khoitao' : 
+                                                ($appointment->Status == 'Đang Thực Hiện' ? 'dangthuchien' : 
+                                                ($appointment->Status == 'Hoàn Thành' ? 'hoanthanh' : 
+                                                ($appointment->Status == 'Hủy Hẹn' ? 'huyhen' : 'unknown')))
+                                            }}">
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="property-thumb me-2">
-                                                            <div class="bg-light rounded" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                                                <i class="fa fa-home text-muted"></i>
-                                                            </div>
+                                                            @if($appointment->property && $appointment->property->images->first())
+                                                                <img src="data:image/jpeg;base64,{{ base64_encode($appointment->property->images->first()->ImagePath) }}" 
+                                                                     class="rounded" style="width: 40px; height: 40px; object-fit: cover;" 
+                                                                     alt="Property">
+                                                            @else
+                                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                                    <i class="fa fa-home text-muted"></i>
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                         <div>
-                                                            {{ $appointment->property ? $appointment->property->Title : $appointment->TitleAppoint }}
+                                                            <div class="fw-medium">{{ $appointment->property ? $appointment->property->Title : $appointment->TitleAppoint }}</div>
+                                                            <small class="text-muted">{{ $appointment->property ? $appointment->property->Address : 'N/A' }}</small>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div>
-                                                        {{ $appointment->AppointmentDateStart ? date('d/m/Y', strtotime($appointment->AppointmentDateStart)) : 'N/A' }}
+                                                        <strong>{{ $appointment->AppointmentDateStart ? \Carbon\Carbon::parse($appointment->AppointmentDateStart)->format('d/m/Y') : 'N/A' }}</strong>
                                                     </div>
-                                                    <small class="text-muted">{{ $appointment->AppointmentDateStart ? date('H:i', strtotime($appointment->AppointmentDateStart)) : 'N/A' }}</small>
+                                                    <small class="text-muted">
+                                                        {{ $appointment->AppointmentDateStart ? \Carbon\Carbon::parse($appointment->AppointmentDateStart)->format('H:i') : 'N/A' }} - 
+                                                        {{ $appointment->AppointmentDateEnd ? \Carbon\Carbon::parse($appointment->AppointmentDateEnd)->format('H:i') : 'N/A' }}
+                                                    </small>
                                                 </td>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="agent-avatar me-2">
-                                                            <div class="bg-primary rounded-circle text-white" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-                                                                {{ $appointment->user_agent ? substr($appointment->user_agent->Name, 0, 1) : 'N' }}
+                                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px; font-size: 12px;">
+                                                                {{ $appointment->user_agent ? strtoupper(substr($appointment->user_agent->Name, 0, 2)) : 'N/A' }}
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            {{ $appointment->user_agent ? $appointment->user_agent->Name : 'N/A' }}
+                                                            <div class="fw-medium">{{ $appointment->user_agent ? $appointment->user_agent->Name : 'Chưa phân công' }}</div>
+                                                            <small class="text-muted">{{ $appointment->user_agent ? $appointment->user_agent->Phone : '' }}</small>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    @if($appointment->Status == 'pending')
-                                                        <span class="badge bg-warning">Chờ xác nhận</span>
-                                                    @elseif($appointment->Status == 'confirmed')
-                                                        <span class="badge bg-info">Đã xác nhận</span>
+                                                    @if($appointment->Status == 'Khởi Tạo')
+                                                        <span class="badge bg-warning text-dark">Chờ Xác Nhận</span>
+                                                    @elseif($appointment->Status == 'Đang Thực Hiện')
+                                                        <span class="badge bg-info">Đang Thực Hiện</span>
                                                     @elseif($appointment->Status == 'Hoàn Thành')
-                                                        <span class="badge bg-success">Hoàn thành</span>
-                                                    @elseif($appointment->Status == 'Đã Hủy')
-                                                        <span class="badge bg-danger">Đã hủy</span>
+                                                        <span class="badge bg-success">Hoàn Thành</span>
+                                                    @elseif($appointment->Status == 'Hủy Hẹn')
+                                                        <span class="badge bg-danger">Đã Hủy</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">{{ $appointment->Status }}</span>
                                                     @endif
                                                 </td>
                                                 <td class="text-end">
-                                                    <div class="btn-group">
-                                                        <button class="btn btn-sm btn-outline-primary">Chi tiết</button>
-                                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                                                            <i class="fa fa-ellipsis-v"></i>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal" data-appointment-id="{{ $appointment->AppointmentID }}">
+                                                            <i class="fa fa-eye"></i> Chi tiết
                                                         </button>
-                                                        <ul class="dropdown-menu">
-                                                            @if($appointment->Status == 'pending')
-                                                                <li><a class="dropdown-item" href="#"><i class="fa fa-check text-success me-2"></i> Xác nhận</a></li>
-                                                            @endif
-                                                            @if($appointment->Status != 'Đã Hủy')
-                                                                <li><a class="dropdown-item" href="#"><i class="fa fa-times text-danger me-2"></i> Hủy</a></li>
-                                                            @endif
-                                                        </ul>
+                                                        @if($appointment->Status == 'Khởi Tạo')
+                                                            <button class="btn btn-outline-success btn-sm" onclick="updateAppointmentStatus({{ $appointment->AppointmentID }}, 'Đang Thực Hiện')">
+                                                                <i class="fa fa-check"></i> Xác nhận
+                                                            </button>
+                                                            <button class="btn btn-outline-danger btn-sm" onclick="updateAppointmentStatus({{ $appointment->AppointmentID }}, 'Hủy Hẹn')">
+                                                                <i class="fa fa-times"></i> Hủy
+                                                            </button>
+                                                        @endif
                                                     </div>
                                                 </td>
                                             </tr>
@@ -477,10 +506,10 @@
                                                         <td>{{ $appointment->AppointmentDateStart ? date('d/m/Y H:i', strtotime($appointment->AppointmentDateStart)) : 'N/A' }}</td>
                                                         <td>{{ $appointment->AppointmentDateEnd ? date('d/m/Y H:i', strtotime($appointment->AppointmentDateEnd)) : 'N/A' }}</td>
                                                         <td>
-                                                            @if($appointment->Status == 'pending')
+                                                            @if($appointment->Status == 'Khởi Tạo')
                                                                 <span class="badge bg-warning">Chờ xác nhận</span>
-                                                            @elseif($appointment->Status == 'confirmed')
-                                                                <span class="badge bg-info">Đã xác nhận</span>
+                                                            @elseif($appointment->Status == 'Hoàn Thành')
+                                                                <span class="badge bg-info">Đã Xác Nhận</span>
                                                             @endif
                                                         </td>
                                                         <td>{{ $appointment->DescAppoint }}</td>
@@ -584,9 +613,5 @@
 @endsection
 
 @section('script')
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Có thể thêm các xử lý JavaScript ở đây nếu cần
-    });
-</script>
+<script src="{{ asset('js/appointment-filters-owner.js') }}"></script>
 @endsection

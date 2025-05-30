@@ -1,13 +1,15 @@
 /**
- * Appointment filters and sorting functionality
+ * Appointment filters and sorting functionality - Updated for Tab System
  */
 $(document).ready(function() {
-    const $appointmentCards = $('.appointment-card');
     const $appointmentFilter = $('#appointmentFilter');
     const $propertyOwnerSearch = $('#propertyOwnerSearch');
-    const $resetSearch = $('#resetSearch');    // Filter appointments based on dropdown selection with improved formatting
+    const $resetSearch = $('#resetSearch');
+    
+    // Filter appointments based on dropdown selection with improved formatting
     $appointmentFilter.on('change', function() {
         const filterValue = $(this).val();
+        const $activeTab = $('.tab-pane.active');
         
         // Reset search
         $propertyOwnerSearch.val('');
@@ -16,35 +18,34 @@ $(document).ready(function() {
         
         switch(filterValue) {
             case 'newest':
-                // Sort by date (newest first)
-                sortAppointmentsByDate(true);
+                // Sort by date (newest first) within active tab only
+                sortAppointmentsByDate(true, $activeTab);
                 break;
             case 'oldest':
-                // Sort by date (oldest first)
-                sortAppointmentsByDate(false);
+                // Sort by date (oldest first) within active tab only
+                sortAppointmentsByDate(false, $activeTab);
                 break;
             case 'property':
-                // Group by property (visual grouping by property)
-                groupAppointmentsByProperty();
+                // Group by property (visual grouping by property) within active tab only
+                groupAppointmentsByProperty($activeTab);
                 break;
             case 'owner':
-                // Group by owner (visual grouping by owner)
-                groupAppointmentsByOwner();
+                // Group by owner (visual grouping by owner) within active tab only
+                groupAppointmentsByOwner($activeTab);
                 break;
             default:
-                // Show all appointments without sorting
-                $('.appointment-card').fadeIn(300);
+                // Show all appointments without sorting within active tab only
+                $activeTab.find('.appointment-card').fadeIn(300);
                 break;
         }
     });
     
-    // Function to sort appointments by date
-    function sortAppointmentsByDate(newestFirst) {
-        const $container = $('.appointment-card').parent();
-        const $appointmentCards = $('.appointment-card').toArray();
+    // Function to sort appointments by date within specific tab
+    function sortAppointmentsByDate(newestFirst, $tabContainer) {
+        const $appointmentCards = $tabContainer.find('.appointment-card').toArray();
         
         // Hide all cards first for smooth transition
-        $('.appointment-card').hide();
+        $tabContainer.find('.appointment-card').hide();
         
         $appointmentCards.sort(function(a, b) {
             const dateA = new Date($(a).data('date'));
@@ -56,19 +57,19 @@ $(document).ready(function() {
         // Re-append the sorted cards with fade effect
         $appointmentCards.forEach(function(card, index) {
             setTimeout(() => {
-                $container.append(card);
+                $tabContainer.append(card);
                 $(card).fadeIn(200);
             }, index * 50); // Staggered animation
         });
     }
     
-    // Function to group appointments visually by property
-    function groupAppointmentsByProperty() {
+    // Function to group appointments visually by property within specific tab
+    function groupAppointmentsByProperty($tabContainer) {
         // Create an object to group appointments by property
         const groupedByProperty = {};
         
-        // First pass - collect all property IDs and their appointments
-        $('.appointment-card').each(function() {
+        // First pass - collect all property IDs and their appointments in the active tab
+        $tabContainer.find('.appointment-card').each(function() {
             const propertyId = $(this).data('property-id');
             if (!propertyId) return;
             
@@ -79,8 +80,7 @@ $(document).ready(function() {
         });
         
         // Second pass - reorder appointments by property groups
-        const $container = $('.appointment-card').first().parent();
-        $('.appointment-card').hide();
+        $tabContainer.find('.appointment-card').hide();
         
         // For each property, show its appointments
         Object.keys(groupedByProperty).forEach((propertyId, groupIndex) => {
@@ -100,13 +100,13 @@ $(document).ready(function() {
                 `);
                 
                 setTimeout(() => {
-                    $container.append($header);
+                    $tabContainer.append($header);
                     $header.hide().fadeIn(200);
                     
                     // Append all appointments for this property
                     cards.forEach((card, cardIndex) => {
                         setTimeout(() => {
-                            $container.append(card);
+                            $tabContainer.append(card);
                             card.fadeIn(200);
                         }, cardIndex * 100);
                     });
@@ -115,13 +115,13 @@ $(document).ready(function() {
         });
     }
     
-    // Function to group appointments visually by owner
-    function groupAppointmentsByOwner() {
+    // Function to group appointments visually by owner within specific tab
+    function groupAppointmentsByOwner($tabContainer) {
         // Create an object to group appointments by owner
         const groupedByOwner = {};
         
-        // First pass - collect all owner IDs and their appointments
-        $('.appointment-card').each(function() {
+        // First pass - collect all owner IDs and their appointments in the active tab
+        $tabContainer.find('.appointment-card').each(function() {
             const ownerId = $(this).data('owner-id');
             if (!ownerId) return;
             
@@ -132,8 +132,7 @@ $(document).ready(function() {
         });
         
         // Second pass - reorder appointments by owner groups
-        const $container = $('.appointment-card').first().parent();
-        $('.appointment-card').hide();
+        $tabContainer.find('.appointment-card').hide();
         $('.property-group-header').remove(); // Remove any previous grouping headers
         
         // For each owner, show their appointments
@@ -144,7 +143,7 @@ $(document).ready(function() {
             let ownerName = "Chủ sở hữu";
             if (cards.length > 0) {
                 // Find property with this owner ID
-                const property = window.propertyList.find(p => p.ownerId === ownerId);
+                const property = window.propertyList ? window.propertyList.find(p => p.ownerId === ownerId) : null;
                 if (property && property.ownerName) {
                     ownerName = property.ownerName;
                 }
@@ -163,13 +162,13 @@ $(document).ready(function() {
                 `);
                 
                 setTimeout(() => {
-                    $container.append($header);
+                    $tabContainer.append($header);
                     $header.hide().fadeIn(200);
                     
                     // Append all appointments for this owner
                     cards.forEach((card, cardIndex) => {
                         setTimeout(() => {
-                            $container.append(card);
+                            $tabContainer.append(card);
                             card.fadeIn(200);
                         }, cardIndex * 100);
                     });
@@ -180,9 +179,10 @@ $(document).ready(function() {
 
     // Function to filter appointments by property with improved empty state handling
     function filterAppointmentsByProperty(propertyId) {
+        const $activeTab = $('.tab-pane.active');
         let foundAny = false;
         
-        $('.appointment-card').each(function() {
+        $activeTab.find('.appointment-card').each(function() {
             const cardPropertyId = $(this).data('property-id');
             if (propertyId && cardPropertyId == propertyId) {
                 $(this).fadeIn(300);
@@ -193,12 +193,11 @@ $(document).ready(function() {
         });
         
         // Show empty state message if no appointments found
-        const $tabPane = $('.appointment-card').first().closest('.tab-pane');
-        const $emptyMessage = $tabPane.find('.empty-filtered');
+        const $emptyMessage = $activeTab.find('.empty-filtered');
         
         if (!foundAny) {
             if ($emptyMessage.length === 0) {
-                $tabPane.append(`
+                $activeTab.append(`
                     <div class="empty-filtered p-4 text-center text-muted">
                         <i class="bi bi-calendar-x mb-2" style="font-size: 2rem;"></i>
                         <p>Không có lịch hẹn nào cho bất động sản này</p>

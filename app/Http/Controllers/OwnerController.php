@@ -193,30 +193,41 @@ class OwnerController extends Controller
 
         // Lấy danh sách lịch hẹn liên quan đến chủ nhà
         $appointments = Appointment::where('OwnerID', $ownerId)
-            ->with(['property', 'user_agent', 'user_customer'])
+            ->with(['property', 'user_agent', 'cusUser'])
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
-        // Phân loại các cuộc hẹn
-        $upcomingAppointments = $appointments->filter(function($appointment) {
-            return $appointment->AppointmentDateStart >= Carbon::today() &&
-                  ($appointment->Status == Appointment::STATUS_PENDING ||
-                   $appointment->Status == Appointment::STATUS_CONFIRMED);
+        // Phân loại các cuộc hẹn theo trạng thái thực tế trong database
+        $pendingAppointments = $appointments->filter(function($appointment) {
+            return $appointment->Status == 'Khởi Tạo';
         });
 
-        $completedAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == Appointment::STATUS_COMPLETED;
+        $confirmedAppointments = $appointments->filter(function($appointment) {
+            return $appointment->Status == 'Đang Thực Hiện' || $appointment->Status == 'Hoàn Thành';
         });
 
         $cancelledAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == Appointment::STATUS_CANCELLED;
+            return $appointment->Status == 'Hủy Hẹn';
+        });
+
+        // Lấy lịch hẹn đã hoàn thành
+        $completedAppointments = $appointments->filter(function($appointment) {
+            return $appointment->Status == 'Hoàn Thành';
+        });
+
+        // Lấy lịch hẹn sắp tới (chưa hủy và ngày hẹn >= hôm nay)
+        $upcomingAppointments = $appointments->filter(function($appointment) {
+            return $appointment->Status != 'Hủy Hẹn' && 
+                   \Carbon\Carbon::parse($appointment->AppointmentDateStart)->gte(\Carbon\Carbon::today());
         });
 
         return view('owners.appointment.appointments', compact(
             'appointments',
-            'upcomingAppointments',
+            'pendingAppointments',
+            'confirmedAppointments', 
+            'cancelledAppointments',
             'completedAppointments',
-            'cancelledAppointments'
+            'upcomingAppointments'
         ));
     }
 
@@ -524,5 +535,265 @@ class OwnerController extends Controller
             Log::error('Error in getPropertiesForListing: ' . $e->getMessage());
             return response()->json(['error' => 'Có lỗi xảy ra khi tải dữ liệu'], 500);
         }
+    }
+
+    /**
+     * Lấy thông báo cho chủ sở hữu
+     */
+    public function getNotifications(Request $request)
+    {
+        $ownerId = Auth::user()->UserID;
+        $notifications = [];
+
+        // Lấy lịch hẹn mới được tạo trong 30 ngày qua
+        $newAppointments = Appointment::with(['property', 'user_agent', 'cusUser'])
+            ->where('OwnerID', $ownerId)
+            ->whereIn('Status', ['Khởi Tạo', 'Đang Thực Hiện'])
+            ->whereDate('AppointmentDateStart', '>=', Carbon::now()->subDays(30))
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->limit(10)
+            ->get();
+
+        foreach ($newAppointments as $appointment) {
+            $appointmentTime = Carbon::parse($appointment->AppointmentDateStart);
+            $notifications[] = [
+                'id' => 'appointment_' . $appointment->AppointmentID,
+                'type' => 'appointment',
+                'title' => 'Lịch hẹn mới',
+                'message' => "Người môi giới {$appointment->user_agent->Name} đã tạo lịch hẹn cho BĐS: {$appointment->property->Title}",
+                'time' => $appointmentTime->diffForHumans(),
+                'url' => route('owner.appointments.index'),
+                'is_read' => false,
+                'data' => [
+                    'appointment_id' => $appointment->AppointmentID,
+                    'property_title' => $appointment->property->Title,
+                    'agent_name' => $appointment->user_agent->Name,
+                    'customer_name' => $appointment->cusUser->Name ?? 'Khách hàng',
+                    'raw_time' => $appointmentTime->timestamp,
+                ]
+            ];
+        }
+
+        // Lấy giao dịch mới hoàn thành trong 30 ngày qua
+        $completedTransactions = Transaction::with(['property', 'trans_agent'])
+            ->where('OwnerID', $ownerId)
+            ->where('TranStatus', 'Paid')
+            ->whereDate('TransactionDate', '>=', Carbon::now()->subDays(30))
+            ->orderBy('TransactionDate', 'desc')
+            ->limit(10)
+            ->get();
+
+        foreach ($completedTransactions as $transaction) {
+            $transactionTime = Carbon::parse($transaction->TransactionDate);
+            $notifications[] = [
+                'id' => 'transaction_' . $transaction->TransactionID,
+                'type' => 'transaction',
+                'title' => 'Giao dịch hoàn thành',
+                'message' => "Giao dịch BĐS {$transaction->property->Title} đã hoàn thành với giá trị " . number_format($transaction->TotalPrice) . " VNĐ",
+                'time' => $transactionTime->diffForHumans(),
+                'url' => route('owner.transactions.index'),
+                'is_read' => false,
+                'data' => [
+                    'transaction_id' => $transaction->TransactionID,
+                    'property_title' => $transaction->property->Title,
+                    'amount' => $transaction->TotalPrice,
+                    'agent_name' => $transaction->trans_agent->Name ?? 'Người môi giới',
+                    'raw_time' => $transactionTime->timestamp,
+                ]
+            ];
+        }
+
+        // Sắp xếp thông báo theo thời gian (mới nhất trước)
+        usort($notifications, function($a, $b) {
+            // Sử dụng dữ liệu gốc để sắp xếp thay vì chuỗi diffForHumans
+            $timeA = isset($a['data']['raw_time']) ? $a['data']['raw_time'] : 0;
+            $timeB = isset($b['data']['raw_time']) ? $b['data']['raw_time'] : 0;
+            return $timeB - $timeA;
+        });
+
+        // Giới hạn số lượng thông báo
+        $notifications = array_slice($notifications, 0, 15);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'notifications' => $notifications,
+                'unread_count' => count($notifications)
+            ]);
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Get appointments by status via AJAX
+     */
+    public function getAppointmentsByStatus(Request $request, $status)
+    {
+        $ownerId = Auth::user()->UserID;
+
+        // Map filter status to database status
+        $statusMap = [
+            'khoitao' => 'Khởi Tạo',
+            'dangthuchien' => 'Đang Thực Hiện', 
+            'hoanthanh' => 'Hoàn Thành',
+            'huyhen' => 'Hủy Hẹn'
+        ];
+
+        if (!isset($statusMap[$status])) {
+            return response()->json(['error' => 'Invalid status'], 400);
+        }
+
+        $dbStatus = $statusMap[$status];
+
+        // Get appointments for this owner's properties with the specified status
+        $appointments = Appointment::with(['property.images', 'user_agent', 'user_customer'])
+            // ->whereHas('property', function ($query) use ($ownerId) {
+            //     $query->where('OwnerID', $ownerId);
+            // })
+            ->where('OwnerID', $ownerId)
+            ->where('Status', $dbStatus)
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->get();
+
+        // Format appointments for AJAX response
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            $propertyImage = null;
+            if ($appointment->property && $appointment->property->images->first()) {
+                $propertyImage = 'data:image/jpeg;base64,' . base64_encode($appointment->property->images->first()->ImagePath);
+            }
+
+            return [
+                'id' => $appointment->AppointmentID,
+                'property_title' => $appointment->property ? $appointment->property->Title : $appointment->TitleAppoint,
+                'property_address' => $appointment->property ? $appointment->property->Address : 'N/A',
+                'property_image' => $propertyImage,
+                'agent_name' => $appointment->user_agent ? $appointment->user_agent->Name : 'Chưa phân công',
+                'agent_phone' => $appointment->user_agent ? $appointment->user_agent->Phone : '',
+                'agent_initials' => $appointment->user_agent ? strtoupper(substr($appointment->user_agent->Name, 0, 2)) : 'N/A',
+                'customer_name' => $appointment->user_customer ? $appointment->user_customer->Name : 'N/A',
+                'date' => $appointment->AppointmentDateStart ? \Carbon\Carbon::parse($appointment->AppointmentDateStart)->format('d/m/Y') : 'N/A',
+                'start_time' => $appointment->AppointmentDateStart ? \Carbon\Carbon::parse($appointment->AppointmentDateStart)->format('H:i') : 'N/A',
+                'end_time' => $appointment->AppointmentDateEnd ? \Carbon\Carbon::parse($appointment->AppointmentDateEnd)->format('H:i') : 'N/A',
+                'status' => $appointment->Status,
+                'status_badge' => $this->getStatusBadge($appointment->Status),
+                //'data_status' => $status, // Keep original filter status for JS
+                'can_confirm' => $appointment->Status == 'Khởi Tạo',
+                'can_cancel' => $appointment->Status == 'Khởi Tạo'
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'appointments' => $formattedAppointments,
+            'count' => $appointments->count(),
+            'status' => $status
+        ]);
+    }
+
+    /**
+     * Get status badge HTML
+     */
+    private function getStatusBadge($status)
+    {
+        switch ($status) {
+            case 'Khởi Tạo':
+                return '<span class="badge bg-warning text-dark">Chờ Xác Nhận</span>';
+            case 'Đang Thực Hiện':
+                return '<span class="badge bg-info">Đang Thực Hiện</span>';
+            case 'Hoàn Thành':
+                return '<span class="badge bg-success">Hoàn Thành</span>';
+            case 'Hủy Hẹn':
+                return '<span class="badge bg-danger">Đã Hủy</span>';
+            default:
+                return '<span class="badge bg-secondary">' . $status . '</span>';
+        }
+    }
+
+    /**
+     * Update appointment status via AJAX
+     */
+    public function updateAppointmentStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'appointment_id' => 'required|string',
+                'status' => 'required|string|in:Đang Thực Hiện,Hủy Hẹn,Hoàn Thành'
+            ]);
+
+            $appointmentId = $request->appointment_id;
+            $newStatus = $request->status;
+            $ownerId = Auth::user()->UserID;
+
+            // Find the appointment and verify ownership
+            $appointment = Appointment::with('property')
+                ->where('AppointmentID', $appointmentId)
+                ->whereHas('property', function ($query) use ($ownerId) {
+                    $query->where('OwnerID', $ownerId);
+                })
+                ->first();
+
+            if (!$appointment) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Không tìm thấy lịch hẹn hoặc bạn không có quyền cập nhật'
+                ], 404);
+            }
+
+            // Check if status transition is valid
+            $currentStatus = $appointment->Status;
+            if (!$this->isValidStatusTransition($currentStatus, $newStatus)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Không thể chuyển từ trạng thái "' . $currentStatus . '" sang "' . $newStatus . '"'
+                ], 422);
+            }
+
+            // Update the appointment status
+            $appointment->Status = $newStatus;
+            $appointment->save();
+
+            // Log the status change
+            Log::info("Appointment {$appointmentId} status updated from '{$currentStatus}' to '{$newStatus}' by owner {$ownerId}");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật trạng thái thành công',
+                'appointment' => [
+                    'id' => $appointment->AppointmentID,
+                    'status' => $appointment->Status,
+                    'status_badge' => $this->getStatusBadge($appointment->Status)
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating appointment status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Check if status transition is valid
+     */
+    private function isValidStatusTransition($currentStatus, $newStatus)
+    {
+        $validTransitions = [
+            'Khởi Tạo' => ['Đang Thực Hiện', 'Hủy Hẹn'],
+            'Đang Thực Hiện' => ['Hoàn Thành', 'Hủy Hẹn'],
+            'Hoàn Thành' => [], // Cannot change from completed
+            'Hủy Hẹn' => [] // Cannot change from cancelled
+        ];
+
+        return isset($validTransitions[$currentStatus]) && 
+               in_array($newStatus, $validTransitions[$currentStatus]);
     }
 }

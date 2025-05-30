@@ -18,7 +18,7 @@
         <div class="phone-number-wrapper">
             <a href="tel:0123456789" class="phone-link">
                 <i class="bi bi-telephone-fill"></i>
-                <span>0123456789</span>
+                <span>19001881</span>
             </a>
         </div>
         <div class="notification-icon-wrapper">

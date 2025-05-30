@@ -9,13 +9,12 @@ class Property extends Model
 {
     use HasFactory;
 
-    protected $table = 'properties'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
-    protected $primaryKey = 'PropertyID'; // Chỉ định khóa chính là 'id'
+    protected $table = 'properties'; // Chỉ định tên bảng
+    protected $primaryKey = 'PropertyID'; // Chỉ định khóa chính
 
-    public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
-    public $incrementing = false; // Nếu khóa chính không phải là số nguyên tự động tăng
-
-    protected $keyType = 'string'; // Nếu khóa chính là chuỗi
+    public $timestamps = false; // Bảng không có created_at và updated_at
+    public $incrementing = false; // PropertyID là string, không auto-increment
+    protected $keyType = 'string'; // PropertyID là string
     public function danhMuc()
     {
         return $this->belongsTo(DanhMucBDS::class, 'PropertyType', 'Protype_ID');

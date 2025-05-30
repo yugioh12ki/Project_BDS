@@ -186,3 +186,69 @@
     line-height: 1 !important;
 }
 /* End Notification Icon Styles */
+
+/* NOTIFICATION STYLES */
+.notification-dropdown {
+    .notification-item {
+        transition: all 0.2s ease;
+        border-radius: 0;
+        
+        &:hover {
+            background-color: #f8f9fa !important;
+            transform: translateX(2px);
+        }
+        
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+    
+    .notification-header {
+        background: linear-gradient(135deg, #C2B280 0%, #D4C499 100%);
+        color: #4A4A4A;
+        font-weight: 600;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .notification-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+        
+        a {
+            color: #C2B280;
+            font-weight: 500;
+            text-decoration: none;
+            
+            &:hover {
+                color: #4A4A4A;
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+.notification-count {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.notification-icon {
+    position: relative;
+    transition: all 0.2s ease;
+    
+    &:hover {
+        color: #C2B280 !important;
+        transform: translateY(-1px);
+    }
+}

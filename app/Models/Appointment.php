@@ -12,6 +12,8 @@ class Appointment extends Model
 
     protected $table = 'appointments';
     protected $primaryKey = 'AppointmentID';
+    public $incrementing = true; // Đảm bảo primary key là auto increment
+    protected $keyType = 'int'; // Đảm bảo primary key là integer
 
     public $timestamps = false;
 
@@ -29,9 +31,9 @@ class Appointment extends Model
     ];
 
     // Status constants
-    const STATUS_PENDING = 'Chờ xử lý';
-    const STATUS_CONFIRMED = 'Thành công';
-    const STATUS_CANCELLED = 'Đã hủy';
+    const STATUS_PENDING = 'Khởi Tạo';
+    const STATUS_ACTIVE = 'Đang Thực Hiện';
+    const STATUS_CANCELLED = 'Hủy Hẹn';
     const STATUS_COMPLETED = 'Hoàn Thành';
 
     // Scopes
@@ -42,7 +44,7 @@ class Appointment extends Model
 
     public function scopeConfirmed($query)
     {
-        return $query->where('Status', self::STATUS_CONFIRMED);
+        return $query->where('Status', self::STATUS_ACTIVE);
     }
 
     public function scopeCompleted($query)
