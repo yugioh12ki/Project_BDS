@@ -12,7 +12,7 @@ class Document extends Model
     protected $table = 'documents';
     protected $primaryKey = 'DocumentID';
 
-    public $incrementing = false;
+    public $incrementing = true;
     public $timestamps = false;
 
 
@@ -20,4 +20,13 @@ class Document extends Model
     {
         return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
     }
+
+    protected $fillable = [
+        'DocumentID',
+        'TransactionID',
+        'UploadedDate',
+        'DocumentType',
+        'FilePath'
+
+    ];
 }

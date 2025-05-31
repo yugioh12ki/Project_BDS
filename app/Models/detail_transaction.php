@@ -18,4 +18,15 @@ class detail_transaction extends Model
     {
         return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
     }
+
+    protected $fillable = [
+        'TransactionID',
+        'Num_Pay',
+        'Price',
+        'DTrans_Date',
+        'PaymentType',
+        'DTrans_Status'
+    ];
+
+
 }

@@ -209,12 +209,27 @@ Route::middleware(['auth'])->group(function()
             Route::put('/transaction/{transactionId}/payment-statuses', [SystemController::class, 'updatePaymentStatuses'])->name('transaction.updatePaymentStatuses');
             Route::post('/transaction/{transactionId}/add-payment', [SystemController::class, 'addPayment'])->name('transaction.addPayment');
             Route::post('/transaction/{id}/document', [SystemController::class, 'addDocument'])->name('transaction.addDocument');
+
+            // New AJAX routes for enhanced transaction table
+            Route::get('/transaction/{id}/details', [SystemController::class, 'getTransactionDetailsAjax'])->name('transaction.details.ajax');
+
             Route::get('/transaction/{id}', [SystemController::class, "getTransactionById"])->name('transaction.id');
             Route::delete('/transaction/{id}', [SystemController::class, 'deleteTransaction'])->name('transaction.delete');
             Route::get('/transaction', [SystemController::class, "getTransaction"])->name('transaction');
 
+            // Contract template routes
+            Route::get('/contract/preview/{filename}', [SystemController::class, 'previewContract'])->name('contract.preview');
+            Route::get('/contract/print/{filename}', [SystemController::class, 'printContract'])->name('contract.print');
+            Route::get('/contract/download/{filename}', [SystemController::class, 'downloadContract'])->name('contract.download');
+
+            // Contract template upload routes
+            Route::post('/contract/upload', [SystemController::class, 'uploadContractTemplate'])->name('contract.upload');
+            Route::post('/contract/download-from-url', [SystemController::class, 'downloadContractFromUrl'])->name('contract.download-from-url');
+            Route::delete('/contract/delete/{filename}', [SystemController::class, 'deleteContractTemplate'])->name('contract.delete');
+            Route::get('/contract/templates/info', [SystemController::class, 'getContractTemplatesInfo'])->name('contract.templates.info');
+
             // Document routes
-            Route::delete('/document/{id}', [SystemController::class, 'deleteDocument'])->name('admin.document.delete');
+            Route::delete('/document/{id}', [SystemController::class, 'deleteDocument'])->name('document.delete');
 
             // Route điều hướng đến trang quản lý đánh giá khách hàng tới môi giới
             Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');

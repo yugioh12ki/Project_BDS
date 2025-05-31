@@ -23,6 +23,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
+// Import PhpWord để đọc file .docx
+use PhpOffice\PhpWord\IOFactory;
+
 class SystemController extends Controller
 {
     //
@@ -1494,7 +1497,507 @@ class SystemController extends Controller
             'trans_owner', 'trans_agent', 'trans_cus', 'detailTransaction'
             ])->get();
 
-        return view('_system.transaction', compact('columns','transactions')); // Đảm bảo biến truyền vào view là $users
+        // Lấy danh sách các file hợp đồng .docx
+        $contractTemplates = $this->getContractTemplates();
+
+        return view('_system.transaction', compact('columns','transactions', 'contractTemplates')); // Đảm bảo biến truyền vào view là $users
+    }
+
+    /**
+     * Lấy danh sách các file template hợp đồng .docx
+     */
+    private function getContractTemplates()
+    {
+        $contractPath = public_path('storage/document/HopDong');
+        $templates = [];
+
+        if (is_dir($contractPath)) {
+            $files = scandir($contractPath);
+            foreach ($files as $file) {
+                if (pathinfo($file, PATHINFO_EXTENSION) === 'docx') {
+                    $filePath = $contractPath . '/' . $file;
+                    $fileSize = filesize($filePath);
+                    $templates[] = [
+                        'name' => $file,
+                        'display_name' => $this->formatFileName($file),
+                        'size' => $fileSize,
+                        'size_formatted' => $this->formatFileSize($fileSize),
+                        'modified' => filemtime($filePath),
+                        'modified_formatted' => date('d/m/Y H:i', filemtime($filePath)),
+                        'download_url' => asset('storage/document/HopDong/' . $file),
+                        'preview_url' => route('admin.contract.preview', ['filename' => $file]),
+                        'print_url' => route('admin.contract.print', ['filename' => $file]),
+                        'type' => 'docx',
+                        'icon' => 'fas fa-file-word',
+                        'color' => 'text-primary'
+                    ];
+                }
+            }
+        }
+
+        // Sắp xếp theo tên file
+        usort($templates, function($a, $b) {
+            return strcmp($a['display_name'], $b['display_name']);
+        });
+
+        return $templates;
+    }
+
+    /**
+     * Format tên file để hiển thị đẹp hơn
+     */
+    private function formatFileName($filename)
+    {
+        // Loại bỏ đuôi .docx
+        $name = pathinfo($filename, PATHINFO_FILENAME);
+
+        // Thay thế dấu gạch ngang và gạch dưới bằng khoảng trắng
+        $name = str_replace(['-', '_'], ' ', $name);
+
+        // Viết hoa chữ cái đầu mỗi từ
+        $name = ucwords($name);
+
+        return $name;
+    }
+
+    /**
+     * Format kích thước file để hiển thị đẹp hơn
+     */
+    private function formatFileSize($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            $bytes = number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            $bytes = number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            $bytes = number_format($bytes / 1024, 2) . ' KB';
+        } elseif ($bytes > 1) {
+            $bytes = $bytes . ' bytes';
+        } elseif ($bytes == 1) {
+            $bytes = $bytes . ' byte';
+        } else {
+            $bytes = '0 bytes';
+        }
+
+        return $bytes;
+    }
+
+    /**
+     * Xử lý xem trước hợp đồng
+     */
+    public function previewContract($filename)
+    {
+        $filePath = public_path('storage/document/HopDong/' . $filename);
+
+        if (!file_exists($filePath)) {
+            return response()->json(['error' => 'File không tồn tại'], 404);
+        }
+
+        // Kiểm tra extension
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        if ($extension !== 'docx') {
+            return response()->json(['error' => 'Chỉ hỗ trợ file .docx'], 400);
+        }
+
+        try {
+            // Đọc nội dung file .docx bằng PhpOffice\PhpWord
+            $phpWord = IOFactory::load($filePath);
+            $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
+
+            // Tạo file HTML tạm thời
+            $tempHtmlPath = sys_get_temp_dir() . '/' . uniqid() . '.html';
+            $htmlWriter->save($tempHtmlPath);
+
+            // Đọc nội dung HTML
+            $htmlContent = file_get_contents($tempHtmlPath);
+
+            // Xóa file tạm
+            unlink($tempHtmlPath);
+
+            // Tạo nội dung HTML xem trước với nội dung thực tế
+            $previewHtml = $this->generatePreviewHtmlWithContent($filename, $filePath, $htmlContent);
+
+            return response()->json([
+                'success' => true,
+                'filename' => $filename,
+                'display_name' => $this->formatFileName($filename),
+                'size' => $this->formatFileSize(filesize($filePath)),
+                'modified' => date('d/m/Y H:i', filemtime($filePath)),
+                'download_url' => asset('storage/document/HopDong/' . $filename),
+                'preview_html' => $previewHtml,
+                'has_content' => true,
+                'message' => 'Hiển thị nội dung file thành công.'
+            ]);
+
+        } catch (\Exception $e) {
+            // Fallback nếu không đọc được file
+            $previewHtml = $this->generatePreviewHtml($filename, $filePath);
+
+            return response()->json([
+                'success' => true,
+                'filename' => $filename,
+                'display_name' => $this->formatFileName($filename),
+                'size' => $this->formatFileSize(filesize($filePath)),
+                'modified' => date('d/m/Y H:i', filemtime($filePath)),
+                'download_url' => asset('storage/document/HopDong/' . $filename),
+                'preview_html' => $previewHtml,
+                'has_content' => false,
+                'message' => 'Không thể đọc nội dung file. Hiển thị thông tin cơ bản. Lỗi: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Xử lý in hợp đồng
+     */
+    public function printContract($filename)
+    {
+        $filePath = public_path('storage/document/HopDong/' . $filename);
+
+        if (!file_exists($filePath)) {
+            return response()->json(['error' => 'File không tồn tại'], 404);
+        }
+
+        // Kiểm tra extension
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        if ($extension !== 'docx') {
+            return response()->json(['error' => 'Chỉ hỗ trợ file .docx'], 400);
+        }
+
+        try {
+            // Đọc nội dung file .docx bằng PhpOffice\PhpWord
+            $phpWord = IOFactory::load($filePath);
+            $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
+
+            // Tạo file HTML tạm thời
+            $tempHtmlPath = sys_get_temp_dir() . '/' . uniqid() . '.html';
+            $htmlWriter->save($tempHtmlPath);
+
+            // Đọc nội dung HTML
+            $htmlContent = file_get_contents($tempHtmlPath);
+
+            // Xóa file tạm
+            unlink($tempHtmlPath);
+
+            // Tạo nội dung HTML để in với nội dung thực tế
+            $printHtml = $this->generatePrintHtmlWithContent($filename, $filePath, $htmlContent);
+
+            return response()->json([
+                'success' => true,
+                'action' => 'browser_print',
+                'filename' => $filename,
+                'display_name' => $this->formatFileName($filename),
+                'print_html' => $printHtml,
+                'has_content' => true,
+                'message' => 'Sẵn sàng để in nội dung file.'
+            ]);
+
+        } catch (\Exception $e) {
+            // Fallback: chỉ in thông tin file nếu không đọc được nội dung
+            $printHtml = $this->generatePrintHtml($filename, $filePath);
+
+            return response()->json([
+                'success' => true,
+                'action' => 'browser_print',
+                'filename' => $filename,
+                'display_name' => $this->formatFileName($filename),
+                'print_html' => $printHtml,
+                'has_content' => false,
+                'message' => 'In thông tin file (không thể đọc nội dung). Lỗi: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Download hợp đồng
+     */
+    public function downloadContract($filename)
+    {
+        $filePath = public_path('storage/document/HopDong/' . $filename);
+
+        if (!file_exists($filePath)) {
+            abort(404, 'File không tồn tại');
+        }
+
+        return response()->download($filePath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ]);
+    }
+
+    /**
+     * Tạo HTML để xem trước file Word
+     */
+    private function generatePreviewHtml($filename, $filePath)
+    {
+        $displayName = $this->formatFileName($filename);
+        $fileSize = $this->formatFileSize(filesize($filePath));
+        $modified = date('d/m/Y H:i', filemtime($filePath));
+        $downloadUrl = asset('storage/document/HopDong/' . $filename);
+
+        return '
+        <div class="preview-document-info p-4">
+            <div class="document-preview-header text-center mb-4">
+                <div class="document-icon mb-3">
+                    <i class="fas fa-file-word text-primary" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="document-title text-primary mb-2">' . $displayName . '</h4>
+                <p class="text-muted mb-3">Microsoft Word Document (.docx)</p>
+            </div>
+
+            <div class="document-details">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-item d-flex align-items-center mb-3">
+                            <i class="fas fa-file me-3 text-info"></i>
+                            <div>
+                                <strong>Tên file:</strong><br>
+                                <span class="text-muted">' . $filename . '</span>
+                            </div>
+                        </div>
+                        <div class="detail-item d-flex align-items-center mb-3">
+                            <i class="fas fa-weight me-3 text-warning"></i>
+                            <div>
+                                <strong>Kích thước:</strong><br>
+                                <span class="text-muted">' . $fileSize . '</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-item d-flex align-items-center mb-3">
+                            <i class="fas fa-calendar me-3 text-success"></i>
+                            <div>
+                                <strong>Sửa đổi lần cuối:</strong><br>
+                                <span class="text-muted">' . $modified . '</span>
+                            </div>
+                        </div>
+                        <div class="detail-item d-flex align-items-center mb-3">
+                            <i class="fas fa-download me-3 text-primary"></i>
+                            <div>
+                                <strong>Hành động:</strong><br>
+                                <a href="' . $downloadUrl . '" class="btn btn-sm btn-outline-primary" download>
+                                    <i class="fas fa-download me-1"></i>Tải xuống
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-note mt-4 p-3 bg-light rounded">
+                <div class="d-flex align-items-start">
+                    <i class="fas fa-info-circle text-info me-3 mt-1"></i>
+                    <div>
+                        <h6 class="mb-2">Hướng dẫn xem file</h6>
+                        <ul class="mb-0 small text-muted">
+                            <li>Đây là file Microsoft Word (.docx)</li>
+                            <li>Để xem đầy đủ nội dung, vui lòng tải xuống file</li>
+                            <li>Hoặc mở trực tiếp bằng Microsoft Word Online</li>
+                            <li>Có thể sử dụng Google Docs để xem file</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-actions text-center mt-4">
+                <a href="' . $downloadUrl . '" class="btn btn-primary me-2" download>
+                    <i class="fas fa-download me-2"></i>Tải xuống để xem
+                </a>
+                <a href="' . $downloadUrl . '" target="_blank" class="btn btn-outline-secondary">
+                    <i class="fas fa-external-link-alt me-2"></i>Mở trong tab mới
+                </a>
+            </div>
+        </div>';
+    }
+
+    /**
+     * Tạo HTML để in file Word
+     */
+    private function generatePrintHtml($filename, $filePath)
+    {
+        $displayName = $this->formatFileName($filename);
+        $currentDate = date('d/m/Y H:i');
+
+        return '
+        <div class="print-document" style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+            <div class="print-header" style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+                <h2 style="color: #333; margin-bottom: 10px;">' . $displayName . '</h2>
+                <p style="color: #666; margin: 0;">Hợp đồng được in vào: ' . $currentDate . '</p>
+            </div>
+
+            <div class="print-content" style="line-height: 1.6; color: #333;">
+                <div class="document-info" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                    <h4 style="color: #333; margin-bottom: 15px;">Thông tin tài liệu:</h4>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold; width: 30%;">Tên file:</td>
+                            <td style="padding: 8px 0;">' . $filename . '</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold;">Kích thước:</td>
+                            <td style="padding: 8px 0;">' . $this->formatFileSize(filesize($filePath)) . '</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold;">Ngày tạo:</td>
+                            <td style="padding: 8px 0;">' . date('d/m/Y H:i', filemtime($filePath)) . '</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="print-placeholder" style="border: 2px dashed #ccc; padding: 40px; text-align: center; background: #fafafa; border-radius: 8px;">
+                    <i class="fas fa-file-word" style="font-size: 3rem; color: #2b5ce6; margin-bottom: 20px;"></i>
+                    <h4 style="color: #333; margin-bottom: 15px;">Nội dung hợp đồng</h4>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        Đây là file Microsoft Word (.docx)<br>
+                        Để in nội dung đầy đủ, vui lòng:
+                    </p>
+                    <ol style="text-align: left; display: inline-block; color: #666;">
+                        <li>Tải xuống file gốc</li>
+                        <li>Mở bằng Microsoft Word</li>
+                        <li>Sử dụng Ctrl+P để in</li>
+                                                          </ol>
+                </div>
+            </div>
+
+            <div class="print-footer" style="margin-top: 40px; text-align: center; border-top: 1px solid #ddd; padding-top: 20px;">
+                <p style="color: #666; margin: 0; font-size: 0.9em;">
+                    Tài liệu này được tạo từ hệ thống quản lý bất động sản<br>
+                    Thời gian: ' . $currentDate . '
+                </p>
+            </div>
+        </div>';
+    }
+
+    /**
+     * Tạo HTML để xem trước file Word với nội dung thực tế
+     */
+    private function generatePreviewHtmlWithContent($filename, $filePath, $htmlContent)
+    {
+        $displayName = $this->formatFileName($filename);
+        $fileSize = $this->formatFileSize(filesize($filePath));
+        $modified = date('d/m/Y H:i', filemtime($filePath));
+        $downloadUrl = asset('storage/document/HopDong/' . $filename);
+
+        // Làm sạch HTML content và thêm CSS
+        $cleanHtmlContent = $this->cleanDocxHtmlContent($htmlContent);
+
+        return '
+        <div class="preview-document-content">
+            <div class="document-header mb-3 p-3 bg-light rounded">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="mb-1"><i class="fas fa-file-word text-primary me-2"></i>' . $displayName . '</h5>
+                        <small class="text-muted">' . $filename . ' • ' . $fileSize . ' • ' . $modified . '</small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="' . $downloadUrl . '" class="btn btn-sm btn-outline-primary" download>
+                            <i class="fas fa-download me-1"></i>Tải xuống
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="document-content border rounded p-4" style="max-height: 500px; overflow-y: auto; background: white; font-family: Arial, sans-serif; line-height: 1.6;">
+                ' . $cleanHtmlContent . '
+            </div>
+
+            <div class="document-footer mt-3 text-center">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Hiển thị nội dung file .docx. Để xem đầy đủ định dạng, vui lòng tải xuống file gốc.
+                </small>
+            </div>
+        </div>';
+    }
+
+    /**
+     * Tạo HTML để in file Word với nội dung thực tế
+     */
+    private function generatePrintHtmlWithContent($filename, $filePath, $htmlContent)
+    {
+        $displayName = $this->formatFileName($filename);
+        $currentDate = date('d/m/Y H:i');
+
+        // Làm sạch HTML content cho việc in
+        $cleanHtmlContent = $this->cleanDocxHtmlContent($htmlContent);
+
+        return '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>' . $displayName . '</title>
+            <style>
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+                body {
+                    font-family: "Times New Roman", serif;
+                    line-height: 1.4;
+                    margin: 20px;
+                    font-size: 14px;
+                }
+                .print-header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    border-bottom: 1px solid #333;
+                    padding-bottom: 10px;
+                }
+                .print-content {
+                    margin: 20px 0;
+                }
+                .print-footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    border-top: 1px solid #ddd;
+                    padding-top: 10px;
+                    font-size: 12px;
+                    color: #666;
+                }
+                table { border-collapse: collapse; width: 100%; }
+                table, th, td { border: 1px solid #333; }
+                th, td { padding: 8px; text-align: left; }
+            </style>
+        </head>
+        <body>
+            <div class="print-header">
+                <h2>' . $displayName . '</h2>
+                <p style="margin: 5px 0; font-size: 12px; color: #666;">Ngày in: ' . $currentDate . '</p>
+            </div>
+
+            <div class="print-content">
+                ' . $cleanHtmlContent . '
+            </div>
+
+            <div class="print-footer">
+                <p>Tài liệu được in từ hệ thống quản lý bất động sản | ' . $currentDate . '</p>
+            </div>
+        </body>
+        </html>';
+    }
+
+    /**
+     * Làm sạch HTML content từ file .docx
+     */
+    private function cleanDocxHtmlContent($htmlContent)
+    {
+        // Loại bỏ các thẻ HTML không cần thiết
+        $htmlContent = preg_replace('/<html[^>]*>/', '', $htmlContent);
+        $htmlContent = preg_replace('/<\/html>/', '', $htmlContent);
+        $htmlContent = preg_replace('/<head>.*?<\/head>/s', '', $htmlContent);
+        $htmlContent = preg_replace('/<body[^>]*>/', '', $htmlContent);
+        $htmlContent = preg_replace('/<\/body>/', '', $htmlContent);
+
+        // Loại bỏ CSS inline phức tạp nhưng giữ lại định dạng cơ bản
+        $htmlContent = preg_replace('/style="[^"]*font-family[^"]*"/i', '', $htmlContent);
+        $htmlContent = preg_replace('/style="[^"]*margin[^"]*"/i', '', $htmlContent);
+
+        // Đảm bảo có ít nhất một số định dạng cơ bản
+        if (trim(strip_tags($htmlContent)) === '') {
+            return '<p style="text-align: center; color: #666; padding: 20px;">Không thể hiển thị nội dung file Word. Vui lòng tải xuống để xem.</p>';
+        }
+
+        return $htmlContent;
     }
 
     public function getTransactionByType(Request $request, $type)
@@ -1607,6 +2110,127 @@ class SystemController extends Controller
         }
     }
 
+    // New AJAX method to get transaction details for expandable rows
+    public function getTransactionDetailsAjax($id)
+    {
+        try {
+            $transaction = Transaction::with([
+                'trans_owner',
+                'trans_agent',
+                'trans_cus',
+                'trans_property',
+                'detailTransaction',
+                'document',
+                'trans_commission.comm_agent',
+                'trans_contract'
+            ])->find($id);
+
+            if (!$transaction) {
+                return response()->json(['error' => 'Không tìm thấy giao dịch'], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'transaction' => $transaction,
+                'payment_history' => $transaction->detailTransaction,
+                'documents' => $transaction->document,
+                'contracts' => $transaction->trans_contract,
+                'commissions' => $transaction->trans_commission
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi tải chi tiết giao dịch: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Process commission payment
+    public function processCommissionPayment(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'commission_id' => 'required|exists:commission,CommissionID',
+                'payment_amount' => 'required|numeric|min:0',
+                'payment_method' => 'required|string',
+                'payment_note' => 'nullable|string'
+            ]);
+
+            $transaction = Transaction::find($id);
+            if (!$transaction) {
+                return response()->json(['error' => 'Không tìm thấy giao dịch'], 404);
+            }
+
+            if ($transaction->TranStatus !== 'Paid') {
+                return response()->json(['error' => 'Chỉ có thể chi trả hoa hồng cho giao dịch đã thanh toán'], 400);
+            }
+
+            $commission = Commission::find($request->commission_id);
+            if (!$commission) {
+                return response()->json(['error' => 'Không tìm thấy thông tin hoa hồng'], 404);
+            }
+
+            if ($commission->TransactionID !== $id) {
+                return response()->json(['error' => 'Hoa hồng không thuộc về giao dịch này'], 400);
+            }
+
+            // Update commission status and payment information
+            $commission->StatusCommission = 'Paid';
+            $commission->PaymentDate = now();
+            $commission->PaymentMethod = $request->payment_method;
+            $commission->PaymentNote = $request->payment_note;
+            $commission->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Chi trả hoa hồng thành công!',
+                'commission' => $commission
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi chi trả hoa hồng: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Calculate commission for transaction
+    public function calculateCommissionAjax($id)
+    {
+        try {
+            $transaction = Transaction::with(['trans_agent'])->find($id);
+            if (!$transaction) {
+                return response()->json(['error' => 'Không tìm thấy giao dịch'], 404);
+            }
+
+            // Check if commission already exists
+            $existingCommission = Commission::where('TransactionID', $id)->first();
+            if ($existingCommission) {
+                return response()->json(['error' => 'Hoa hồng đã được tính cho giao dịch này'], 400);
+            }
+
+            // Default commission rate (2%)
+            $commissionRate = 2;
+            $commissionAmount = ($transaction->TotalPrice * $commissionRate) / 100;
+
+            // Create new commission record
+            $commission = new Commission();
+            $commission->TransactionID = $id;
+            $commission->AgentID = $transaction->AgentID;
+            $commission->CommissionRate = $commissionRate;
+            $commission->Amount = $commissionAmount;
+            $commission->StatusCommission = 'Pending';
+            $commission->CreatedDate = now();
+            $commission->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tính hoa hồng thành công!',
+                'commission' => $commission->load('comm_agent'),
+                'commission_rate' => $commissionRate,
+                'commission_amount' => number_format($commissionAmount, 0, ',', '.')
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi tính hoa hồng: ' . $e->getMessage()], 500);
+        }
+    }
 
     public function deleteTransaction($id)
     {
@@ -1950,4 +2574,327 @@ class SystemController extends Controller
         }
     }
 
+    /**
+     * Upload contract template files
+     */
+    public function uploadContractTemplate(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'files.*' => 'required|file|mimes:docx|max:10240', // 10MB max
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'File không hợp lệ. Chỉ chấp nhận file .docx dưới 10MB.',
+                    'details' => $validator->errors()
+                ], 400);
+            }
+
+            $contractsPath = public_path('storage/document/HopDong');
+
+            // Ensure HopDong directory exists
+            if (!file_exists($contractsPath)) {
+                mkdir($contractsPath, 0755, true);
+            }
+
+            $uploadedFiles = [];
+            $errors = [];
+
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $file) {
+                    try {
+                        // Generate unique filename
+                        $originalName = $file->getClientOriginalName();
+                        $nameWithoutExt = pathinfo($originalName, PATHINFO_FILENAME);
+                        $extension = $file->getClientOriginalExtension();
+
+                        // Clean filename
+                        $cleanName = preg_replace('/[^a-zA-Z0-9_\-\.\s]/', '', $nameWithoutExt);
+                        $cleanName = preg_replace('/\s+/', '_', $cleanName);
+
+                        $filename = $cleanName . '.' . $extension;
+
+                        // Check if file already exists
+                        $counter = 1;
+                        $finalFilename = $filename;
+                        while (file_exists($contractsPath . '/' . $finalFilename)) {
+                            $finalFilename = $cleanName . '_' . $counter . '.' . $extension;
+                            $counter++;
+                        }
+
+                        // Move file to HopDong directory
+                        $file->move($contractsPath, $finalFilename);
+
+                        // Validate it's a proper docx file by trying to read it
+                        try {
+                            $fullPath = $contractsPath . '/' . $finalFilename;
+                            $phpWord = IOFactory::load($fullPath);
+                            $properties = $phpWord->getDocInfo();
+
+                            $uploadedFiles[] = [
+                                'original_name' => $originalName,
+                                'filename' => $finalFilename,
+                                'size' => filesize($fullPath),
+                                'display_name' => $nameWithoutExt,
+                                'upload_time' => now()->format('Y-m-d H:i:s'),
+                                'status' => 'success'
+                            ];
+                        } catch (\Exception $e) {
+                            // If we can't read it as a Word document, delete it
+                            unlink($contractsPath . '/' . $finalFilename);
+                            $errors[] = [
+                                'file' => $originalName,
+                                'error' => 'File không phải là file Word hợp lệ'
+                            ];
+                        }
+
+                    } catch (\Exception $e) {
+                        $errors[] = [
+                            'file' => $originalName ?? 'Unknown',
+                            'error' => 'Lỗi khi tải lên: ' . $e->getMessage()
+                        ];
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tải lên hoàn tất',
+                'uploaded' => $uploadedFiles,
+                'errors' => $errors,
+                'total_uploaded' => count($uploadedFiles),
+                'total_errors' => count($errors)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Contract upload error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Có lỗi xảy ra khi tải lên: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download contract template from URL
+     */
+    public function downloadContractFromUrl(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'url' => 'required|url',
+                'filename' => 'nullable|string|max:255'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'URL không hợp lệ',
+                    'details' => $validator->errors()
+                ], 400);
+            }
+
+            $url = $request->input('url');
+            $customFilename = $request->input('filename');
+
+            // Check if URL ends with .docx
+            if (!str_ends_with(strtolower($url), '.docx')) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'URL phải trỏ đến file .docx'
+                ], 400);
+            }
+
+            $contractsPath = public_path('storage/document/HopDong');
+
+            // Ensure HopDong directory exists
+            if (!file_exists($contractsPath)) {
+                mkdir($contractsPath, 0755, true);
+            }
+
+            // Generate filename
+            if ($customFilename) {
+                $filename = preg_replace('/[^a-zA-Z0-9_\-\.\s]/', '', $customFilename);
+                $filename = preg_replace('/\s+/', '_', $filename) . '.docx';
+            } else {
+                $filename = basename($url);
+                $filename = preg_replace('/[^a-zA-Z0-9_\-\.\s]/', '', $filename);
+                $filename = preg_replace('/\s+/', '_', $filename);
+            }
+
+            // Check if file already exists
+            $counter = 1;
+            $originalFilename = $filename;
+            $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
+            while (file_exists($contractsPath . '/' . $filename)) {
+                $filename = $nameWithoutExt . '_' . $counter . '.docx';
+                $counter++;
+            }
+
+            // Download file
+            try {
+                $response = Http::timeout(30)->get($url);
+
+                if (!$response->successful()) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Không thể tải file từ URL. Mã lỗi: ' . $response->status()
+                    ], 400);
+                }
+
+                $content = $response->body();
+                $fullPath = $contractsPath . '/' . $filename;
+
+                file_put_contents($fullPath, $content);
+
+                // Validate it's a proper docx file
+                try {
+                    $phpWord = IOFactory::load($fullPath);
+                    $properties = $phpWord->getDocInfo();
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Tải file từ URL thành công',
+                        'file' => [
+                            'filename' => $filename,
+                            'size' => filesize($fullPath),
+                            'display_name' => pathinfo($filename, PATHINFO_FILENAME),
+                            'url' => $url,
+                            'download_time' => now()->format('Y-m-d H:i:s')
+                        ]
+                    ]);
+
+                } catch (\Exception $e) {
+                    // If we can't read it as a Word document, delete it
+                    unlink($fullPath);
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'File tải về không phải là file Word hợp lệ'
+                    ], 400);
+                }
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Không thể kết nối đến URL: ' . $e->getMessage()
+                ], 400);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Contract URL download error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete contract template
+     */
+    public function deleteContractTemplate(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'filename' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Tên file không hợp lệ'
+                ], 400);
+            }
+
+            $filename = $request->input('filename');
+            $contractsPath = public_path('storage/document/HopDong');
+            $fullPath = $contractsPath . '/' . $filename;
+
+            if (!file_exists($fullPath)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'File không tồn tại'
+                ], 404);
+            }
+
+            // Security check - ensure file is within HopDong directory
+            $realPath = realpath($fullPath);
+            $realContractsPath = realpath($contractsPath);
+
+            if (!$realPath || !str_starts_with($realPath, $realContractsPath)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Không có quyền xóa file này'
+                ], 403);
+            }
+
+            if (unlink($fullPath)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Xóa file thành công'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Không thể xóa file'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Contract delete error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Có lỗi xảy ra khi xóa file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get contract templates info for management
+     */
+    public function getContractTemplatesInfo()
+    {
+        try {
+            $contractsPath = public_path('storage/document/HopDong');
+
+            if (!file_exists($contractsPath)) {
+                mkdir($contractsPath, 0755, true);
+            }
+
+            $files = glob($contractsPath . '/*.docx');
+            $templates = [];
+
+            foreach ($files as $file) {
+                $filename = basename($file);
+                $size = filesize($file);
+                $modified = filemtime($file);
+
+                $templates[] = [
+                    'filename' => $filename,
+                    'display_name' => pathinfo($filename, PATHINFO_FILENAME),
+                    'size' => $size,
+                    'size_formatted' => $this->formatFileSize($size),
+                    'modified' => $modified,
+                    'modified_formatted' => date('d/m/Y H:i', $modified),
+                    'download_url' => asset('storage/document/HopDong/' . $filename),
+                    'can_delete' => true
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'templates' => $templates,
+                'total' => count($templates)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Get contract templates error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Có lỗi xảy ra khi lấy danh sách mẫu hợp đồng: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

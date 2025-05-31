@@ -53,4 +53,22 @@ class Transaction extends Model
     {
         return $this->hasMany(Commission::class, 'TransactionID', 'TransactionID');
     }
+
+    public function trans_contract()
+    {
+        return $this->hasMany(contracts::class, 'TransactionID', 'TransactionID');
+    }
+
+    protected $fillable = [
+        'TransactionID',
+        'PropertyID',
+        'OwnerID',
+        'AgentID',
+        'CusID',
+        'TranStatus',
+        'TotalPrice',
+        'TransactionDate',
+        'TransactionType',
+
+    ];
 }
