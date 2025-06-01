@@ -29,7 +29,7 @@ class Property extends Model
     {
         return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }
-    public function moigioi()
+    public function agent()
     {
         return $this->belongsTo(User::class, 'AgentID', 'UserID');
     }
@@ -53,6 +53,10 @@ class Property extends Model
         return $this->hasMany(Appointment::class, 'PropertyID', 'PropertyID');
     }
 
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
+    }
     protected $fillable = [
          'OwnerID',
          'AgentID',

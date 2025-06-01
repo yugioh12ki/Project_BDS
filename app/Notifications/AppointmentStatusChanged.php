@@ -15,15 +15,17 @@ class AppointmentStatusChanged extends Notification
     protected $appointment;
     protected $oldStatus;
     protected $newStatus;
+    protected $by;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(Appointment $appointment, $oldStatus, $newStatus)
+    public function __construct(Appointment $appointment, $oldStatus, $newStatus, $by = null)
     {
         $this->appointment = $appointment;
         $this->oldStatus = $oldStatus;
         $this->newStatus = $newStatus;
+        $this->by = $by;
     }
 
     /**
@@ -42,11 +44,12 @@ class AppointmentStatusChanged extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $subject = 'Cập nhật trạng thái lịch hẹn - ' . $this->appointment->TitleAppoint;
+        $byText = $this->by ? " bởi {$this->by}" : '';
         
         return (new MailMessage)
                     ->subject($subject)
                     ->greeting('Xin chào ' . $notifiable->Name . '!')
-                    ->line('Trạng thái lịch hẹn của bạn đã được cập nhật.')
+                    ->line("Trạng thái lịch hẹn của bạn đã được cập nhật{$byText}.")
                     ->line('**Tiêu đề:** ' . $this->appointment->TitleAppoint)
                     ->line('**Trạng thái cũ:** ' . $this->oldStatus)
                     ->line('**Trạng thái mới:** ' . $this->newStatus)
@@ -63,6 +66,8 @@ class AppointmentStatusChanged extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $byText = $this->by ? " ({$this->by})" : '';
+
         return [
             'appointment_id' => $this->appointment->AppointmentID,
             'title' => $this->appointment->TitleAppoint,
@@ -71,7 +76,8 @@ class AppointmentStatusChanged extends Notification
             'property_title' => $this->appointment->property->Title ?? 'N/A',
             'appointment_date_start' => $this->appointment->AppointmentDateStart,
             'appointment_date_end' => $this->appointment->AppointmentDateEnd,
-            'message' => "Lịch hẹn '{$this->appointment->TitleAppoint}' đã được cập nhật từ '{$this->oldStatus}' thành '{$this->newStatus}'"
+            'by' => $this->by,
+            'message' => "Lịch hẹn '{$this->appointment->TitleAppoint}' đã được cập nhật từ '{$this->oldStatus}' thành '{$this->newStatus}'{$byText}"
         ];
     }
 }

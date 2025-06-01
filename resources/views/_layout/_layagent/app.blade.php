@@ -12,6 +12,9 @@
         'resources/sass/appagent.scss',
         'resources/js/header_agent.js',
         'resources/js/appointments.js',
+        'resources/js/autocomplete.js',
+        'resources/js/appointment-agent.js',
+        'resources/js/notifications-agent.js',
         ])
     <title>@yield('title', 'Người Môi Giới')</title>
 </head>

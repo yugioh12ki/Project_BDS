@@ -26,19 +26,33 @@ class OwnerController extends Controller
      */
     public function dashboard()
     {
-        return view('owners.dashboard');
+        $owner = Auth::user();
+        
+        // Count of properties managed by this agent
+        $propertyCount = Property::where('OwnerID', $owner->UserID)->count();        // Get recent appointments
+        $recentAppointments = Appointment::where('OwnerID', $owner->UserID)
+            ->with(['property', 'cusUser', 'agentUser'])
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->limit(10)
+            ->get();
+
+        $recentProperties = Property::where('OwnerID', $owner->UserID)
+            ->with('agent')
+            ->orderBy('PostedDate', 'desc')
+            ->limit(10)
+            ->get();
+        
+        return view('owners.dashboard', compact('owner', 'propertyCount', 'recentAppointments', 'recentProperties'));
     }
 
     public function listProperty()
     {
         $ownerId = Auth::user()->UserID;
         
-        // Lấy tất cả BĐS của owner hiện tại
         $properties = Property::with(['danhMuc', 'chiTiet', 'images'])
             ->where('OwnerID', $ownerId)
             ->get();
 
-        // Lấy BĐS pending để hiển thị trong modal tạo listing
         $ownerProperties = Property::with(['danhMuc', 'chiTiet', 'images'])
             ->where('OwnerID', $ownerId)
             ->where('Status', 'pending')
@@ -47,7 +61,6 @@ class OwnerController extends Controller
         $categories = DanhMucBDS::all();
         $owners = User::all();
 
-        // Log để debug
         Log::info('Properties count: ' . $properties->count());
         Log::info('Pending properties count: ' . $ownerProperties->count());
 
@@ -59,176 +72,112 @@ class OwnerController extends Controller
         ));
     }
 
-
-    public function createPropertyForm()
-    {
-        $property = null; // Khởi tạo biến property
-        // biến $Owner lấy giá trị là id của người dùng hiện tại
-        $Owner = Auth::user()->UserID;
-        $categories = DanhMucBDS::all();
-        return view('_system.partialview.create_property', compact('property','Owner','categories'));
-    }
-
-    public function createProperty(Request $request)
-    {
-        try {
-            // Validate main property data
-            $validatedProperty = $request->validate([
-                'Title' => 'required|string|max:255',
-                'TypePro' => 'required|in:Sale,Rent',
-                'Description' => 'required|string',
-                'Price' => 'required|numeric|min:0',
-                'Address' => 'required|string|max:255',
-                'Ward' => 'required|string|max:255',
-                'District' => 'required|string|max:255',
-                'Province' => 'required|string|max:255',
-                'PropertyType' => 'required|exists:danhmuc_pro,Protype_ID',
-            ]);
-
-            $property_ID = uniqid('PR');
-            $ownerID = Auth::user()->UserID;
-
-            // Validate property details
-            $validatedDetails = $request->validate([
-                'Levelhouse'   => 'nullable|integer',
-                'Floor'        => 'nullable|integer',
-                'HouseLength'  => 'nullable|integer',
-                'HouseWidth'   => 'nullable|integer',
-                'TotalLength'  => 'nullable|integer',
-                'TotalWidth'   => 'nullable|integer',
-                'Bedroom'      => 'nullable|integer',
-                'Balcony'      => 'nullable|boolean',
-                'Bath_WC'      => 'nullable|integer',
-                'Road'         => 'nullable|integer',
-                'legal'        => 'nullable|string|max:255',
-                'view'         => 'nullable|string',
-                'near'         => 'nullable|string|max:255',
-                'Interior'     => 'nullable|string',
-                'WaterPrice'   => 'nullable|string',
-                'PowerPrice'   => 'nullable|string',
-                'Utilities'    => 'nullable|string',
-            ]);
-
-            // Create new property entry
-            $property = new Property();
-            $property->PropertyID   = $property_ID;
-            $property->Title = $validatedProperty['Title'];
-            $property->TypePro = $validatedProperty['TypePro'];
-            $property->Description = $validatedProperty['Description'];
-            $property->Price = $validatedProperty['Price'];
-            $property->Address = $validatedProperty['Address'];
-            $property->Ward = $validatedProperty['Ward'];
-            $property->District = $validatedProperty['District'];
-            $property->Province = $validatedProperty['Province'];
-            $property->PropertyType = $validatedProperty['PropertyType'];
-            $property->OwnerID = Auth::user()->UserID;
-            $property->AgentID =  null;
-            $property->PostedDate = now();
-            $property->ApprovedBy = null;
-            $property->ApprovedDate = now();
-            $property->Status = 'pending'; // New properties are pending by default
-
-
-            // Save the property to get PropertyID
-            $property->save();
-
-            // Create property details
-            $propertyDetail = new DetailProperty();
-            $propertyDetail->PropertyID = $property_ID;
-            $propertyDetail->Levelhouse   = $request->input('Levelhouse');
-            $propertyDetail->Floor        = $request->input('Floor');
-            $propertyDetail->HouseLength  = $request->input('HouseLength');
-            $propertyDetail->HouseWidth   = $request->input('HouseWidth');
-            $propertyDetail->TotalLength  = $request->input('TotalLength');
-            $propertyDetail->TotalWidth   = $request->input('TotalWidth');
-            $propertyDetail->Bedroom      = $request->input('Bedroom');
-            $propertyDetail->Balcony      = $request->input('Balcony');
-            $propertyDetail->Bath_WC      = $request->input('Bath_WC');
-            $propertyDetail->Road         = $request->input('Road');
-            $propertyDetail->legal        = $request->input('legal');
-            $propertyDetail->view         = $request->input('view');
-            $propertyDetail->near         = $request->input('near');
-            $propertyDetail->Interior     = $request->input('Interior');
-            $propertyDetail->WaterPrice   = $request->input('WaterPrice');
-            $propertyDetail->PowerPrice   = $request->input('PowerPrice');
-            $propertyDetail->Utilities    = $request->input('Utilities');
-
-            $propertyDetail->save();
-
-            if ($request->hasFile('property_images')) {
-                foreach ($request->file('property_images') as $imageFile) {
-                    if ($imageFile->isValid()) {
-                        $img = new Image();
-                        $img->PropertyID = $property_ID;
-                        $img->ImagePath = file_get_contents($imageFile->getRealPath());
-                        $img->Caption = null;
-                        $img->UploadedDate = now();
-                        $img->save();
-                    }
-                }
-            }
-
-            if ($request->hasFile('property_video')) {
-                $videoFile = $request->file('property_video');
-                if ($videoFile->isValid()) {
-                    $video = new Video();
-                    $video->PropertyID = $property_ID;
-                    $video->VideoPath = file_get_contents($videoFile->getRealPath());
-                    $video->Description = null;
-                    $video->UploadedDate = now();
-                    $video->save();
-                }
-            }
-
-            return redirect()->route('owner.property.create')->with('success', 'Bất động sản đã được tạo thành công!');
-        } catch (\Exception $e) {
-            return redirect()->back()->withInput()->withErrors(['error' => 'Lỗi khi tạo bất động sản: ' . $e->getMessage()]);
-        }
-    }
-
-
     public function appointments()
     {
-        $ownerId = Auth::user()->UserID;
+        $owner = Auth::user();
+        $appointments = Appointment::with(['cusUser', 'agentUser', 'property'])
+            ->where('OwnerID', $owner->UserID)
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->get();
+  
+        $properties = Property::where('OwnerID', $owner->UserID)
+            ->select('PropertyID', 'Title', 'Address', 'Ward', 'District')
+            ->get();
 
-        // Lấy danh sách lịch hẹn liên quan đến chủ nhà
-        $appointments = Appointment::where('OwnerID', $ownerId)
-            ->with(['property', 'user_agent', 'cusUser'])
+        $propertyList = [];
+        foreach ($properties as $property) {
+            $propertyList[] = [
+                'id' => $property->PropertyID,
+                'title' => $property->Title,
+                'address' => $property->Address ?? '',
+                'district' => $property->District ?? '',
+                'ward' => $property->Ward ?? '',
+            ];
+        }
+
+        Appointment::where('OwnerID', $owner->UserID)
+            ->where('Status', 'Đang Thực Hiện')
+            ->where('AppointmentDateEnd', '<=', now())
+            ->update(['Status' => 'Hoàn Thành']);
+
+        $appointments = Appointment::with(['cusUser', 'agentUser', 'property'])
+            ->where('OwnerID', $owner->UserID)
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
-        // Phân loại các cuộc hẹn theo trạng thái thực tế trong database
-        $pendingAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == 'Khởi Tạo';
-        });
+        $upcomingAppointments = $appointments->filter(function ($a) {
+            return in_array($a->Status, ['Khởi Tạo', 'Đang Thực Hiện'])
+                && Carbon::parse($a->AppointmentDateStart)->isAfter(now());
+        })->sortBy('AppointmentDateStart');
 
-        $confirmedAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == 'Đang Thực Hiện' || $appointment->Status == 'Hoàn Thành';
-        });
+        return view('owners.appointment.appointments', compact('appointments', 'properties', 'propertyList','upcomingAppointments'));
+    }
 
-        $cancelledAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == 'Hủy Hẹn';
-        });
+    public function updateAppointmentStatus(Request $request, $id)
+    {
+        $appointment = Appointment::with(['cusUser', 'agentUser', 'property', 'ownerUser'])->findOrFail($id);
+        $oldStatus = $appointment->Status;
+        $newStatus = $request->status;
 
-        // Lấy lịch hẹn đã hoàn thành
-        $completedAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status == 'Hoàn Thành';
-        });
+        $request->validate([
+            'status' => 'required|string|in:Đang Thực Hiện,Hủy Hẹn'
+        ]);
 
-        // Lấy lịch hẹn sắp tới (chưa hủy và ngày hẹn >= hôm nay)
-        $upcomingAppointments = $appointments->filter(function($appointment) {
-            return $appointment->Status != 'Hủy Hẹn' && 
-                   \Carbon\Carbon::parse($appointment->AppointmentDateStart)->gte(\Carbon\Carbon::today());
-        });
+        if ($appointment->OwnerID !== Auth::id() || $appointment->Status !== 'Khởi Tạo') {
+            return redirect()->back()->with('error', 'Bạn không có quyền cập nhật lịch hẹn này');
+        }
 
-        return view('owners.appointment.appointments', compact(
-            'appointments',
-            'pendingAppointments',
-            'confirmedAppointments', 
-            'cancelledAppointments',
-            'completedAppointments',
-            'upcomingAppointments'
-        ));
+        $appointment->Status = $newStatus;
+        $appointment->save();
+
+        // Gửi thông báo cho agent (người môi giới)
+        if ($appointment->agentUser) {
+            $appointment->agentUser->notify(
+                new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus, $appointment->ownerUser ? $appointment->ownerUser->Name : null)
+            );
+        }
+
+        // Gửi thông báo cho khách hàng (nếu muốn)
+        if ($appointment->cusUser) {
+            $appointment->cusUser->notify(
+                new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus, $appointment->ownerUser ? $appointment->ownerUser->Name : null)
+            );
+        }
+
+        return redirect()->back()->with('success', 'Cập nhật trạng thái lịch hẹn thành công');
+    }
+
+
+    public function searchProperties(Request $request)
+    {
+        $owner = Auth::user();
+        $searchText = $request->query('term');
+        
+        $property = Property::with('agent')
+            ->where('OwnerID', $owner->UserID)
+            ->where('Title', 'LIKE', "%{$searchText}%")
+            ->first();
+
+        if ($property) {
+            return response()->json([
+                'id' => $property->PropertyID,
+                'title' => $property->Title,
+                'agentName' => $property->agent->Name ?? 'Không xác định'
+            ]);
+        }
+
+        return response()->json(null);
+    }
+
+    public function getRelatedCustomers($propertyId)
+    {
+        $owner = Auth::user();
+        
+        return User::whereHas('appoint_customer', function($query) use ($propertyId) {
+                $query->where('PropertyID', $propertyId);
+            })
+            ->select('UserID', 'Name')
+            ->get();
     }
 
     public function transactions(Request $request)
@@ -537,81 +486,78 @@ class OwnerController extends Controller
         }
     }
 
-    /**
-     * Lấy thông báo cho chủ sở hữu
-     */
     public function getNotifications(Request $request)
     {
         $ownerId = Auth::user()->UserID;
         $notifications = [];
 
-        // Lấy lịch hẹn mới được tạo trong 30 ngày qua
-        $newAppointments = Appointment::with(['property', 'user_agent', 'cusUser'])
+        // Lấy các lịch hẹn với trạng thái cần hiển thị thông báo
+        $recentAppointments = Appointment::with(['property', 'agentUser', 'cusUser'])
             ->where('OwnerID', $ownerId)
-            ->whereIn('Status', ['Khởi Tạo', 'Đang Thực Hiện'])
+            ->whereIn('Status', ['Khởi Tạo', 'Đang Thực Hiện', 'Hủy Hẹn', 'Hoàn Thành']) // tùy bạn cần
             ->whereDate('AppointmentDateStart', '>=', Carbon::now()->subDays(30))
             ->orderBy('AppointmentDateStart', 'desc')
-            ->limit(10)
+            ->limit(20)
             ->get();
 
-        foreach ($newAppointments as $appointment) {
+        foreach ($recentAppointments as $appointment) {
             $appointmentTime = Carbon::parse($appointment->AppointmentDateStart);
+            $statusMsg = '';
+            $title = 'Cập nhật lịch hẹn';
+
+            // CHÚ Ý: Phải kiểm tra null tránh lỗi
+            $agentName = $appointment->agentUser->Name ?? 'Người môi giới';
+            $propertyTitle = $appointment->property->Title ?? '(BĐS)';
+            $customerName = $appointment->cusUser->Name ?? 'Khách hàng';
+
+            switch ($appointment->Status) {
+                case 'Khởi Tạo':
+                    $statusMsg = "Người môi giới {$agentName} đã tạo lịch hẹn cho BĐS: {$propertyTitle}";
+                    $title = 'Lịch hẹn mới';
+                    break;
+                case 'Đang Thực Hiện':
+                    $statusMsg = "Lịch hẹn cho BĐS: {$propertyTitle} đang được thực hiện.";
+                    break;
+                case 'Hủy Hẹn':
+                    $statusMsg = "Lịch hẹn cho BĐS: {$propertyTitle} đã bị hủy.";
+                    $title = 'Lịch hẹn bị hủy';
+                    break;
+                case 'Hoàn Thành':
+                    $statusMsg = "Lịch hẹn cho BĐS: {$propertyTitle} đã hoàn thành.";
+                    $title = 'Lịch hẹn hoàn thành';
+                    break;
+                default:
+                    $statusMsg = "Cập nhật mới cho lịch hẹn BĐS: {$propertyTitle}";
+            }
+
             $notifications[] = [
                 'id' => 'appointment_' . $appointment->AppointmentID,
                 'type' => 'appointment',
-                'title' => 'Lịch hẹn mới',
-                'message' => "Người môi giới {$appointment->user_agent->Name} đã tạo lịch hẹn cho BĐS: {$appointment->property->Title}",
+                'title' => $title,
+                'message' => $statusMsg,
                 'time' => $appointmentTime->diffForHumans(),
                 'url' => route('owner.appointments.index'),
                 'is_read' => false,
                 'data' => [
                     'appointment_id' => $appointment->AppointmentID,
-                    'property_title' => $appointment->property->Title,
-                    'agent_name' => $appointment->user_agent->Name,
-                    'customer_name' => $appointment->cusUser->Name ?? 'Khách hàng',
+                    'property_title' => $propertyTitle,
+                    'agent_name' => $agentName,
+                    'customer_name' => $customerName,
                     'raw_time' => $appointmentTime->timestamp,
                 ]
             ];
         }
 
-        // Lấy giao dịch mới hoàn thành trong 30 ngày qua
-        $completedTransactions = Transaction::with(['property', 'trans_agent'])
-            ->where('OwnerID', $ownerId)
-            ->where('TranStatus', 'Paid')
-            ->whereDate('TransactionDate', '>=', Carbon::now()->subDays(30))
-            ->orderBy('TransactionDate', 'desc')
-            ->limit(10)
-            ->get();
+        // Bạn có thể bổ sung thêm phần giao dịch tương tự như trên nếu muốn.
 
-        foreach ($completedTransactions as $transaction) {
-            $transactionTime = Carbon::parse($transaction->TransactionDate);
-            $notifications[] = [
-                'id' => 'transaction_' . $transaction->TransactionID,
-                'type' => 'transaction',
-                'title' => 'Giao dịch hoàn thành',
-                'message' => "Giao dịch BĐS {$transaction->property->Title} đã hoàn thành với giá trị " . number_format($transaction->TotalPrice) . " VNĐ",
-                'time' => $transactionTime->diffForHumans(),
-                'url' => route('owner.transactions.index'),
-                'is_read' => false,
-                'data' => [
-                    'transaction_id' => $transaction->TransactionID,
-                    'property_title' => $transaction->property->Title,
-                    'amount' => $transaction->TotalPrice,
-                    'agent_name' => $transaction->trans_agent->Name ?? 'Người môi giới',
-                    'raw_time' => $transactionTime->timestamp,
-                ]
-            ];
-        }
-
-        // Sắp xếp thông báo theo thời gian (mới nhất trước)
+        // Sắp xếp tất cả thông báo mới nhất trước
         usort($notifications, function($a, $b) {
-            // Sử dụng dữ liệu gốc để sắp xếp thay vì chuỗi diffForHumans
-            $timeA = isset($a['data']['raw_time']) ? $a['data']['raw_time'] : 0;
-            $timeB = isset($b['data']['raw_time']) ? $b['data']['raw_time'] : 0;
+            $timeA = $a['data']['raw_time'] ?? 0;
+            $timeB = $b['data']['raw_time'] ?? 0;
             return $timeB - $timeA;
         });
 
-        // Giới hạn số lượng thông báo
+        // Giới hạn số lượng thông báo trả về (nếu cần)
         $notifications = array_slice($notifications, 0, 15);
 
         if ($request->ajax()) {
@@ -624,10 +570,8 @@ class OwnerController extends Controller
 
         return $notifications;
     }
+    
 
-    /**
-     * Get appointments by status via AJAX
-     */
     public function getAppointmentsByStatus(Request $request, $status)
     {
         $ownerId = Auth::user()->UserID;
@@ -646,15 +590,11 @@ class OwnerController extends Controller
 
         $dbStatus = $statusMap[$status];
 
-        // Get appointments for this owner's properties with the specified status
-        $appointments = Appointment::with(['property.images', 'user_agent', 'user_customer'])
-            // ->whereHas('property', function ($query) use ($ownerId) {
-            //     $query->where('OwnerID', $ownerId);
-            // })
-            ->where('OwnerID', $ownerId)
-            ->where('Status', $dbStatus)
-            ->orderBy('AppointmentDateStart', 'desc')
-            ->get();
+        $appointments = Appointment::with(['property.images', 'agentUser', 'cusUser'])
+        ->where('OwnerID', $ownerId)
+        ->where('Status', $dbStatus)
+        ->orderBy('AppointmentDateStart', 'desc')
+        ->get();
 
         // Format appointments for AJAX response
         $formattedAppointments = $appointments->map(function ($appointment) {
@@ -668,18 +608,21 @@ class OwnerController extends Controller
                 'property_title' => $appointment->property ? $appointment->property->Title : $appointment->TitleAppoint,
                 'property_address' => $appointment->property ? $appointment->property->Address : 'N/A',
                 'property_image' => $propertyImage,
-                'agent_name' => $appointment->user_agent ? $appointment->user_agent->Name : 'Chưa phân công',
-                'agent_phone' => $appointment->user_agent ? $appointment->user_agent->Phone : '',
-                'agent_initials' => $appointment->user_agent ? strtoupper(substr($appointment->user_agent->Name, 0, 2)) : 'N/A',
-                'customer_name' => $appointment->user_customer ? $appointment->user_customer->Name : 'N/A',
-                'date' => $appointment->AppointmentDateStart ? \Carbon\Carbon::parse($appointment->AppointmentDateStart)->format('d/m/Y') : 'N/A',
-                'start_time' => $appointment->AppointmentDateStart ? \Carbon\Carbon::parse($appointment->AppointmentDateStart)->format('H:i') : 'N/A',
-                'end_time' => $appointment->AppointmentDateEnd ? \Carbon\Carbon::parse($appointment->AppointmentDateEnd)->format('H:i') : 'N/A',
+                'agent_name' => $appointment->agentUser ? $appointment->agentUser->Name : 'Chưa phân công',
+                'agent_phone' => $appointment->agentUser ? $appointment->agentUser->Phone : '',
+                'agent_initials' => $appointment->agentUser ? strtoupper(substr($appointment->agentUser->Name, 0, 2)) : 'N/A',
+                'customer_name' => $appointment->cusUser ? $appointment->cusUser->Name : 'Chưa có thông tin',
+                'customer_phone' => $appointment->cusUser ? $appointment->cusUser->Phone : '',
+                'customer_initials' => $appointment->cusUser ? strtoupper(substr($appointment->cusUser->Name, 0, 2)) : 'N/A',
+                'title' => $appointment->TitleAppoint ?: 'Không có tiêu đề',
+                'description' => $appointment->DescAppoint ?: 'Không có mô tả',
+                'date' => $appointment->AppointmentDateStart ? Carbon::parse($appointment->AppointmentDateStart)->format('d/m/Y') : 'N/A',
+                'end_date' => $appointment->AppointmentDateEnd ? Carbon::parse($appointment->AppointmentDateEnd)->format('d/m/Y') : 'N/A',
+                'start_time' => $appointment->AppointmentDateStart ? Carbon::parse($appointment->AppointmentDateStart)->format('H:i') : 'N/A',
+                'end_time' => $appointment->AppointmentDateEnd ? Carbon::parse($appointment->AppointmentDateEnd)->format('H:i') : 'N/A',
                 'status' => $appointment->Status,
                 'status_badge' => $this->getStatusBadge($appointment->Status),
-                //'data_status' => $status, // Keep original filter status for JS
-                'can_confirm' => $appointment->Status == 'Khởi Tạo',
-                'can_cancel' => $appointment->Status == 'Khởi Tạo'
+
             ];
         });
 
@@ -698,88 +641,18 @@ class OwnerController extends Controller
     {
         switch ($status) {
             case 'Khởi Tạo':
-                return '<span class="badge bg-warning text-dark">Chờ Xác Nhận</span>';
+                return '<span class="badge bg-warning text-dark">Khởi Tạo</span>';
             case 'Đang Thực Hiện':
-                return '<span class="badge bg-info">Đang Thực Hiện</span>';
+                return '<span class="badge bg-success">Đang Thực Hiện</span>';
             case 'Hoàn Thành':
-                return '<span class="badge bg-success">Hoàn Thành</span>';
+                return '<span class="badge bg-info">Hoàn Thành</span>';
             case 'Hủy Hẹn':
-                return '<span class="badge bg-danger">Đã Hủy</span>';
+                return '<span class="badge bg-danger">Hủy Hẹn</span>';
             default:
                 return '<span class="badge bg-secondary">' . $status . '</span>';
         }
     }
 
-    /**
-     * Update appointment status via AJAX
-     */
-    public function updateAppointmentStatus(Request $request)
-    {
-        try {
-            $request->validate([
-                'appointment_id' => 'required|string',
-                'status' => 'required|string|in:Đang Thực Hiện,Hủy Hẹn,Hoàn Thành'
-            ]);
-
-            $appointmentId = $request->appointment_id;
-            $newStatus = $request->status;
-            $ownerId = Auth::user()->UserID;
-
-            // Find the appointment and verify ownership
-            $appointment = Appointment::with('property')
-                ->where('AppointmentID', $appointmentId)
-                ->whereHas('property', function ($query) use ($ownerId) {
-                    $query->where('OwnerID', $ownerId);
-                })
-                ->first();
-
-            if (!$appointment) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Không tìm thấy lịch hẹn hoặc bạn không có quyền cập nhật'
-                ], 404);
-            }
-
-            // Check if status transition is valid
-            $currentStatus = $appointment->Status;
-            if (!$this->isValidStatusTransition($currentStatus, $newStatus)) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Không thể chuyển từ trạng thái "' . $currentStatus . '" sang "' . $newStatus . '"'
-                ], 422);
-            }
-
-            // Update the appointment status
-            $appointment->Status = $newStatus;
-            $appointment->save();
-
-            // Log the status change
-            Log::info("Appointment {$appointmentId} status updated from '{$currentStatus}' to '{$newStatus}' by owner {$ownerId}");
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Cập nhật trạng thái thành công',
-                'appointment' => [
-                    'id' => $appointment->AppointmentID,
-                    'status' => $appointment->Status,
-                    'status_badge' => $this->getStatusBadge($appointment->Status)
-                ]
-            ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Dữ liệu không hợp lệ: ' . implode(', ', $e->validator->errors()->all())
-            ], 422);
-
-        } catch (\Exception $e) {
-            Log::error('Error updating appointment status: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.'
-            ], 500);
-        }
-    }
 
     /**
      * Check if status transition is valid
@@ -796,4 +669,185 @@ class OwnerController extends Controller
         return isset($validTransitions[$currentStatus]) && 
                in_array($newStatus, $validTransitions[$currentStatus]);
     }
+
+    /**
+     * Confirm appointment (Owner confirms agent's appointment)
+     */
+    public function confirmAppointment($id)
+    {
+        try {
+            $appointment = Appointment::findOrFail($id);
+            
+            // Check if this owner can confirm this appointment
+            if ($appointment->OwnerID !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền xác nhận lịch hẹn này'
+                ], 403);
+            }
+
+            // Check if appointment can be confirmed
+            if ($appointment->Status !== 'Khởi Tạo') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lịch hẹn này không thể xác nhận'
+                ], 400);
+            }
+
+            $oldStatus = $appointment->Status;
+            $newStatus = 'Đang Thực Hiện';
+
+            // Update appointment status
+            $appointment->Status = $newStatus;
+            $appointment->save();
+
+            // Send notification to agent
+            if ($appointment->agentUser) {
+                $ownerName = Auth::user()->Name;
+                $appointment->agentUser->notify(
+                    new \App\Notifications\AppointmentStatusChanged(
+                        $appointment, 
+                        $oldStatus, 
+                        $newStatus,
+                        $ownerName
+                    )
+                );
+            }
+
+            // Return success response
+            return response()->json([
+                'success' => true,
+                'message' => 'Lịch hẹn đã được xác nhận thành công',
+                'new_status' => $newStatus
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error confirming appointment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xác nhận lịch hẹn'
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel appointment (Owner cancels agent's appointment)
+     */
+    public function cancelAppointment($id)
+    {
+        try {
+            $appointment = Appointment::findOrFail($id);
+            
+            // Check if this owner can cancel this appointment
+            if ($appointment->OwnerID !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền hủy lịch hẹn này'
+                ], 403);
+            }
+
+            // Check if appointment can be cancelled
+            if (!in_array($appointment->Status, ['Khởi Tạo', 'Đang Thực Hiện'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lịch hẹn này không thể hủy'
+                ], 400);
+            }
+
+            $oldStatus = $appointment->Status;
+            $newStatus = 'Hủy Hẹn';
+
+            // Update appointment status
+            $appointment->Status = $newStatus;
+            $appointment->save();
+
+            // Send notification to agent
+            if ($appointment->agentUser) {
+                $ownerName = Auth::user()->Name;
+                $appointment->agentUser->notify(
+                    new \App\Notifications\AppointmentStatusChanged(
+                        $appointment, 
+                        $oldStatus, 
+                        $newStatus,
+                        $ownerName
+                    )
+                );
+            }
+
+            // Return success response
+            return response()->json([
+                'success' => true,
+                'message' => 'Lịch hẹn đã được hủy thành công',
+                'new_status' => $newStatus
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error cancelling appointment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi hủy lịch hẹn'
+            ], 500);
+        }
+    }
+
+    /**
+     * Finish appointment (Mark as completed)
+     */
+    public function finishAppointment($id)
+    {
+        try {
+            $appointment = Appointment::findOrFail($id);
+            
+            // Check if this owner can finish this appointment
+            if ($appointment->OwnerID !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền hoàn thành lịch hẹn này'
+                ], 403);
+            }
+
+            // Check if appointment can be finished
+            if ($appointment->Status !== 'Đang Thực Hiện') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Chỉ có thể hoàn thành lịch hẹn đang thực hiện'
+                ], 400);
+            }
+
+            $oldStatus = $appointment->Status;
+            $newStatus = 'Hoàn Thành';
+
+            // Update appointment status
+            $appointment->Status = $newStatus;
+            $appointment->save();
+
+            // Send notification to agent
+            if ($appointment->agentUser) {
+                $ownerName = Auth::user()->Name;
+                $appointment->agentUser->notify(
+                    new \App\Notifications\AppointmentStatusChanged(
+                        $appointment, 
+                        $oldStatus, 
+                        $newStatus,
+                        $ownerName
+                    )
+                );
+            }
+
+            // Return success response
+            return response()->json([
+                'success' => true,
+                'message' => 'Lịch hẹn đã được hoàn thành',
+                'new_status' => $newStatus
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error finishing appointment: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi hoàn thành lịch hẹn'
+            ], 500);
+        }
+    }
+
 }

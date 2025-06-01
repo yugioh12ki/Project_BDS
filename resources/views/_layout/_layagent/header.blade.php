@@ -21,12 +21,30 @@
                 <span>19001881</span>
             </a>
         </div>
-        <div class="notification-icon-wrapper">
-            <a href="#" class="notification-icon" aria-label="Thông báo">
+        
+        <div class="notification-icon-wrapper" style="position:relative;">
+            <a href="#" class="notification-icon" aria-label="Thông báo" style="color:#4A4A4A; font-size:1.2rem; display:flex; padding:5px;" id="notificationBell">
                 <i class="bi bi-bell"></i>
-                <span class="notification-count" style="display: none;">0</span>
+                <span class="notification-count" style="display: none; position:absolute; top:-5px; right:-5px; background:#E74C3C; color:white; border-radius:50%; padding:1px 5px; font-size:0.7rem; font-weight:bold;" id="notificationCount">0</span>
             </a>
+            
+            <!-- Notification Popup -->
+            <div class="notification-dropdown" id="notificationDropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 350px; max-height: 400px; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; overflow: hidden;">
+                <div class="notification-header" style="padding: 15px; border-bottom: 1px solid #eee; background: #f8f9fa;">
+                    <h6 style="margin: 0; font-weight: 600; color: #333;">Thông báo</h6>
+                </div>
+                <div class="notification-body" id="notificationList" style="max-height: 300px; overflow-y: auto;">
+                    <div class="text-center py-4" id="notificationLoading">
+                        <i class="bi bi-hourglass-split" style="font-size: 1.5rem; color: #6c757d;"></i>
+                        <p style="margin: 10px 0 0 0; color: #6c757d;">Đang tải...</p>
+                    </div>
+                </div>
+                <div class="notification-footer" style="padding: 10px 15px; border-top: 1px solid #eee; background: #f8f9fa; text-align: center;">
+                    <a href="{{ route('agent.appointments') }}" style="color: #007bff; text-decoration: none; font-size: 0.9rem;">Xem tất cả</a>
+                </div>
+            </div>
         </div>
+
         @if(Auth::check() && Auth::user()->Role === 'Agent')
             <button class="user-greeting dropdown-toggle" type="button" id="dropdownUserMenu" data-bs-toggle="dropdown" aria-expanded="false">
                 Xin chào, {{ Auth::user()->Name }}

@@ -636,6 +636,9 @@ $(document).ready(function() {
     // Form validation and submission is now handled in create-appointment-modal.blade.php
     // via the #submitAppointmentBtn click handler to ensure only ONE submission occurs.
     
+    // IMPORTANT: The updateAppointmentStatus function is handled in appointment-filters-owner.js
+    // to avoid conflicts between different appointment management systems.
+    
     // --- Property search and filtering ---
     $propertyOwnerSearch.on('input', function() {
         const searchTerm = $(this).val().toLowerCase().trim();

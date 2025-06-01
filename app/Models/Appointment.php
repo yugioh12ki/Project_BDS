@@ -68,56 +68,24 @@ class Appointment extends Model
                      ->where('Status', '!=', self::STATUS_CANCELLED);
     }
 
-    //Mối quan hệ với bảng 'user'
-    public function user_owner()
-    {
-        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
-    }
-    public function user_agent()
+    public function agentUser()
     {
         return $this->belongsTo(User::class, 'AgentID', 'UserID');
     }
 
-    public function user_customer()
+    public function ownerUser()
     {
-        return $this->belongsTo(User::class, 'CustomerID', 'UserID');
+        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }
 
-    //Mối quan hệ với bảng 'property'
+    public function cusUser()
+    {
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
+    }
 
     public function property()
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
     }
 
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'UserID', 'UserID');
-    }
-
-    public function agent()
-    {
-        return $this->belongsTo(User::class, 'AgentID', 'UserID');
-    }
-
-    public function customer()
-    {
-        return $this->belongsTo(User::class, 'CustomerID', 'UserID');
-    }
-
-    // Quan hệ với người dùng (Chủ nhà)
-    public function ownerUser()
-    {
-        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
-    }
-
-    // Quan hệ với người dùng (Khách xem nhà)
-    public function cusUser()
-    {
-        return $this->belongsTo(User::class, 'CusID', 'UserID');
-    }
-
-    public function khachHang() {
-        return $this->belongsTo(User::class, 'CusID', 'UserID');
-    }
 }

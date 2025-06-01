@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class AgentController extends Controller
 {    /**
@@ -27,13 +28,13 @@ class AgentController extends Controller
         $recentAppointments = Appointment::where('AgentID', $agent->UserID)
             ->with(['property', 'cusUser', 'ownerUser'])
             ->orderBy('AppointmentDateStart', 'desc')
-            ->limit(5)
+            ->limit(10)
             ->get();
           // Get recent properties assigned to this agent
         $recentProperties = Property::where('AgentID', $agent->UserID)
             ->with('owner')
             ->orderBy('PostedDate', 'desc')
-            ->limit(5)
+            ->limit(10)
             ->get();
         
         return view('agents.dashboard', compact('agent', 'propertyCount', 'recentAppointments', 'recentProperties'));
@@ -67,6 +68,8 @@ class AgentController extends Controller
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
 
+        $owners = User::where('Role', 'Owner')->get();
+        $customers = User::where('Role', 'Customer')->get();
         // Lấy danh sách properties với eager loading owner - đảm bảo load relationship
         $properties = Property::with(['owner' => function($query) {
                 $query->select('UserID', 'Name', 'Phone', 'Email');
@@ -91,7 +94,7 @@ class AgentController extends Controller
         }
 
         // Truyền cả 2 biến vào view
-        return view('agents.appointments', compact('appointments', 'properties', 'propertyList'));
+        return view('agents.appointments', compact('appointments','owners', 'customers', 'properties', 'propertyList'));
     }
     
     /**
@@ -196,25 +199,16 @@ class AgentController extends Controller
 
     public function searchProperties(Request $request)
     {
-        $agent = Auth::user();
-        $searchText = $request->query('term');
-        
-        // Tìm chính xác property theo title
-        $property = Property::with('owner')
-            ->where('AgentID', $agent->UserID)
-            ->where('Title', 'LIKE', "%{$searchText}%")
-            ->first();
+        $ownerId = $request->query('owner_id');
+        if (!$ownerId) return response()->json([]);
 
-        if ($property) {
-            return response()->json([
-                'id' => $property->PropertyID,
-                'title' => $property->Title,
-                'ownerName' => $property->owner->Name ?? 'Không xác định'
-            ]);
-        }
+        $properties = Property::where('OwnerID', $ownerId)
+            ->whereIn('Status', ['active', 'Active', 'approved', 'Approved'])
+            ->get(['PropertyID as id', 'Title as title']);
 
-        return response()->json(null);
+        return response()->json($properties);
     }
+
 
     public function getRelatedCustomers($propertyId)
     {
@@ -238,8 +232,7 @@ class AgentController extends Controller
      * @param Request $request
      * @param int $id
      * @return \Illuminate\Http\RedirectResponse
-     */
-    public function updateAppointmentStatus(Request $request, $id)
+     */    public function updateAppointmentStatus(Request $request, $id)
     {
         $request->validate([
             'status' => 'required|string|in:Thành công,Đã hủy,Hoàn Thành,Chờ xử lý'
@@ -253,21 +246,31 @@ class AgentController extends Controller
         }
 
         $oldStatus = $appointment->Status;
-        $newStatus = $request->status;
+        $requestStatus = $request->status;
+        
+        // Map agent status to database status
+        $statusMap = [
+            'Thành công' => Appointment::STATUS_ACTIVE,    // 'Đang Thực Hiện'
+            'Đã hủy' => Appointment::STATUS_CANCELLED,     // 'Hủy Hẹn'
+            'Hoàn Thành' => Appointment::STATUS_COMPLETED, // 'Hoàn Thành'
+            'Chờ xử lý' => Appointment::STATUS_PENDING     // 'Khởi Tạo'
+        ];
+        
+        $newStatus = $statusMap[$requestStatus] ?? $requestStatus;
         
         // Only update if status actually changed
         if ($oldStatus !== $newStatus) {
             $appointment->Status = $newStatus;
-            $appointment->save();
-
-            // Send notifications to customer and owner
+            $appointment->save();            // Send notifications to customer and owner
             try {
+                $agentName = Auth::user()->Name ?? 'Người môi giới';
+                
                 if ($appointment->cusUser) {
-                    $appointment->cusUser->notify(new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus));
+                    $appointment->cusUser->notify(new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus, $agentName));
                 }
                 
                 if ($appointment->ownerUser) {
-                    $appointment->ownerUser->notify(new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus));
+                    $appointment->ownerUser->notify(new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus, $agentName));
                 }
                 
                 Log::info('Appointment status updated and notifications sent', [
@@ -291,21 +294,79 @@ class AgentController extends Controller
         return redirect()->back()->with('info', 'Trạng thái lịch hẹn không thay đổi');
     }
     
-    public function searchCustomers(Request $request)
+    public function getNotifications(Request $request)
     {
-        $term = $request->get('term');
-        $propertyId = $request->get('propertyId');
+        $agentId = Auth::user()->UserID;
+        $notifications = [];
 
-        $customers = Appointment::where('PropertyID', $propertyId)
-            ->join('users', 'appointments.CusID', '=', 'users.UserID')
-            ->where('users.Name', 'LIKE', "%{$term}%")
-            ->select('users.UserID as id', 'users.Name as name', 'users.Phone as phone')
-            ->distinct()
+        $appointments = Appointment::with(['property', 'ownerUser', 'cusUser'])
+            ->where('AgentID', $agentId)
+            ->whereIn('Status', ['Đang Thực Hiện', 'Hủy Hẹn'])
+            ->whereDate('AppointmentDateStart', '>=', Carbon::now()->subDays(30))
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->limit(15)
             ->get();
 
-        return response()->json([
-            'customers' => $customers
-        ]);
+        foreach ($appointments as $appointment) {
+            $appointmentTime = Carbon::parse($appointment->AppointmentDateStart);
+
+            if ($appointment->Status === 'Đang Thực Hiện') {
+                $message = "Chủ sở hữu {$appointment->ownerUser->Name} đã XÁC NHẬN lịch hẹn cho BĐS: {$appointment->property->Title}";
+                $title = 'Lịch hẹn được xác nhận';
+            } else { 
+                $message = "Chủ sở hữu {$appointment->ownerUser->Name} đã HỦY lịch hẹn cho BĐS: {$appointment->property->Title}";
+                $title = 'Lịch hẹn bị hủy';
+            }
+
+            $notifications[] = [
+                'id' => 'appointment_' . $appointment->AppointmentID,
+                'type' => 'appointment',
+                'title' => $title,
+                'message' => $message,
+                'time' => $appointmentTime->diffForHumans(),
+                'url' => route('agent.appointments'),
+                'is_read' => false,
+                'data' => [
+                    'appointment_id' => $appointment->AppointmentID,
+                    'property_title' => $appointment->property->Title,
+                    'owner_name' => $appointment->ownerUser->Name,
+                    'customer_name' => $appointment->cusUser->Name ?? 'Khách hàng',
+                    'status' => $appointment->Status,
+                    'raw_time' => $appointmentTime->timestamp,
+                ]
+            ];
+        }
+
+        usort($notifications, function($a, $b) {
+            $timeA = $a['data']['raw_time'] ?? 0;
+            $timeB = $b['data']['raw_time'] ?? 0;
+            return $timeB - $timeA;
+        });
+
+        $notifications = array_slice($notifications, 0, 15);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'notifications' => $notifications,
+                'unread_count' => count($notifications)
+            ]);
+        }
+
+        return $notifications;
+    }
+
+    public function searchCustomers(Request $request)
+    {
+        $searchTerm = $request->query('term');
+        $customers = User::where('Role', 'Customer')
+            ->where(function ($q) use ($searchTerm) {
+                $q->where('Name', 'LIKE', '%' . $searchTerm . '%')
+                ->orWhere('Phone', 'LIKE', '%' . $searchTerm . '%');
+            })
+            ->limit(10)
+            ->get(['UserID as id', 'Name as name', 'Phone as phone']);
+        return response()->json($customers);
     }
     
     /**
@@ -314,298 +375,135 @@ class AgentController extends Controller
     public function searchOwners(Request $request)
     {
         $searchTerm = $request->query('term');
-        $getTop = $request->query('top', false);
-        $limit = $request->query('limit', 5);
-        
-        // Xử lý khi yêu cầu top owners
-        if ($getTop) {
-            $owners = User::where('Role', 'Owner')
-                ->orderBy('Name', 'asc')
-                ->take($limit)
-                ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
-            return response()->json(['owners' => $owners]);
-        }
-        
         if (!$searchTerm || strlen($searchTerm) < 2) {
             return response()->json(['owners' => []]);
         }
-        
-        // Tìm kiếm chủ sở hữu theo tên hoặc email
         $owners = User::where('Role', 'Owner')
-            ->where(function ($query) use ($searchTerm) {
-                $query->where('Name', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('Email', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('Phone', 'like', '%' . $searchTerm . '%');
-            })
-            ->take(10)
-            ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
-        
+            ->where('Name', 'like', '%' . $searchTerm . '%')
+            ->limit(10)
+            ->get(['UserID as id', 'Name as name', 'Phone as phone']);
         return response()->json(['owners' => $owners]);
     }
     
-    /**
-     * Lấy danh sách bất động sản của một chủ sở hữu
-     */
-    public function getOwnerProperties(Request $request)
+    
+
+    public function getAppointmentsByStatus(Request $request, $status)
     {
-        try {
-            $agent = Auth::user();
-            $ownerId = $request->query('ownerId');
-            
-            // Log đầu vào để debug
-            Log::info('getOwnerProperties called', [
-                'agent_id' => $agent ? $agent->UserID : null,
-                'owner_id' => $ownerId,
-                'request_params' => $request->all()
-            ]);
-            
-            if (!$ownerId) {
-                Log::warning('Missing ownerId parameter');
-                return response()->json(['error' => 'OwnerID is required'], 400);
-            }
-            
-            // Tìm chủ sở hữu
-            $owner = User::where('UserID', $ownerId)
-                         ->where('Role', 'Owner')
-                         ->first();
-            
-            if (!$owner) {
-                return response()->json(['error' => 'Không tìm thấy chủ sở hữu'], 404);
-            }
-            
-            // Debug để kiểm tra ID chủ sở hữu
-            Log::debug('Finding properties for owner', ['ownerId' => $ownerId]);
-              // Sử dụng Eloquent Model để truy vấn - fix status filter to include more possible values
-            $properties = \App\Models\Property::where('OwnerID', $ownerId)
-                            ->whereIn('Status', ['active', 'Active', 'approved', 'Approved', 'pending', 'Pending']) // Check multiple possible status values
-                            ->with('danhMuc') // Eager loading quan hệ
-                            ->get();
-            
-            // Ghi log số lượng bất động sản tìm thấy
-            Log::debug('Raw Properties Found', [
-                'ownerID' => $ownerId,
-                'properties_count' => $properties->count(),
-                'first_property' => $properties->first(),
-                'all_property_ids' => $properties->pluck('PropertyID')->toArray(),                'filter_conditions' => [
-                    'OwnerID' => $ownerId,
-                    'Status' => ['active', 'Active', 'approved', 'Approved', 'pending', 'Pending']
-                ]
-            ]);
-        
-        // Định dạng dữ liệu trả về cho frontend
-        $formattedProperties = $properties->map(function($property) {
-            // Với eager loading, danh mục đã được nạp sẵn
-            $category = $property->danhMuc;
-            
-            if (!$category && !empty($property->PropertyType)) {
-                try {
-                    // Nếu chưa có danh mục, thử lấy trực tiếp
-                    $category = \App\Models\DanhMucBDS::find($property->PropertyType);
-                    if (!$category) {
-                        Log::warning("Không tìm thấy danh mục cho PropertyType: {$property->PropertyType}");
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Lỗi khi truy vấn danh mục bất động sản", [
-                        'PropertyType' => $property->PropertyType,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
-            
-            return [
-                'id' => $property->PropertyID,
-                'title' => $property->Title ?? 'Không có tiêu đề',
-                'address' => $property->Address,
-                'district' => $property->District,
-                'ward' => $property->Ward,
-                'type' => $property->TypePro,
-                'price' => $property->Price,
-                'formattedPrice' => isset($property->Price) 
-                    ? (($property->TypePro == 'Rent') 
-                        ? number_format($property->Price) . ' VNĐ/tháng'
-                        : number_format($property->Price) . ' VNĐ')
-                    : '',
-                'fullAddress' => implode(', ', array_filter([$property->Address, $property->Ward, $property->District])),
-                'ownerId' => $property->OwnerID,
-                'categoryId' => $property->PropertyType,
-                'categoryName' => $category ? $category->ten_pro : null,
-                'status' => $property->Status
+        $agentId = Auth::user()->UserID;
+
+        // Map filter status to database status
+        $statusMap = [
+            'khoitao' => 'Khởi Tạo',
+            'dangthuchien' => 'Đang Thực Hiện', 
+            'hoanthanh' => 'Hoàn Thành',
+            'huyhen' => 'Hủy Hẹn'
+        ];
+
+        if (!isset($statusMap[$status])) {
+            return response()->json(['error' => 'Invalid status'], 400);
+        }
+
+        $dbStatus = $statusMap[$status];
+
+        $appointments = Appointment::with(['property.images', 'ownerUser', 'cusUser'])
+            ->where('AgentID', $agentId)
+            ->where('Status', $dbStatus)
+            ->orderBy('AppointmentDateStart', 'desc')
+            ->get();
+
+        $formattedAppointments = $appointments->map(function ($appointment) {
+            $propertyImage = null;
+            if ($appointment->property && $appointment->property->images->first()) {
+                $propertyImage = 'data:image/jpeg;base64,' . base64_encode($appointment->property->images->first()->ImagePath);
+            }            return [
+                'id' => $appointment->AppointmentID,
+                'property_title' => $appointment->property ? $appointment->property->Title : $appointment->TitleAppoint,
+                'property_address' => $appointment->property ? $appointment->property->Address : 'N/A',
+                'property_image' => $propertyImage,
+                'owner_name' => $appointment->ownerUser ? $appointment->ownerUser->Name : 'N/A',
+                'owner_phone' => $appointment->ownerUser ? $appointment->ownerUser->Phone : '',
+                'owner_initials' => $appointment->ownerUser ? strtoupper(substr($appointment->ownerUser->Name, 0, 2)) : 'N/A',
+                'customer_name' => $appointment->cusUser ? $appointment->cusUser->Name : 'N/A',
+                'customer_phone' => $appointment->cusUser ? $appointment->cusUser->Phone : '',
+                'customer_initials' => $appointment->cusUser ? strtoupper(substr($appointment->cusUser->Name, 0, 2)) : 'N/A',
+                'title' => $appointment->TitleAppoint,
+                'description' => $appointment->DescAppoint,
+                'date' => $appointment->AppointmentDateStart ? Carbon::parse($appointment->AppointmentDateStart)->format('d/m/Y') : 'N/A',
+                'end_date' => $appointment->AppointmentDateEnd ? Carbon::parse($appointment->AppointmentDateEnd)->format('d/m/Y') : 'N/A',
+                'start_time' => $appointment->AppointmentDateStart ? Carbon::parse($appointment->AppointmentDateStart)->format('H:i') : 'N/A',
+                'end_time' => $appointment->AppointmentDateEnd ? Carbon::parse($appointment->AppointmentDateEnd)->format('H:i') : 'N/A',
+                'status' => $appointment->Status,
+                'status_badge' => $this->getStatusBadge($appointment->Status),
+                'can_update' => true, // Agent can always update
             ];
         });
-        
+
         return response()->json([
-            'owner' => [
-                'id' => $owner->UserID,
-                'name' => $owner->Name,
-                'phone' => $owner->Phone,
-                'email' => $owner->Email
-            ],
-            'properties' => $formattedProperties
+            'success' => true,
+            'appointments' => $formattedAppointments,
+            'count' => $appointments->count(),
+            'status' => $status
         ]);
-        
-        } catch (\Exception $e) {
-            // Log lỗi và trả về thông báo lỗi
-            Log::error('Error in getOwnerProperties', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
-            ]);
-            
-            return response()->json([
-                'error' => 'Không thể tải thông tin bất động sản: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
     /**
-     * Tìm kiếm khách hàng theo tên hoặc email để tạo appointment
+     * Get status badge HTML
      */
-    public function searchCustomersForAppointment(Request $request)
+    private function getStatusBadge($status)
     {
-        $searchTerm = $request->query('term');
-        $getTop = $request->query('top', false);
-        $limit = $request->query('limit', 5);
-        
-        // Xử lý khi yêu cầu top customers
-        if ($getTop) {
-            $customers = User::where('Role', 'Customer')
-                ->orderBy('Name', 'asc')
-                ->take($limit)
-                ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
-            return response()->json(['customers' => $customers]);
+        switch ($status) {
+            case 'Khởi Tạo':
+                return '<span class="badge bg-warning text-dark">Khởi Tạo</span>';
+            case 'Đang Thực Hiện':
+                return '<span class="badge bg-success">Đang Thực Hiện</span>';
+            case 'Hoàn Thành':
+                return '<span class="badge bg-info">Hoàn Thành</span>';
+            case 'Hủy Hẹn':
+                return '<span class="badge bg-danger">Hủy Hẹn</span>';
+            default:
+                return '<span class="badge bg-secondary">' . $status . '</span>';
         }
-        
-        if (!$searchTerm || strlen($searchTerm) < 2) {
-            return response()->json(['customers' => []]);
-        }
-        
-        // Tìm kiếm khách hàng theo tên hoặc email
-        $customers = User::where('Role', 'Customer')
-            ->where(function ($query) use ($searchTerm) {
-                $query->where('Name', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('Email', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('Phone', 'like', '%' . $searchTerm . '%');
-            })
-            ->take(10)
-            ->get(['UserID as id', 'Name as name', 'Email as email', 'Phone as phone']);
-        
-        return response()->json(['customers' => $customers]);
     }
 
-    /**
-     * Lấy danh sách bất động sản của một chủ sở hữu thông qua URL REST API
-     */
-    public function getOwnerPropertiesByUrl($ownerId)
+    public function finishAppointment($id)
     {
-        try {
-            $agent = Auth::user();
-            
-            // Log đầu vào để debug
-            Log::info('getOwnerPropertiesByUrl called', [
-                'agent_id' => $agent ? $agent->UserID : null,
-                'owner_id' => $ownerId,
-                'request_method' => request()->method(),
-                'request_headers' => request()->headers->all()
-            ]);
-            
-            if (!$ownerId) {
-                Log::warning('Missing ownerId parameter');
-                return response()->json(['error' => 'OwnerID is required'], 400);
-            }
-            
-            // Tìm chủ sở hữu
-            $owner = User::where('UserID', $ownerId)
-                         ->where('Role', 'Owner')
-                         ->first();
-            
-            if (!$owner) {
-                Log::warning('Owner not found', ['ownerId' => $ownerId]);
-                return response()->json(['error' => 'Không tìm thấy chủ sở hữu'], 404);
-            }
-            
-            Log::info('Owner found', [
-                'owner_id' => $owner->UserID,
-                'owner_name' => $owner->Name
-            ]);
-            
-            // Debug để kiểm tra ID chủ sở hữu
-            Log::debug('Finding properties for owner', ['ownerId' => $ownerId]);
-            
-            // Sử dụng Eloquent Model để truy vấn - fix status filter to include more possible values
-            $properties = \App\Models\Property::where('OwnerID', $ownerId)
-                            ->whereIn('Status', ['active', 'Active', 'approved', 'Approved', 'pending', 'Pending']) // Check multiple possible status values
-                            ->with('danhMuc') // Eager loading quan hệ
-                            ->get();
-            
-            // Ghi log số lượng bất động sản tìm thấy
-            Log::debug('Raw Properties Found (REST API)', [
-                'ownerID' => $ownerId,
-                'properties_count' => $properties->count(),
-                'first_property' => $properties->first(),
-                'all_property_ids' => $properties->pluck('PropertyID')->toArray()
-            ]);
-        
-            // Định dạng dữ liệu trả về cho frontend
-            $formattedProperties = $properties->map(function($property) {
-                // Với eager loading, danh mục đã được nạp sẵn
-                $category = $property->danhMuc;
-                
-                if (!$category && !empty($property->PropertyType)) {
-                    try {
-                        // Nếu chưa có danh mục, thử lấy trực tiếp
-                        $category = \App\Models\DanhMucBDS::find($property->PropertyType);
-                        if (!$category) {
-                            Log::warning("Không tìm thấy danh mục cho PropertyType: {$property->PropertyType}");
-                        }
-                    } catch (\Exception $e) {
-                        Log::error("Lỗi khi truy vấn danh mục bất động sản", [
-                            'PropertyType' => $property->PropertyType,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                }
-                
-                return [
-                    'id' => $property->PropertyID,
-                    'title' => $property->Title ?? 'Không có tiêu đề',
-                    'address' => $property->Address,
-                    'district' => $property->District,
-                    'ward' => $property->Ward,
-                    'type' => $property->TypePro,
-                    'price' => $property->Price,
-                    'formattedPrice' => isset($property->Price) 
-                        ? (($property->TypePro == 'Rent') 
-                            ? number_format($property->Price) . ' VNĐ/tháng'
-                            : number_format($property->Price) . ' VNĐ')
-                        : '',
-                    'fullAddress' => implode(', ', array_filter([$property->Address, $property->Ward, $property->District])),
-                    'ownerId' => $property->OwnerID,
-                    'categoryId' => $property->PropertyType,
-                    'categoryName' => $category ? $category->ten_pro : null,
-                    'status' => $property->Status
-                ];
-            });
-            
-            return response()->json([
-                'owner' => [
-                    'id' => $owner->UserID,
-                    'name' => $owner->Name,
-                    'phone' => $owner->Phone,
-                    'email' => $owner->Email
-                ],
-                'properties' => $formattedProperties
-            ]);
-            
-        } catch (\Exception $e) {
-            // Log lỗi và trả về thông báo lỗi
-            Log::error('Error in getOwnerPropertiesByUrl', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'error' => 'Không thể tải thông tin bất động sản: ' . $e->getMessage()
-            ], 500);
+        $agent = Auth::user();
+        $appointment = Appointment::with('ownerUser', 'cusUser')->findOrFail($id);
+
+        if (
+            $appointment->AgentID != $agent->UserID
+            || $appointment->Status !== 'Đang Thực Hiện'
+            || Carbon::now()->lt(Carbon::parse($appointment->AppointmentDateEnd))
+        ) {
+            return redirect()->back()->with('error', 'Bạn không thể hoàn thành lịch hẹn này.');
         }
+
+        $oldStatus = $appointment->Status;
+        $appointment->Status = 'Hoàn Thành';
+        $appointment->save();
+
+        if ($appointment->ownerUser) {
+            $appointment->ownerUser->notify(
+                new \App\Notifications\AppointmentStatusChanged(
+                    $appointment,
+                    $oldStatus,
+                    'Hoàn Thành',
+                    $agent->Name 
+                )
+            );
+        }
+
+        if ($appointment->cusUser) {
+            $appointment->cusUser->notify(
+                new \App\Notifications\AppointmentStatusChanged(
+                    $appointment,
+                    $oldStatus,
+                    'Hoàn Thành',
+                    $agent->Name
+                )
+            );
+        }
+
+        return redirect()->back()->with('success', 'Lịch hẹn đã hoàn thành!');
     }
 }

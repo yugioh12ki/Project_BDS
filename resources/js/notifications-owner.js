@@ -49,7 +49,7 @@ class NotificationManager {
         dropdown.style.display = 'none';
     }    async loadNotifications() {
         try {
-            const response = await fetch('/owner/notifications', {
+            const response = await fetch('/owner/notifications-owner', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
