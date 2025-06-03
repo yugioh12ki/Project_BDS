@@ -2,7 +2,7 @@
 
 @section('title', 'Người Môi Giới')
 
-@section('content')
+@section('dashboard')
 <div class="container-fluid py-4">
     <h1 class="h3 mb-2">Bảng điều khiển</h1>
     <p class="text-muted">Chào mừng trở lại, {{ auth()->user()->name ?? 'Nguyễn Văn A' }}</p>

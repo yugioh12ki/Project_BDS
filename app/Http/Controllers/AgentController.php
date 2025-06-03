@@ -7,6 +7,7 @@ use App\Models\Property;
 use App\Models\profile_agent;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Models\Transaction;
 use App\Models\DetailProperty;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,20 +40,24 @@ class AgentController extends Controller
         
         return view('agents.dashboard', compact('agent', 'propertyCount', 'recentAppointments', 'recentProperties'));
     }
-    
-    /**
+      /**
      * Display listings managed by this agent
      */
     public function brokers()
     {
         $agent = Auth::user();
-    
-        $properties = Property::where('AgentID', $agent->UserID)
+        
+        // Lấy danh sách properties được phân công cho agent này với status = 'active'
+        $properties = Property::with(['danhMuc', 'owner'])
+            ->where('AgentID', $agent->UserID)
             ->where('Status', 'active')
             ->orderBy('PostedDate', 'desc')
             ->get();
+        
+        // Nhóm properties theo District để hiển thị theo quận/huyện
+        $propertiesByDistrict = $properties->groupBy('District');
 
-        return view('agents.brokers', compact('properties'));
+        return view('agents.brokers', compact('properties', 'propertiesByDistrict', 'agent'));
     }
     
     /**
@@ -223,7 +228,9 @@ class AgentController extends Controller
 
     public function transactions()
     {
-        // Implement transactions view
+        $transactions = Transaction::all();
+
+        return view('agents.transactions', compact('transactions'));
     }
 
     /**

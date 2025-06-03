@@ -14,6 +14,7 @@
         'resources/js/appointments.js',
         'resources/js/autocomplete.js',
         'resources/js/appointment-agent.js',
+        'resources/js/property-district.js',
         'resources/js/notifications-agent.js',
         ])
     <title>@yield('title', 'Người Môi Giới')</title>
@@ -25,9 +26,11 @@
 <body>
     <!-- Nội dung chính -->
     <div class="content-area">
-        @yield('content')
+        @yield('dashboard')
+        @yield('profile-agent')
         @yield('brokers')
         @yield('appointments')
+        @yield('transactions')
     </div>
     
     <!-- Footer -->

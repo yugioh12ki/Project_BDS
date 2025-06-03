@@ -153,6 +153,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/appointments/create', [AgentController::class, 'createAppointment'])->name('appointments.create');
         Route::put('/appointments/{id}/status', [AgentController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
         Route::get('/transactions', [AgentController::class, 'transactions'])->name('transactions');
+        // Route::get('/transactions/create', [AgentController::class, 'create'])->name('transactions.create');
         Route::get('/properties/{id}/customers', [AgentController::class, 'getRelatedCustomers'])->name('properties.customers');
         Route::get('/search-owners', [AgentController::class, 'searchOwners'])->name('search.owners');
         Route::get('/search-customers', [AgentController::class, 'searchCustomers'])->name('search.customers');

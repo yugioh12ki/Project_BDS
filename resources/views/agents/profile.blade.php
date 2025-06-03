@@ -2,7 +2,7 @@
 
 @section('title', 'Hồ sơ Agent')
 
-@section('content')
+@section('profile-agent')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
