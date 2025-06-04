@@ -19,17 +19,15 @@ class Transaction extends Model
     protected $keyType = 'string'; // Nếu khóa chính là chuỗi
 
     protected $fillable = [
+        'TransactionID',
         'PropertyID',
-        'OwnerID',
-        'CustomerID',
         'AgentID',
-        'TransactionType',
-        'Amount',
-        'Commission',
+        'OwnerID',
+        'CusID',
+        'TotalPrice',
         'TransactionDate',
-        'Status',
-        'Description',
-        'PaymentMethod'
+        'TransactionType',
+        'TranStatus'
     ];
 
     public function detailTransaction()
@@ -68,7 +66,7 @@ class Transaction extends Model
      */
     public function trans_cus()
     {
-        return $this->belongsTo(User::class, 'CustomerID', 'UserID');
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
     }
 
     /**

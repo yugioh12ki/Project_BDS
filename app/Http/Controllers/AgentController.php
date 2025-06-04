@@ -224,11 +224,17 @@ class AgentController extends Controller
             })
             ->select('UserID', 'Name')
             ->get();
-    }
-
-    public function transactions()
+    }    public function index()
     {
-        $transactions = Transaction::all();
+        $agent = Auth::user();
+        
+        // Get transactions related to agent's properties
+        $transactions = Transaction::with(['property', 'trans_cus', 'trans_owner'])
+            ->whereHas('property', function($query) use ($agent) {
+                $query->where('AgentID', $agent->UserID);
+            })
+            ->orderBy('TransactionDate', 'desc')
+            ->paginate(10);
 
         return view('agents.transactions', compact('transactions'));
     }
@@ -512,5 +518,316 @@ class AgentController extends Controller
         }
 
         return redirect()->back()->with('success', 'Lịch hẹn đã hoàn thành!');
+    }
+
+    /**
+     * Display property details including images and map
+     * @param string $id PropertyID
+     * @return \Illuminate\View\View
+     */
+    public function propertyDetails($id)
+    {
+        $agent = Auth::user();
+        
+        // Get property details with eager loading for images and details
+        $property = Property::with([
+            'danhMuc', 
+            'owner', 
+            'chiTiet',
+            'images'
+        ])
+        ->where('PropertyID', $id)
+        ->where('AgentID', $agent->UserID) // Ensure agent can only see their assigned properties
+        ->firstOrFail();
+        
+        // Format address for Google Maps
+        $mapAddress = urlencode("{$property->Address}, {$property->Ward}, {$property->District}, {$property->Province}");
+        
+        return view('agents.property-detail-modal', compact('property', 'agent', 'mapAddress'));
+    }
+
+    /**
+     * Get property details for AJAX modal
+     * @param string $id PropertyID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPropertyDetails($id)
+    {
+        try {
+            // Get property details with all necessary relationships
+            $property = Property::with([
+                'danhMuc', 
+                'owner', 
+                'chiTiet',
+                'images'
+            ])
+            ->where('PropertyID', $id)
+            ->where('Status', 'active')
+            ->first();
+            
+            if (!$property) {
+                return response()->json(['error' => 'Không tìm thấy bất động sản'], 404);
+            }
+            
+            // Get property image
+            $imageUrl = null;
+            $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
+            $firstImage = $property->images->first();
+            
+            if ($thumbnailImage) {
+                $imageUrl = $thumbnailImage->ImageURL ?: ($thumbnailImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($thumbnailImage->ImagePath) : null);
+            } elseif ($firstImage) {
+                $imageUrl = $firstImage->ImageURL ?: ($firstImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($firstImage->ImagePath) : null);
+            }            // Format property data for modal
+            $propertyData = [
+                'PropertyID' => $property->PropertyID,
+                'Title' => $property->Title,
+                'Address' => $property->Address,
+                'Ward' => $property->Ward,
+                'District' => $property->District,
+                'Province' => $property->Province,
+                'Price' => $property->Price,
+                'TypePro' => $property->TypePro,
+                'Status' => $property->Status,
+                'Description' => $property->Description,
+                'PostedDate' => $property->PostedDate,
+                'Latitude' => $property->Latitude ?? null,
+                'Longitude' => $property->Longitude ?? null,
+                
+                // Owner information
+                'owner' => $property->owner ? [
+                    'Name' => $property->owner->Name,
+                    'Phone' => $property->owner->Phone,
+                    'Email' => $property->owner->Email,
+                    'Address' => $property->owner->Address
+                ] : null,
+                  // Category information
+                'danhMuc' => $property->danhMuc ? [
+                    'ten_pro' => $property->danhMuc->ten_pro,
+                    'Type' => $property->danhMuc->Type
+                ] : null,
+                  // Detail property information
+                'chiTiet' => $property->chiTiet ? [
+                    'Floor' => $property->chiTiet->Floor,
+                    'Area' => $property->chiTiet->HouseLength && $property->chiTiet->HouseWidth 
+                        ? $property->chiTiet->HouseLength * $property->chiTiet->HouseWidth 
+                        : null,
+                    'HouseLength' => $property->chiTiet->HouseLength,
+                    'HouseWidth' => $property->chiTiet->HouseWidth,
+                    'Bedroom' => $property->chiTiet->Bedroom,
+                    'Bath_WC' => $property->chiTiet->Bath_WC,
+                    'Balcony' => $property->chiTiet->Balcony,
+                    'Levelhouse' => $property->chiTiet->Levelhouse,
+                    'Road' => $property->chiTiet->Road,
+                    'legal' => $property->chiTiet->legal,
+                    'view' => $property->chiTiet->view,
+                    'near' => $property->chiTiet->near,
+                    'Interior' => $property->chiTiet->Interior,
+                    'WaterPrice' => $property->chiTiet->WaterPrice,
+                    'PowerPrice' => $property->chiTiet->PowerPrice,
+                    'Utilities' => $property->chiTiet->Utilities
+                ] : null,
+                
+                // Include all property images
+                'images' => $property->images->map(function($image) {
+                    return [
+                        'ImageID' => $image->ImageID,
+                        'PropertyID' => $image->PropertyID,
+                        'ImagePath' => $image->ImagePath ? asset(str_replace('public/', 'storage/', $image->ImagePath)) : null,
+                        'ImageURL' => $image->ImageURL,
+                        'Caption' => $image->Caption,
+                        'IsThumbnail' => $image->IsThumbnail
+                    ];
+                }),
+                
+                // Owner information
+                'owner_name' => $property->owner ? $property->owner->Name : null,
+                'owner_phone' => $property->owner ? $property->owner->Phone : null,
+                'owner_email' => $property->owner ? $property->owner->Email : null,
+                  // Detail property information                'floor' => $property->chiTiet ? $property->chiTiet->Floor : null,
+                'area' => $property->chiTiet ? ($property->chiTiet->HouseLength && $property->chiTiet->HouseWidth 
+                    ? $property->chiTiet->HouseLength * $property->chiTiet->HouseWidth 
+                    : null) : null,
+                'bedroom' => $property->chiTiet ? $property->chiTiet->Bedroom : null,
+                'bathroom' => $property->chiTiet ? $property->chiTiet->Bath_WC : null,
+                'balcony' => $property->chiTiet ? $property->chiTiet->Balcony : null,
+                'levelhouse' => $property->chiTiet ? $property->chiTiet->Levelhouse : null,
+                'property_type' => $property->danhMuc ? $property->danhMuc->Type : null,
+                'road' => $property->chiTiet ? $property->chiTiet->Road : null,
+                'legal' => $property->chiTiet ? $property->chiTiet->legal : null,
+                'interior' => $property->chiTiet ? $property->chiTiet->Interior : null,
+                'water_price' => $property->chiTiet ? $property->chiTiet->WaterPrice : null,
+                'power_price' => $property->chiTiet ? $property->chiTiet->PowerPrice : null,
+                'utilities' => $property->chiTiet ? $property->chiTiet->Utilities : null,
+                
+                // Map coordinates for Google Maps
+                'latitude' => $property->Latitude,
+                'longitude' => $property->Longitude,
+                'map_address' => urlencode($property->Address . ', ' . $property->Ward . ', ' . $property->District . ', ' . $property->Province)
+            ];
+            
+            return response()->json(['success' => true, 'property' => $propertyData]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting property details: ' . $e->getMessage());
+            return response()->json(['error' => 'Lỗi khi tải thông tin bất động sản'], 500);
+        }
+    }    /**
+     * Search and filter transactions
+     */
+    public function search(Request $request)
+    {
+        $agent = Auth::user();
+        $query = Transaction::with(['property', 'trans_cus', 'trans_owner'])
+            ->whereHas('property', function($query) use ($agent) {
+                $query->where('AgentID', $agent->UserID);
+            });
+
+        // Apply search filters
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('TransactionID', 'like', "%{$search}%")
+                  ->orWhereHas('property', function($query) use ($search) {
+                      $query->where('Title', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('trans_cus', function($query) use ($search) {
+                      $query->where('Name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('TranStatus', $request->status);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('TransactionType', $request->type);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('TransactionDate', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('TransactionDate', '<=', $request->date_to);
+        }
+
+        $transactions = $query->orderBy('TransactionDate', 'desc')->paginate(10);
+
+        return response()->json([
+            'success' => true,
+            'data' => $transactions->items(),
+            'pagination' => [
+                'current_page' => $transactions->currentPage(),
+                'last_page' => $transactions->lastPage(),
+                'total' => $transactions->total()
+            ]
+        ]);
+    }    /**
+     * Export transactions to CSV
+     */
+    public function export(Request $request)
+    {
+        $agent = Auth::user();
+        $query = Transaction::with(['property', 'trans_cus', 'trans_owner'])
+            ->whereHas('property', function($query) use ($agent) {
+                $query->where('AgentID', $agent->UserID);
+            });
+
+        // Apply same filters as search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('TransactionID', 'like', "%{$search}%")
+                  ->orWhereHas('property', function($query) use ($search) {
+                      $query->where('Title', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('TranStatus', $request->status);
+        }
+
+        $transactions = $query->orderBy('TransactionDate', 'desc')->get();
+
+        $filename = 'transactions_' . date('Y-m-d_H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($transactions) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // CSV Headers
+            fputcsv($file, [
+                'Mã giao dịch',
+                'Tên bất động sản', 
+                'Khách hàng',
+                'Chủ nhà',
+                'Giá trị',
+                'Trạng thái',
+                'Loại giao dịch',
+                'Ngày tạo'
+            ]);            foreach ($transactions as $transaction) {
+                fputcsv($file, [
+                    $transaction->TransactionID,
+                    $transaction->property->Title ?? '',
+                    $transaction->trans_cus->Name ?? '',
+                    $transaction->trans_owner->Name ?? '',
+                    number_format($transaction->TotalPrice ?? 0, 0, ',', '.') . ' VND',
+                    $transaction->TranStatus ?? '',
+                    $transaction->TransactionType ?? '',
+                    $transaction->TransactionDate ? date('d/m/Y H:i', strtotime($transaction->TransactionDate)) : ''
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }    /**
+     * Show transaction details
+     */
+    public function show($id)
+    {
+        $agent = Auth::user();
+        
+        $transaction = Transaction::with(['property', 'trans_cus', 'trans_owner'])
+            ->whereHas('property', function($query) use ($agent) {
+                $query->where('AgentID', $agent->UserID);
+            })
+            ->where('TransactionID', $id)
+            ->first();
+
+        if (!$transaction) {
+            return response()->json(['error' => 'Không tìm thấy giao dịch'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'transaction' => [
+                'id' => $transaction->TransactionID,
+                'property_title' => $transaction->property->Title ?? '',
+                'property_address' => $transaction->property->Address ?? '',
+                'customer_name' => $transaction->trans_cus->Name ?? '',
+                'customer_phone' => $transaction->trans_cus->Phone ?? '',
+                'owner_name' => $transaction->trans_owner->Name ?? '',
+                'owner_phone' => $transaction->trans_owner->Phone ?? '',
+                'amount' => $transaction->TotalPrice,
+                'formatted_amount' => number_format($transaction->TotalPrice ?? 0, 0, ',', '.') . ' VND',
+                'status' => $transaction->TranStatus,
+                'type' => $transaction->TransactionType,
+                'description' => $transaction->Description ?? '',
+                'created_at' => $transaction->TransactionDate ? date('d/m/Y H:i', strtotime($transaction->TransactionDate)) : '',
+                'updated_at' => $transaction->TransactionDate ? date('d/m/Y H:i', strtotime($transaction->TransactionDate)) : ''
+            ]
+        ]);
     }
 }

@@ -14,6 +14,7 @@ export default defineConfig({
                 'resources/sass/login.scss',
                 'resources/sass/appagent.scss',
                 'resources/sass/register.scss',
+                'resources/sass/scss_agent/transactions.scss',
                 'resources/js/app.js',
                 'resources/js/home.js',
                 'resources/js/header_owner.js',

@@ -20,6 +20,7 @@ class DanhMucBDS extends Model
 
     protected $fillable = [
         'Protype_ID',
-        'ten_pro'
+        'ten_pro',
+        'Type'
     ];
 }

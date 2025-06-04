@@ -134,9 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const propertyCard = createPropertyCard(property);
             propertyCards.appendChild(propertyCard);
         });
-    }
-
-    // Tạo property card từ template
+    }    // Tạo property card từ template
     function createPropertyCard(property) {
         const template = propertyCardTemplate.content.cloneNode(true);
         const card = template.querySelector('.property-card');
@@ -168,6 +166,12 @@ document.addEventListener('DOMContentLoaded', function() {
             card.querySelector('.property-description').textContent = property.description;
         } else {
             card.querySelector('.property-description').classList.add('d-none');
+        }
+        
+        // Cập nhật link "Xem chi tiết"
+        const detailLink = card.querySelector('.property-detail-link');
+        if (detailLink) {
+            detailLink.href = `/property/${property.id}`;
         }
         
         return card;

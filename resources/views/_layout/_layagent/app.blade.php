@@ -7,14 +7,16 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     @vite([
         'resources/js/app.js',
         'resources/sass/appagent.scss',
         'resources/js/header_agent.js',
-        'resources/js/appointments.js',
         'resources/js/autocomplete.js',
         'resources/js/appointment-agent.js',
         'resources/js/property-district.js',
+        'resources/js/property-modal.js',
+        'resources/sass/scss_agent/transactions.scss',
         'resources/js/notifications-agent.js',
         ])
     <title>@yield('title', 'Người Môi Giới')</title>
@@ -31,6 +33,7 @@
         @yield('brokers')
         @yield('appointments')
         @yield('transactions')
+        @yield('detail-property')
     </div>
     
     <!-- Footer -->

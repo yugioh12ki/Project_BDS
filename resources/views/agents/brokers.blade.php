@@ -2,6 +2,37 @@
 
 @section('title', 'Danh Sách Phân Công Môi Giới')
 
+@section('styles')
+<style>
+    .detail-label {
+        font-weight: 500;
+        color: #666;
+    }
+    
+    .detail-value {
+        font-weight: 600;
+    }
+    
+    .detail-item {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+    
+    .modal-header {
+        border-bottom: 2px solid #f8f9fa;
+    }
+    
+    .modal-footer {
+        border-top: 2px solid #f8f9fa;
+    }
+</style>
+@endsection
+
 @section('brokers')
 <div class="container-fluid py-4">
     <div class="row">
@@ -21,18 +52,6 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h5 class="card-title mb-0">{{ $district }}</h5>
-                                    <div class="d-flex gap-1">
-                                        @php
-                                            $saleCount = $districtProperties->where('TypePro', 'Sale')->count();
-                                            $rentCount = $districtProperties->where('TypePro', 'Rent')->count();
-                                        @endphp
-                                        @if($saleCount > 0)
-                                            <span class="badge bg-primary px-2 py-1">Bán</span>
-                                        @endif
-                                        @if($rentCount > 0)
-                                            <span class="badge bg-success px-2 py-1">Thuê</span>
-                                        @endif
-                                    </div>
                                 </div>
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-geo-alt text-muted me-2"></i>
@@ -70,7 +89,6 @@
                                                             <div class="fw-bold small text-dark">{{ Str::limit($property->Title, 35) }}</div>
                                                             <div class="small text-muted">{{ $property->Address }}, {{ $property->Ward }}</div>
                                                         </div>
-                                                        <span class="badge bg-primary ms-2">Bán</span>
                                                     </div>
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="small text-success fw-bold">
@@ -103,7 +121,6 @@
                                                             <div class="fw-bold small text-dark">{{ Str::limit($property->Title, 35) }}</div>
                                                             <div class="small text-muted">{{ $property->Address }}, {{ $property->Ward }}</div>
                                                         </div>
-                                                        <span class="badge bg-success ms-2">Thuê</span>
                                                     </div>
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="small text-success fw-bold">
@@ -220,7 +237,11 @@
                                             
                                             <!-- Actions -->
                                             <div class="d-flex gap-2">
-                                                <button class="btn btn-outline-primary btn-sm flex-fill">
+                                                <button type="button" 
+                                                   class="btn btn-outline-primary btn-sm flex-fill property-detail-link" 
+                                                   data-property-id=""
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#propertyDetailModal">
                                                     <i class="bi bi-eye me-1"></i>Xem chi tiết
                                                 </button>
                                             </div>
@@ -283,6 +304,9 @@
     </div>
 </div>
 
+<!-- Include Property Detail Modal -->
+@include('agents.property-detail-modal')
+
 <script>
     // Dữ liệu BĐS theo quận
     window.propertyData = {
@@ -301,19 +325,37 @@
                         category: "{{ $property->danhMuc ? addslashes($property->danhMuc->ten_pro) : 'Loại BĐS #'.$property->PropertyType }}",
                         date: "{{ \Carbon\Carbon::parse($property->PostedDate)->format('d/m/Y') }}",
                         province: "{{ addslashes($property->Province) }}",
+                        ward: "{{ addslashes($property->Ward) }}",
+                        district: "{{ addslashes($property->District) }}",
+                        status: "{{ $property->Status }}",
                         @if($property->owner)
                             owner: "{{ addslashes($property->owner->Name) }}",
+                            ownerPhone: "{{ $property->owner->Phone ?? 'Không có thông tin' }}",
+                            ownerEmail: "{{ $property->owner->Email ?? 'Không có thông tin' }}",
                         @else
                             owner: null,
+                            ownerPhone: null,
+                            ownerEmail: null,
                         @endif
                         @if($property->Description)
-                            description: "{{ addslashes(Str::limit($property->Description, 80)) }}",
+                            description: "{{ addslashes($property->Description) }}",
                         @else
                             description: "",
                         @endif
-                    },
+                        @if($property->chiTiet)
+                            area: "{{ $property->chiTiet->Area ?? 'N/A' }}",
+                            bedroom: "{{ $property->chiTiet->Bedroom ?? 'N/A' }}",
+                            bathroom: "{{ $property->chiTiet->Bath_WC ?? 'N/A' }}",
+                            floor: "{{ $property->chiTiet->Floor ?? 'N/A' }}"
+                        @else
+                            area: "N/A",
+                            bedroom: "N/A",
+                            bathroom: "N/A",
+                            floor: "N/A"
+                        @endif
+                    }@if(!$loop->last),@endif
                 @endforeach
-            ],
+            ]@if(!$loop->last),@endif
         @endforeach
     };
 
@@ -376,13 +418,30 @@
         });
     }
 
+    // Thêm event listener cho tất cả các click trên property-detail-link
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.property-detail-link');
+        if (link) {
+            e.preventDefault();
+            const propertyId = link.getAttribute('data-property-id');
+            console.log('Clicked property detail link, loading property ID:', propertyId);
+            
+            if (propertyId) {
+                // Gọi loadPropertyDetails với propertyId (string) như function expect
+                loadPropertyDetails(propertyId);
+            }
+        }
+    });
+    
+    // Sử dụng các hàm từ file property-modal.js
+    
     // Tạo property card từ template
     function createPropertyCard(property) {
         const template = propertyCardTemplate.content.cloneNode(true);
         const card = template.querySelector('.property-card');
         
         // Cập nhật data-district
-        card.dataset.district = property.district;
+        card.dataset.district = property.district || '';
         
         // Cập nhật nội dung
         card.querySelector('.property-title').textContent = property.title;
@@ -411,7 +470,20 @@
             card.querySelector('.property-description').classList.add('d-none');
         }
         
+        // Cập nhật nút "Xem chi tiết" để hiển thị modal
+        const detailLink = card.querySelector('.property-detail-link');
+        if (detailLink) {
+            // Set the property ID data attribute
+            detailLink.setAttribute('data-property-id', property.id);
+            detailLink.setAttribute('data-bs-toggle', 'modal');
+            detailLink.setAttribute('data-bs-target', '#propertyDetailModal');
+            
+            console.log('Setting up property detail modal button:', {
+                propertyId: property.id
+            });
+        }
+        
         return card;
     }
 </script>
-@endsection 
+@endsection
