@@ -12,6 +12,16 @@ class feedback extends Model
     protected $primaryKey = 'FeedbackID';
     public $timestamps = false;
 
+    protected $fillable = [
+        'CusID',
+        'AgentID',
+        'Title',
+        'Rating',
+        'Comment',
+        'FeedbackDate',
+        'Status'
+    ];
+
     public function user_Cus()
     {
         return $this->belongsTo(profile_customer::class, 'CusID', 'UserID')->with('user');
@@ -41,6 +51,39 @@ class feedback extends Model
     public function customer_user()
     {
         return $this->belongsTo(User::class, 'CusID', 'UserID');
+    }
+
+    // ✅ NEW RELATIONSHIPS - Backward Compatible Pattern
+    // Direct relationships for better performance and consistency with Property/User models
+
+    public function customer_feedback()
+    {
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
+    }
+
+    public function agent_feedback()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
+
+    public function customer_profile()
+    {
+        return $this->belongsTo(profile_customer::class, 'CusID', 'UserID');
+    }
+
+    public function agent_profile()
+    {
+        return $this->belongsTo(profile_agent::class, 'AgentID', 'UserID');
+    }
+
+    public function customer_profile_with_user()
+    {
+        return $this->belongsTo(profile_customer::class, 'CusID', 'UserID')->with('user');
+    }
+
+    public function agent_profile_with_user()
+    {
+        return $this->belongsTo(profile_agent::class, 'AgentID', 'UserID')->with('user');
     }
 
 }

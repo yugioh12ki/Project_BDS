@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const userDropdownBtn = document.getElementById('userDropdownBtn');
     const userDropdownContent = document.getElementById('userDropdownContent');
-    
+
     if (userDropdownBtn && userDropdownContent) {
         userDropdownBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -26,13 +26,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalSlides = slides.length;
 
     function showSlide(index) {
+        // Kiểm tra nếu không có slides hoặc dots
+        if (!slides.length || !dots.length || index >= slides.length || index >= dots.length) {
+            return;
+        }
+
         // Ẩn tất cả slides và dots
-        slides.forEach(slide => slide.classList.remove('active'));
-        dots.forEach(dot => dot.classList.remove('active'));
-        
+        slides.forEach(slide => {
+            if (slide && slide.classList) {
+                slide.classList.remove('active');
+            }
+        });
+        dots.forEach(dot => {
+            if (dot && dot.classList) {
+                dot.classList.remove('active');
+            }
+        });
+
         // Hiển thị slide và dot hiện tại
-        slides[index].classList.add('active');
-        dots[index].classList.add('active');
+        if (slides[index] && slides[index].classList) {
+            slides[index].classList.add('active');
+        }
+        if (dots[index] && dots[index].classList) {
+            dots[index].classList.add('active');
+        }
     }
 
     function nextSlide() {
@@ -81,4 +98,4 @@ document.addEventListener('DOMContentLoaded', function() {
             setInterval(nextSlide, 3000);
         });
     }
-}); 
+});

@@ -23,38 +23,42 @@
         <div class="tab-content" id="userTabsContent">
             {{-- Tab tài khoản hoạt động --}}
             <div class="tab-pane fade show active" id="active-users" role="tabpanel" aria-labelledby="active-users-tab">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                <div class="table-responsive-enhanced">
+                    <table class="table table-enhanced table-hover align-middle mb-0">
+                        <thead class="table-light sticky-header">
                             <tr>
-                                <th scope="col">
+                                <th scope="col" class="sortable" data-column="UserID">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-id-card text-primary me-2"></i>
                                         <strong>User ID</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="sortable" data-column="Name">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-user text-primary me-2"></i>
                                         <strong>Họ tên</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="sortable hide-on-mobile" data-column="Email">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-envelope text-primary me-2"></i>
                                         <strong>Email</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="hide-on-tablet" data-column="Phone">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-phone text-primary me-2"></i>
                                         <strong>Điện thoại</strong>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="sortable" data-column="Role">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-user-tag text-primary me-2"></i>
                                         <strong>Role</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
                                 <th scope="col" style="width: 150px;">
@@ -83,8 +87,8 @@
                                             <span class="fw-bold text-dark">{{ $user->Name }}</span>
                                         </div>
                                     </td>
-                                    <td><span class="text-dark fw-medium">{{ $user->Email }}</span></td>
-                                    <td>
+                                    <td class="hide-on-mobile"><span class="text-dark fw-medium">{{ $user->Email }}</span></td>
+                                    <td class="hide-on-tablet">
                                         @if($user->Phone)
                                             <a href="tel:{{ $user->Phone }}" class="text-decoration-none text-dark fw-medium">
                                                 <i class="fas fa-phone-alt text-success me-1"></i>
@@ -100,7 +104,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="btn-group action-buttons" role="group">
+                                        <div class="btn-group action-buttons-mobile" role="group">
                                             <button type="button" class="btn btn-outline-primary btn-sm"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#viewModal{{ $user->UserID }}"
@@ -139,38 +143,42 @@
 
             {{-- Tab tài khoản không hoạt động --}}
             <div class="tab-pane fade" id="inactive-users" role="tabpanel" aria-labelledby="inactive-users-tab">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                <div class="table-responsive-enhanced">
+                    <table class="table table-enhanced table-hover align-middle mb-0">
+                        <thead class="table-light sticky-header">
                             <tr>
-                                <th scope="col">
+                                <th scope="col" class="sortable" data-column="UserID">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-id-card text-primary me-2"></i>
                                         <strong>User ID</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="sortable" data-column="Name">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-user text-primary me-2"></i>
                                         <strong>Họ tên</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="sortable hide-on-mobile" data-column="Email">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-envelope text-primary me-2"></i>
                                         <strong>Email</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="hide-on-tablet" data-column="Phone">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-phone text-primary me-2"></i>
                                         <strong>Điện thoại</strong>
                                     </div>
                                 </th>
-                                <th scope="col">
+                                <th scope="col" class="sortable" data-column="Role">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-user-tag text-primary me-2"></i>
                                         <strong>Role</strong>
+                                        <i class="fas fa-sort ms-auto sort-icon"></i>
                                     </div>
                                 </th>
                                 <th scope="col" style="width: 150px;">

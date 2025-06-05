@@ -64,6 +64,30 @@ class User extends Authenticatable
         return $this->hasMany(Property::class, 'ApprovedBy', 'UserID');
     }
 
+    // === NEW RELATIONSHIPS - KHÔNG ẢNH HƯỞNG CODE CŨ ===
+
+    // Relationships mới với tên rõ ràng hơn (dành cho code mới)
+    public function owned_properties()
+    {
+        return $this->hasMany(Property::class, 'OwnerID', 'UserID');
+    }
+
+    public function managed_properties()
+    {
+        return $this->hasMany(Property::class, 'AgentID', 'UserID');
+    }
+
+    public function approved_properties()
+    {
+        return $this->hasMany(Property::class, 'ApprovedBy', 'UserID');
+    }
+
+    // Relationship mới để lấy properties với agent profile information
+    public function agent_properties_with_profile()
+    {
+        return $this->managed_properties()->with(['agent_profile']);
+    }
+
     // Mối quan hệ với bảng 'appointment'
 
     public function appoint_agent()
@@ -97,6 +121,18 @@ class User extends Authenticatable
     }
 
     // Mối quan hệ với bảng 'feedback'
+    // Direct relationship for agent feedbacks (for performance)
+    public function agent_feedbacks()
+    {
+        return $this->hasMany(feedback::class, 'AgentID', 'UserID');
+    }
+
+    // Direct relationship for customer feedbacks (for performance)
+    public function customer_feedbacks()
+    {
+        return $this->hasMany(feedback::class, 'CusID', 'UserID');
+    }
+
     public function feedback_agent()
     {
         return $this->hasManyThrough(
@@ -177,6 +213,34 @@ class User extends Authenticatable
         return Property::where('AgentID', $this->UserID)
                       ->where('Status', 'active')
                       ->count();
+    }
+
+    /**
+     * Get total approved feedback count for agent
+     */
+    public function getTotalRatingsAttribute()
+    {
+        if ($this->Role !== 'Agent') {
+            return 0;
+        }
+
+        return $this->agent_feedbacks()->where('Status', 'Đã duyệt')->count();
+    }
+
+    /**
+     * Get average rating for agent
+     */
+    public function getAverageRatingAttribute()
+    {
+        if ($this->Role !== 'Agent') {
+            return 0;
+        }
+
+        $average = $this->agent_feedbacks()
+            ->where('Status', 'Đã duyệt')
+            ->avg('Rating');
+
+        return $average ? round($average, 1) : 0;
     }
 
 

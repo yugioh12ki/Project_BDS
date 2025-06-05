@@ -1,4 +1,4 @@
-<div class="container">
+{{-- <div class="container">
     <h1 class="mb-4">Chi tiết Phiếu Hoa Hồng</h1>
 
     <form action="{{ route('admin.commission.update', $commission->CommissionID) }}" method="POST">
@@ -67,4 +67,4 @@
 
         <button type="submit" class="btn btn-primary mt-2">Lưu thông tin</button>
     </form>
-</div>
+</div> --}}

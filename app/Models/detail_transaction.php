@@ -23,9 +23,9 @@ class detail_transaction extends Model
         'TransactionID',
         'Num_Pay',
         'Price',
-        'DTrans_Date',
+        'DTran_Date',
         'PaymentType',
-        'DTrans_Status'
+        'DTran_Status'
     ];
 
 

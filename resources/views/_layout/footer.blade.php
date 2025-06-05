@@ -44,6 +44,25 @@
                   Email: batdongsan@gmail.com
               </li>
           </ul>
+          
+          <!-- Social Media Icons -->
+          <div class="footer-realestate__social">
+              <div class="footer-realestate__social-title">KẾT NỐI VỚI CHÚNG TÔI</div>
+              <div class="footer-realestate__social-icons">
+                  <a href="#" class="social-icon" title="Website">
+                      <i class="bi bi-globe"></i>
+                  </a>
+                  <a href="#" class="social-icon" title="Facebook">
+                      <i class="bi bi-facebook"></i>
+                  </a>
+                  <a href="#" class="social-icon" title="YouTube">
+                      <i class="bi bi-youtube"></i>
+                  </a>
+                  <a href="#" class="social-icon" title="Twitter">
+                      <i class="bi bi-twitter"></i>
+                  </a>
+              </div>
+          </div>
       </div>
   </div>
 </footer>

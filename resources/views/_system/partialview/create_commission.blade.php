@@ -1,4 +1,4 @@
-<div class="container">
+{{-- <div class="container">
     <form action="{{ route('admin.commission.store') }}" method="POST">
         @csrf
         <div class="form-group">
@@ -66,4 +66,4 @@
     });
 </script>
 
-
+ --}}

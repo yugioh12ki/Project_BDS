@@ -31,7 +31,12 @@ use App\Http\Controllers\CustomerController;
 
 // Public routes - có thể truy cập không cần đăng nhập
 Route::get('/search', [CustomerController::class, 'search'])->name('customer.search');
-Route::get('/property/{id}', [CustomerController::class, 'propertyDetail'])->name('property.detail');
+
+// Property listing routes
+Route::get('/mua', [CustomerController::class, 'saleProperties'])->name('properties.sale');
+Route::get('/mua/{propertyID}', [CustomerController::class, 'propertyDetail'])->name('properties.sale.detail');
+Route::get('/cho-thue', [CustomerController::class, 'rentProperties'])->name('properties.rent');
+Route::get('/cho-thue/{propertyID}', [CustomerController::class, 'propertyDetail'])->name('properties.rent.detail');
 
 // Trang chủ - cho phép tất cả người dùng truy cập (đã đăng nhập hoặc chưa)
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -42,66 +47,6 @@ Route::post('/login', [LoginController::class, "authenticate"])->name('login.aut
 
 //Đăng Ký
 Route::get('/register',[RegisterController::class,"register"])->name('register');
-
-// Demo route - không cần auth
-Route::get('/property-cards-demo', function () {
-    // Tạo dữ liệu mẫu cho card BĐS
-    $properties = collect([
-        (object)[
-            'PropertyID' => 'P001',
-            'Title' => 'Căn hộ cao cấp, Trung tâm',
-            'Address' => '123 Nguyễn Huệ',
-            'Ward' => 'Quận 1',
-            'District' => 'Quận 1',
-            'Province' => 'TP.HCM',
-            'Price' => 5200000000,
-            'TypePro' => 'Sale',
-            'images' => collect([
-                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
-            ]),
-            'danhMuc' => (object)['ten_pro' => 'Căn hộ'],
-            'chiTiet' => (object)['Area' => 85, 'Bedroom' => 2, 'Bath_WC' => 2]
-        ],
-        (object)[
-            'PropertyID' => 'P002',
-            'Title' => 'Nhà phố liền kề',
-            'Address' => '456 Lê Văn Lương',
-            'Ward' => 'Quận 7',
-            'District' => 'Quận 7',
-            'Province' => 'TP.HCM',
-            'Price' => 35000000,
-            'TypePro' => 'Rent',
-            'images' => collect([
-                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
-            ]),
-            'danhMuc' => (object)['ten_pro' => 'Nhà phố'],
-            'chiTiet' => (object)['Area' => 120, 'Bedroom' => 3, 'Bath_WC' => 3]
-        ],
-        (object)[
-            'PropertyID' => 'P003',
-            'Title' => 'Biệt thự view sông',
-            'Address' => '789 Nguyễn Văn Linh',
-            'Ward' => 'Quận 7',
-            'District' => 'Quận 7',
-            'Province' => 'TP.HCM',
-            'Price' => 25000000000,
-            'TypePro' => 'Sale',
-            'images' => collect([
-                (object)['ImageURL' => 'https://via.placeholder.com/600x400', 'IsThumbnail' => 1]
-            ]),
-            'danhMuc' => (object)['ten_pro' => 'Biệt thự'],
-            'chiTiet' => (object)['Area' => 350, 'Bedroom' => 5, 'Bath_WC' => 6]
-        ]
-    ]);
-
-    $categories = collect([
-        (object)['Protype_ID' => 1, 'ten_pro' => 'Căn hộ'],
-        (object)['Protype_ID' => 2, 'ten_pro' => 'Nhà phố'],
-        (object)['Protype_ID' => 3, 'ten_pro' => 'Biệt thự']
-    ]);
-
-    return view('trangchu.search-results', compact('properties', 'categories'));
-});
 
 Route::middleware(['auth'])->group(function()
     {
@@ -127,6 +72,19 @@ Route::middleware(['auth'])->group(function()
             Route::get('/appointments', [CustomerController::class, 'showAppointments'])->name('appointments.index');
             Route::post('/appointments/{id}/cancel', [CustomerController::class, 'cancelAppointment'])->name('appointments.cancel');
 
+            // Transaction history routes
+            Route::get('/transaction-history', [CustomerController::class, 'transactionHistory'])->name('transaction.history');
+            Route::get('/transaction/{id}/detail', [CustomerController::class, 'transactionDetail'])->name('transaction.detail');
+            Route::post('/payment/process', [CustomerController::class, 'processPayment'])->name('payment.process');
+
+            // Customer document routes - secure access to own transaction documents
+            Route::get('/document/view/{id}', [CustomerController::class, 'viewDocument'])->name('document.view');
+            Route::get('/document/download/{id}', [CustomerController::class, 'downloadDocument'])->name('document.download');
+
+            // Agent directory and feedback routes
+            Route::get('/contact-agent', [CustomerController::class, 'contactAgent'])->name('contact-agent');
+            Route::post('/submit-feedback', [CustomerController::class, 'submitFeedback'])->name('submit-feedback');
+
             // Notification routes
             Route::get('/notifications', [CustomerController::class, 'getNotifications'])->name('notifications');
             Route::post('/notifications/{id}/mark-as-read', [CustomerController::class, 'markNotificationAsRead'])->name('notifications.mark-read');
@@ -135,7 +93,6 @@ Route::middleware(['auth'])->group(function()
         // Routes danh cho người dùng đã đăng nhập không cần phải liên quan đến quyền
         Route::get('/document/view/{id}', [SystemController::class, 'viewDocument'])->name('admin.document.view');
         Route::get('/document/download/{id}', [SystemController::class, 'downloadDocument'])->name('admin.document.download');
-        Route::delete('/document/delete/{id}', [SystemController::class, 'deleteDocument'])->name('admin.document.delete');
 
         // Routes dành cho người dùng đã đăng nhập có quyền là Admin
 
@@ -222,14 +179,22 @@ Route::middleware(['auth'])->group(function()
             Route::get('/contract/print/{filename}', [SystemController::class, 'printContract'])->name('contract.print');
             Route::get('/contract/download/{filename}', [SystemController::class, 'downloadContract'])->name('contract.download');
 
+            // Contract template management routes
+            Route::post('/contracts/add', [SystemController::class, 'addContractTemplate'])->name('contracts.add');
+            Route::post('/contracts/edit', [SystemController::class, 'editContractTemplate'])->name('contracts.edit');
+            Route::post('/contracts/delete', [SystemController::class, 'deleteContractTemplateJson'])->name('contracts.delete');
+
             // Contract template upload routes
             Route::post('/contract/upload', [SystemController::class, 'uploadContractTemplate'])->name('contract.upload');
             Route::post('/contract/download-from-url', [SystemController::class, 'downloadContractFromUrl'])->name('contract.download-from-url');
             Route::delete('/contract/delete/{filename}', [SystemController::class, 'deleteContractTemplate'])->name('contract.delete');
             Route::get('/contract/templates/info', [SystemController::class, 'getContractTemplatesInfo'])->name('contract.templates.info');
 
+            // Contract analysis route
+            Route::post('/contract/analyze', [SystemController::class, 'analyzeContract'])->name('contract.analyze');
+
             // Document routes
-            Route::delete('/document/{id}', [SystemController::class, 'deleteDocument'])->name('document.delete');
+            Route::delete('/document/{id}', [SystemController::class, 'deleteDocument'])->name('admin.document.delete');
 
             // Route điều hướng đến trang quản lý đánh giá khách hàng tới môi giới
             Route::get('/feedback', [SystemController::class, "getFeedback"])->name('feedback');
@@ -246,11 +211,18 @@ Route::middleware(['auth'])->group(function()
 
             // Route điều hướng đến trang quản lý hoa hồng
             Route::get('/commission', [SystemController::class, "getCommission"])->name('commission');
-            Route::get('/commission/filter/{status}', [SystemController::class, 'getCommissionByStatus'])->name('commission.filter');
+
+            // Routes cụ thể - phải đặt trước routes có tham số động
             Route::get('/commission/create', [SystemController::class, "createCommissionForm"])->name('commission.create');
             Route::post('/commission/create', [SystemController::class, 'createCommission'])->name('commission.store');
             Route::get('/commission/search', [SystemController::class, 'searchCommission'])->name('commission.search');
-            Route::post('/commission/view', [SystemController::class, 'viewCommissionModal'])->name('commission.view');
+            Route::get('/commission/search-type', [SystemController::class, 'searchCommissionByDateAndType'])->name('commission.search.type');
+            Route::get('/commission/view', [SystemController::class, 'viewCommissionModal'])->name('commission.view');
+            Route::post('/commission/view-modal', [SystemController::class, 'viewCommissionModal'])->name('commission.view.modal');
+
+            // Routes với tham số dynamic - đặt sau routes cụ thể
+            Route::get('/commission/type/{type}', [SystemController::class, 'getCommissionByType'])->name('commission.type');
+            Route::get('/commission/filter/{status}', [SystemController::class, 'getCommissionByStatus'])->name('commission.filter');
             Route::get('/commission/{id}', [SystemController::class, 'getCommissionById'])->name('commission.get');
             Route::get('/commission/{id}/edit', [SystemController::class, 'editCommissionForm'])->name('commission.edit');
             Route::put('/commission/{id}', [SystemController::class, 'updateCommission'])->name('commission.update');
@@ -307,12 +279,10 @@ Route::middleware(['auth'])->group(function()
     Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
 
     // Route cho user chat (guest và user đã đăng nhập)
-    Route::get('/chat', [ChatbotController::class, 'userChat'])->name('user.chat');
+    Route::get('/chat', [ChatbotController::class, 'userChat'])->name('user.chat');            });
 
-});
-
-// Route API cho chatbot
-Route::post('/api/chatbot', [ChatbotController::class, 'answer'])->name('chatbot.answer');
+// Route API cho chatbot (sử dụng method answerChatbot)
+Route::post('/api/chatbot', [ChatbotController::class, 'answerChatbot'])->name('chatbot.answer');
 
 // Test routes cho Gemini AI - chỉ dùng trong development
 Route::prefix('test')->name('test.')->group(function () {
@@ -328,4 +298,11 @@ Route::prefix('test')->name('test.')->group(function () {
     Route::get('/gemini/db-connection', [ChatbotController::class, 'testDatabaseConnection'])->name('gemini.dbconnection');
     Route::get('/gemini/status', [ChatbotController::class, 'getDatabaseIntegrationStatus'])->name('gemini.status');
 });
+
+// Test route for commission modal
+Route::get('/test-commission-modal', function () {
+    return view('test_commission_modal');
+});
+
+
 

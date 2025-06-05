@@ -33,6 +33,9 @@
     @yield('home')
     @yield('changepassword')
     @yield('profilecustomer')
+
+    <!-- Include Chatbox Component -->
+    @include('components.chatbox')
 </body>
 <footer>
     @include('_layout.footer')

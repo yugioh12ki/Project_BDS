@@ -15,6 +15,9 @@ class profile_agent extends Model
 
     public $timestamps = false;
 
+    public $incrementing = false;
+    public $keyType = 'string';
+
     public function user()
     {
         return $this->belongsTo(User::class, 'UserID', 'UserID');

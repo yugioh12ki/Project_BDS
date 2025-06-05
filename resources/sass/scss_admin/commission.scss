@@ -1,0 +1,312 @@
+// Commission Tab Styles
+.commission-tabs {
+    .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+
+        .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+            margin-right: 5px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+
+            &:hover {
+                color: #495057;
+                background-color: #f8f9fa;
+                border-color: transparent;
+            }
+
+            &.active {
+                color: #0d6efd;
+                background-color: #fff;
+                border-color: #e9ecef #e9ecef #fff;
+                border-bottom: 2px solid #0d6efd;
+            }
+
+            i {
+                margin-right: 8px;
+            }
+        }
+    }
+}
+
+// Commission Table Styles
+.commission-table {
+    .table {
+        th {
+            background-color: #343a40;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 12px 8px;
+            vertical-align: middle;
+        }
+
+        td {
+            padding: 12px 8px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+    }
+}
+
+// Agent Info Styles
+.agent-info {
+    .fw-bold {
+        color: #0d6efd;
+        font-size: 14px;
+    }
+
+    small {
+        display: block;
+        color: #6c757d;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+}
+
+// Property Info Styles
+.property-info {
+    .fw-bold {
+        color: #198754;
+        font-size: 14px;
+        line-height: 1.3;
+    }
+
+    small {
+        color: #6c757d;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+}
+
+// Transaction Info Styles
+.transaction-info {
+    .fw-bold {
+        font-size: 13px;
+        line-height: 1.3;
+    }
+
+    .text-success {
+        color: #198754 !important;
+    }
+
+    small {
+        color: #6c757d;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+}
+
+// Payment Details Styles
+.payment-details {
+    max-height: 150px;
+    overflow-y: auto;
+
+    .payment-item {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        margin-bottom: 4px;
+
+        small {
+            font-size: 11px;
+            line-height: 1.2;
+        }
+
+        .text-success {
+            color: #198754 !important;
+        }
+    }
+}
+
+// Commission Info Styles
+.commission-info {
+    text-align: center;
+
+    .fw-bold {
+        color: #ffc107;
+        font-size: 14px;
+    }
+
+    small {
+        color: #6c757d;
+        font-size: 12px;
+        display: block;
+    }
+
+    .text-info {
+        color: #0dcaf0 !important;
+    }
+}
+
+// Empty State Styles
+.empty-state {
+    padding: 40px 20px;
+
+    i {
+        color: #6c757d;
+    }
+
+    h5, p {
+        color: #6c757d;
+    }
+}
+
+// Search Box Styles
+.search-box {
+    .form-control {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+
+        &:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+    }
+
+    .btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+    }
+}
+
+// Summary Cards
+.summary-cards {
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transition: all 0.3s ease;
+
+        &:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        h3 {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        small {
+            color: #6c757d;
+            font-size: 12px;
+        }
+    }
+}
+
+// Modal Styles
+.modal {
+    .modal-lg {
+        max-width: 900px;
+    }
+
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+
+        .modal-title {
+            color: #495057;
+            font-weight: 600;
+        }
+    }
+
+    .modal-body {
+        .table-sm {
+            th, td {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .fw-bold {
+                color: #495057;
+            }
+        }
+
+        h6 {
+            color: #0d6efd;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+    }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+    .commission-table {
+        .table {
+            font-size: 12px;
+
+            th, td {
+                padding: 8px 4px;
+            }
+        }
+    }
+
+    .agent-info, .property-info, .transaction-info {
+        .fw-bold {
+            font-size: 12px;
+        }
+
+        small {
+            font-size: 10px;
+        }
+    }
+
+    .payment-details {
+        max-height: 100px;
+
+        .payment-item {
+            small {
+                font-size: 10px;
+            }
+        }
+    }
+
+    .search-box {
+        margin-bottom: 15px;
+
+        .d-flex {
+            flex-direction: column;
+
+            .form-control {
+                margin-bottom: 10px;
+            }
+        }
+    }
+}
+
+@media (max-width: 576px) {
+    .commission-tabs {
+        .nav-tabs {
+            .nav-link {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+        }
+    }
+
+    .modal {
+        .modal-lg {
+            max-width: 95%;
+        }
+    }
+}

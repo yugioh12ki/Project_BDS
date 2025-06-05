@@ -76,15 +76,16 @@ table tr:hover {
 
 // Modal styles
 .modal {
-    z-index: 1055 ; /* Đảm bảo modal nằm trên các phần tử khác */
+    z-index: 1055 !important; /* Đảm bảo modal nằm trên các phần tử khác */
 }
 
-.modal.fade {
-    transition: none !important;
-}
+// Remove transition override to allow Bootstrap 5 modal animations
+// .modal.fade {
+//     transition: none !important;
+// }
 
 .modal-backdrop {
-    z-index: 1050 ;
+    z-index: 1050 !important;
 }
 
 .modal-dialog {

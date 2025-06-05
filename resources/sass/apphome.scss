@@ -1,10 +1,13 @@
 @import "bootstrap/scss/bootstrap";
+@import '_colors.scss';
 @import 'header.scss';
 @import 'footer.scss';
+@import 'card-styles.scss';
 @import 'profile.scss';
 @import 'change-password.scss';
 @import 'banner.scss';
 @import 'modern-home.scss';
 @import 'search-results.scss';
 @import 'property-detail.scss';
+@import 'propertylist.scss';
 @import 'scss_user/appointments';

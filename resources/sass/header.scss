@@ -12,12 +12,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: 1600px;
+    max-width: 2000px;
     margin: 0 auto;
     padding: 0 20px; // Giảm padding để có thêm không gian
-    background-color: #cbbb82;
+    background: linear-gradient(135deg, #8B6914 0%, #D4AF37 100%); // Dark gold to light gold gradient
     height: 80px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 20px rgba(184, 134, 11, 0.3);
+    border-bottom: 3px solid #8B6914; // Dark gold border
 
     &__left {
         display: flex;
@@ -40,7 +41,7 @@ body {
         padding: 0;
 
         li a {
-            color: #333;
+            color: #ffffff; // White text for better contrast
             text-decoration: none;
             font-size: 14px; // Giảm font size
             font-weight: 500;
@@ -50,6 +51,7 @@ body {
 
             &:hover {
                 background: rgba(255,255,255,0.2);
+                color: #ffffff;
             }
         }
     }
@@ -69,12 +71,16 @@ body {
             align-items: center;
             gap: 5px;
             padding: 6px 12px;
-            background: #21765d;
+            background: #D4AF37; // Light Gold
             color: white;
             border-radius: 20px;
             font-size: 13px;
             font-weight: 500;
             white-space: nowrap; // Ngăn xuống dòng
+
+            &:hover {
+                background: #B8860B; // Darker gold on hover
+            }
 
             i { font-size: 15px; }
         }
@@ -88,7 +94,7 @@ body {
                 align-items: center;
                 background: none;
                 border: none;
-                color: #21765d;
+                color: #ffffff;
                 cursor: pointer;
                 position: relative;
 
@@ -100,7 +106,7 @@ body {
                     position: absolute;
                     top: -8px;
                     right: -8px;
-                    background: #dc3545;
+                    background: #B8860B; // Gold instead of red
                     color: white;
                     border-radius: 50%;
                     padding: 2px 6px;
@@ -183,14 +189,18 @@ body {
                 align-items: center;
                 gap: 5px;
                 padding: 6px 12px;
-                background: rgba(33, 118, 93, 0.1);
-                color: #21765d;
+                background: rgba(212, 175, 55, 0.2); // Light gold background
+                color: #ffffff;
                 border: none;
                 border-radius: 20px;
                 font-size: 13px;
                 font-weight: 500;
                 cursor: pointer;
                 white-space: nowrap; // Ngăn xuống dòng
+
+                &:hover {
+                    background: rgba(212, 175, 55, 0.3);
+                }
             }
 
             &-content {
@@ -220,7 +230,8 @@ body {
                     transition: background 0.2s;
 
                     &:hover {
-                        background: #f5f5f5;
+                        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); // Light gold gradient
+                        color: #B8860B; // Gold text
                     }
                 }
 
@@ -241,13 +252,23 @@ body {
         }
 
         .btn-login {
-            background: #21765d;
+            background: #B8860B; // Gold background
             color: white;
+
+            &:hover {
+                background: #8B6914; // Darker gold on hover
+            }
         }
 
         .btn-register {
-            background: white;
-            color: #21765d;
+            background: #D4AF37; // Light Gold
+            color: white;
+            border: 2px solid #D4AF37;
+            
+            &:hover {
+                background: #B8860B;
+                border-color: #B8860B;
+            }
         }
     }
 }

@@ -716,6 +716,7 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Nội thất</label>
                                             <select name="Interior" class="form-control">
+                                                <option value="">Không</option>
                                                 <option value="Cơ bản" {{ old('Interior') == 'Cơ bản' ? 'selected' : '' }}>Cơ bản</option>
                                                 <option value="Đầy đủ" {{ old('Interior') == 'Đầy đủ' ? 'selected' : '' }}>Đầy đủ</option>
                                             </select>
@@ -797,11 +798,23 @@
                                             </div>
                                             <div class="card-body">
                                                 <div class="form-group mb-3">
-                                                    <label class="form-label">Chọn video</label>
-                                                    <input type="file" name="property_videos[]" class="form-control" multiple accept="video/*" id="videoInput">
-                                                    <small class="form-text text-muted">
+                                                    <label class="form-label">URL Video (YouTube, TikTok, v.v.)</label>
+                                                    <div id="videoUrlContainer">
+                                                        <div class="video-url-group mb-2">
+                                                            <div class="input-group">
+                                                                <input type="url" name="video_urls[]" class="form-control video-url-input" placeholder="https://www.youtube.com/watch?v=..." value="{{ old('video_urls.0') }}">
+                                                                <button type="button" class="btn btn-outline-danger remove-video-url" style="display: none;">
+                                                                    <i class="fas fa-times"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" id="addVideoUrl">
+                                                        <i class="fas fa-plus me-1"></i>Thêm URL video
+                                                    </button>
+                                                    <small class="form-text text-muted d-block mt-2">
                                                         <i class="fas fa-info-circle text-info"></i>
-                                                        Có thể chọn nhiều video (định dạng: mp4, avi, mov)
+                                                        Hỗ trợ YouTube, TikTok, Vimeo và các URL video khác
                                                     </small>
                                                 </div>
 
@@ -834,10 +847,10 @@
                                                 <div class="col-md-6">
                                                     <h6 class="text-success">Video:</h6>
                                                     <ul class="text-muted mb-0">
-                                                        <li>Kích thước tối đa: 50MB/file</li>
-                                                        <li>Định dạng: MP4, AVI, MOV</li>
-                                                        <li>Thời lượng khuyến nghị: 1-3 phút</li>
-                                                        <li>Quay video ổn định, rõ nét</li>
+                                                        <li>Hỗ trợ YouTube, TikTok, Vimeo</li>
+                                                        <li>Copy và paste URL video vào ô input</li>
+                                                        <li>Có thể thêm nhiều video khác nhau</li>
+                                                        <li>URL phải hoạt động và công khai</li>
                                                     </ul>
                                                 </div>
                                             </div>
@@ -1045,29 +1058,120 @@ document.getElementById('imageInput').addEventListener('change', function(e) {
     }
 });
 
-// Video preview functionality
-document.getElementById('videoInput').addEventListener('change', function(e) {
-    const preview = document.getElementById('videoPreview');
-    preview.innerHTML = '';
+// Video URL functionality
+document.getElementById('addVideoUrl').addEventListener('click', function() {
+    const container = document.getElementById('videoUrlContainer');
+    const newGroup = document.createElement('div');
+    newGroup.className = 'video-url-group mb-2';
+    newGroup.innerHTML = `
+        <div class="input-group">
+            <input type="url" name="video_urls[]" class="form-control video-url-input" placeholder="https://www.youtube.com/watch?v=...">
+            <button type="button" class="btn btn-outline-danger remove-video-url">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newGroup);
+    
+    // Update remove button visibility
+    updateRemoveButtonVisibility();
+    
+    // Add event listener for the new input
+    const newInput = newGroup.querySelector('.video-url-input');
+    newInput.addEventListener('input', updateVideoPreview);
+    
+    // Add event listener for remove button
+    newGroup.querySelector('.remove-video-url').addEventListener('click', function() {
+        newGroup.remove();
+        updateRemoveButtonVisibility();
+        updateVideoPreview();
+    });
+});
 
-    for (let i = 0; i < e.target.files.length; i++) {
-        const file = e.target.files[i];
-        if (file.type.startsWith('video/')) {
+// Function to update remove button visibility
+function updateRemoveButtonVisibility() {
+    const groups = document.querySelectorAll('.video-url-group');
+    groups.forEach((group, index) => {
+        const removeBtn = group.querySelector('.remove-video-url');
+        if (groups.length > 1) {
+            removeBtn.style.display = 'block';
+        } else {
+            removeBtn.style.display = 'none';
+        }
+    });
+}
+
+// Function to get video embed URL
+function getVideoEmbedUrl(url) {
+    // YouTube
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeMatch = url.match(youtubeRegex);
+    if (youtubeMatch) {
+        return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+    }
+    
+    // TikTok
+    const tiktokRegex = /(?:tiktok\.com\/)(?:.*\/video\/|@[^\/]+\/video\/)(\d+)/;
+    const tiktokMatch = url.match(tiktokRegex);
+    if (tiktokMatch) {
+        return `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`;
+    }
+    
+    // Vimeo
+    const vimeoRegex = /(?:vimeo\.com\/)(\d+)/;
+    const vimeoMatch = url.match(vimeoRegex);
+    if (vimeoMatch) {
+        return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+    
+    return null;
+}
+
+// Function to update video preview
+function updateVideoPreview() {
+    const preview = document.getElementById('videoPreview');
+    const inputs = document.querySelectorAll('.video-url-input');
+    preview.innerHTML = '';
+    
+    inputs.forEach((input, index) => {
+        const url = input.value.trim();
+        if (url) {
+            const embedUrl = getVideoEmbedUrl(url);
             const div = document.createElement('div');
-            div.className = 'preview-item d-flex align-items-center';
-            div.innerHTML = `
-                <video controls class="me-3">
-                    <source src="${URL.createObjectURL(file)}" type="${file.type}">
-                </video>
-                <div>
-                    <strong>${file.name}</strong><br>
-                    <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
-                </div>
-            `;
+            div.className = 'preview-item d-flex align-items-center mb-3 p-3 border rounded';
+            
+            if (embedUrl) {
+                div.innerHTML = `
+                    <iframe width="200" height="120" src="${embedUrl}" frameborder="0" allowfullscreen class="me-3"></iframe>
+                    <div>
+                        <strong>Video ${index + 1}</strong><br>
+                        <small class="text-muted">${url}</small>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="me-3 d-flex align-items-center justify-content-center" style="width: 200px; height: 120px; background-color: #f8f9fa; border: 2px dashed #dee2e6;">
+                        <i class="fas fa-video fa-2x text-muted"></i>
+                    </div>
+                    <div>
+                        <strong>Video ${index + 1}</strong><br>
+                        <small class="text-muted">${url}</small><br>
+                        <small class="text-warning">URL không được hỗ trợ preview</small>
+                    </div>
+                `;
+            }
             preview.appendChild(div);
         }
-    }
+    });
+}
+
+// Add event listeners to existing inputs
+document.querySelectorAll('.video-url-input').forEach(input => {
+    input.addEventListener('input', updateVideoPreview);
 });
+
+// Initialize remove button visibility
+updateRemoveButtonVisibility();
 
 // Form validation when switching tabs
 document.addEventListener('DOMContentLoaded', function() {
@@ -1163,6 +1267,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     });
 
+    // Handle TypePro radio button change to show/hide utilities section
+    const typeProRadios = document.querySelectorAll('input[name="TypePro"]');
+    const utilitiesSection = document.querySelector('h6.text-warning');
+    
+    // Find the utilities section and its parent container
+    let utilitiesContainer = null;
+    if (utilitiesSection && utilitiesSection.textContent.includes('Tiện ích')) {
+        utilitiesContainer = utilitiesSection.parentElement;
+        // Find all utility form groups after the utilities heading
+        const utilityElements = [];
+        let nextElement = utilitiesSection.nextElementSibling;
+        while (nextElement && nextElement.classList.contains('form-group')) {
+            utilityElements.push(nextElement);
+            nextElement = nextElement.nextElementSibling;
+        }
+        utilitiesContainer = { heading: utilitiesSection, elements: utilityElements };
+    }
+
+    function toggleUtilitiesSection() {
+        if (!utilitiesContainer) return;
+        
+        const selectedType = document.querySelector('input[name="TypePro"]:checked');
+        if (selectedType && selectedType.value === 'Sale') {
+            // Hide utilities section for Sale
+            utilitiesContainer.heading.style.display = 'none';
+            utilitiesContainer.elements.forEach(el => el.style.display = 'none');
+        } else {
+            // Show utilities section for Rent or no selection
+            utilitiesContainer.heading.style.display = 'block';
+            utilitiesContainer.elements.forEach(el => el.style.display = 'block');
+        }
+    }
+
+    // Add event listeners to TypePro radio buttons
+    typeProRadios.forEach(radio => {
+        radio.addEventListener('change', toggleUtilitiesSection);
+    });
+
+    // Initial check on page load
+    toggleUtilitiesSection();
+
+    // Function to display search results
     function displaySearchResults(owners) {
         if (owners.length === 0) {
             ownerSearchResults.innerHTML = '<div class="autocomplete-item no-results"><i class="fas fa-search"></i> Không tìm thấy chủ sở hữu nào</div>';
@@ -1172,11 +1318,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const phone = escapeHtml(owner.Phone || '');
                 const email = escapeHtml(owner.Email || '');
                 const address = escapeHtml(owner.Address || '');
-
+                const ward = escapeHtml(owner.Ward || '');
+                const district = escapeHtml(owner.District || '');
+                const province = escapeHtml(owner.Province || '');
+                const identityCard = escapeHtml(owner.IdentityCard || '');
+                
+                // Build complete address
+                const fullAddress = [address, ward, district, province].filter(Boolean).join(', ');
+                
                 return `
-                    <div class="autocomplete-item" data-owner-id="${owner.UserID}" onclick="selectOwner('${owner.UserID}', '${name}', '${phone}', '${email}', '${address}')">
+                    <div class="autocomplete-item" data-owner-id="${owner.UserID}" onclick="selectOwner('${owner.UserID}', '${name}', '${phone}', '${email}', '${address}', '${ward}', '${district}', '${province}', '${identityCard}')">
                         <div class="owner-name"><i class="fas fa-user me-2"></i>${name}</div>
-                        <div class="owner-details"><i class="fas fa-phone me-1"></i>${phone} <i class="fas fa-envelope ms-2 me-1"></i>${email}</div>
+                        <div class="owner-details">
+                            <div><i class="fas fa-phone me-1"></i>${phone} <i class="fas fa-envelope ms-2 me-1"></i>${email}</div>
+                            ${fullAddress ? `<div class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>${fullAddress}</div>` : ''}
+                            ${identityCard ? `<div class="text-muted"><i class="fas fa-id-card me-1"></i>CCCD: ${identityCard}</div>` : ''}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1204,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function selectOwner(ownerId, name, phone, email, address) {
+function selectOwner(ownerId, name, phone, email, address, ward, district, province, identityCard) {
     const ownerSearchInput = document.getElementById('ownerSearch');
     const ownerSearchResults = document.getElementById('ownerSearchResults');
     const selectedOwnerIdInput = document.getElementById('selectedOwnerId');
@@ -1215,12 +1372,22 @@ function selectOwner(ownerId, name, phone, email, address) {
     selectedOwnerIdInput.value = ownerId;
     ownerSearchInput.value = name;
 
-    // Display selected owner info
+    // Build complete address for display
+    const fullAddress = [address, ward, district, province].filter(Boolean).join(', ');
+
+    // Display selected owner info with complete details
     ownerInfoDisplay.innerHTML = `
-        <strong><i class="fas fa-user"></i> ${name}</strong><br>
-        <i class="fas fa-phone"></i> ${phone}<br>
-        <i class="fas fa-envelope"></i> ${email}
-        ${address ? `<br><i class="fas fa-map-marker-alt"></i> ${address}` : ''}
+        <div class="row">
+            <div class="col-md-6">
+                <strong><i class="fas fa-user"></i> ${name}</strong><br>
+                <i class="fas fa-phone"></i> ${phone}<br>
+                <i class="fas fa-envelope"></i> ${email}
+            </div>
+            <div class="col-md-6">
+                ${fullAddress ? `<i class="fas fa-map-marker-alt"></i> ${fullAddress}<br>` : ''}
+                ${identityCard ? `<i class="fas fa-id-card"></i> CCCD: ${identityCard}` : ''}
+            </div>
+        </div>
     `;
 
     selectedOwnerInfo.style.display = 'block';
@@ -1319,10 +1486,25 @@ function handleOwnerCreationReturn() {
     const newOwnerName = urlParams.get('newOwnerName');
     const newOwnerPhone = urlParams.get('newOwnerPhone');
     const newOwnerEmail = urlParams.get('newOwnerEmail');
+    const newOwnerAddress = urlParams.get('newOwnerAddress');
+    const newOwnerWard = urlParams.get('newOwnerWard');
+    const newOwnerDistrict = urlParams.get('newOwnerDistrict');
+    const newOwnerProvince = urlParams.get('newOwnerProvince');
+    const newOwnerIdentityCard = urlParams.get('newOwnerIdentityCard');
 
     if (newOwnerId && newOwnerName) {
-        // Select the newly created owner
-        selectOwner(newOwnerId, newOwnerName, newOwnerPhone || '', newOwnerEmail || '', '');
+        // Select the newly created owner with all details
+        selectOwner(
+            newOwnerId, 
+            newOwnerName, 
+            newOwnerPhone || '', 
+            newOwnerEmail || '', 
+            newOwnerAddress || '',
+            newOwnerWard || '',
+            newOwnerDistrict || '',
+            newOwnerProvince || '',
+            newOwnerIdentityCard || ''
+        );
 
         // Clean up URL parameters
         const url = new URL(window.location);
@@ -1330,6 +1512,11 @@ function handleOwnerCreationReturn() {
         url.searchParams.delete('newOwnerName');
         url.searchParams.delete('newOwnerPhone');
         url.searchParams.delete('newOwnerEmail');
+        url.searchParams.delete('newOwnerAddress');
+        url.searchParams.delete('newOwnerWard');
+        url.searchParams.delete('newOwnerDistrict');
+        url.searchParams.delete('newOwnerProvince');
+        url.searchParams.delete('newOwnerIdentityCard');
         window.history.replaceState({}, document.title, url.toString());
 
         showNotification(`Đã chọn chủ sở hữu: ${newOwnerName}`, 'success');

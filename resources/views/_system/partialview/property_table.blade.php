@@ -45,9 +45,9 @@
     <i class="fas fa-info-circle"></i> Không tìm thấy bất động sản nào phù hợp với điều kiện lọc.
 </div>
 
-<div class="table-responsive">
-    <table class="table table-hover table-striped table-enhanced">
-        <thead>
+<div class="table-responsive-enhanced">
+    <table class="table table-enhanced table-hover table-striped">
+        <thead class="sticky-header">
             <tr>
                 @if(isset($status) && $status == 'pending')
                 <th class="checkbox-column">
@@ -899,9 +899,9 @@ window.propertyData['{{ $property->PropertyID }}'] = {
     Category: {!! json_encode(optional($property->danhmuc)->CategoryName ?? "Không có") !!},
     TypePro: {!! json_encode($property->TypePro ?? "") !!},
     Area: {!! json_encode($property->Area ?? "N/A") !!},
-    Bedrooms: {!! json_encode(optional($property->chiTiet)->Bedrooms ?? "N/A") !!},
-    Bathrooms: {!! json_encode(optional($property->chiTiet)->Bathrooms ?? "N/A") !!},
-    Floors: {!! json_encode(optional($property->chiTiet)->Floors ?? "N/A") !!},
+    Bedrooms: {!! json_encode(optional($property->chiTiet)->Bedroom ?? "N/A") !!},
+    Bathrooms: {!! json_encode(optional($property->chiTiet)->Bath_WC ?? "N/A") !!},
+    Floors: {!! json_encode(optional($property->chiTiet)->Floor ?? "N/A") !!},
     Legal: {!! json_encode(optional($property->chiTiet)->legal ?? "N/A") !!},
     Direction: {!! json_encode(optional($property->chiTiet)->view ?? "N/A") !!},
     AgentName: {!! json_encode(optional($property->moigioi)->Name ?? "Chưa phân công") !!},
@@ -925,13 +925,11 @@ window.propertyData['{{ $property->PropertyID }}'] = {
         @if(isset($property->images) && count($property->images) > 0)
             @foreach($property->images as $img)
                 @php
-                    $imagePath = $img->ImagePath;
-                    $imagePath = preg_replace('/^(\\\\)?public(\\\\|\/)/', '', $imagePath);
-                    $imagePath = str_replace('\\', '/', $imagePath);
+                    $imageUrl = \App\Helpers\ImageHelper::getImageUrl($img->ImagePath);
                 @endphp
                 {
                     id: '{{ $img->ImageID ?? '' }}',
-                    path: '{{ asset('storage/' . $imagePath) }}',
+                    path: '{{ $imageUrl }}',
                     caption: {!! json_encode($img->Caption ?? '') !!},
                     uploadDate: '{{ $img->created_at ? $img->created_at->format("d/m/Y") : "" }}'
                 },
@@ -1184,10 +1182,8 @@ function showPropertyNotification(propertyId) {
                                 ${property.Images && property.Images.length > 0 ?
                                     '<div class="media-gallery">' +
                                     property.Images.map(img => {
-                                        // Update image path to use public/storage/property/{propertyId}
-                                        const imagePath = img.path.includes('public/storage/property') ?
-                                            img.path :
-                                            `public/storage/property/${property.PropertyID}/${img.path.split('/').pop()}`;
+                                        // Use the image path directly as it's already processed by ImageHelper
+                                        const imagePath = img.path;
                                         return `<div class="media-item image-item">
                                             <img src="${imagePath}" alt="Hình ảnh BĐS" onclick="viewFullImage('${imagePath}')">
                                             ${img.caption ? `<div class="image-caption">${img.caption}</div>` : ''}
@@ -1216,9 +1212,8 @@ function showPropertyNotification(propertyId) {
                                         } else if (isTikTok) {
                                             videoContent = `<div class="tiktok-video"><a href="${video.path}" target="_blank" class="btn btn-outline-primary"><i class="fab fa-tiktok me-2"></i>Xem video TikTok</a></div>`;
                                         } else {
-                                            const videoPath = video.path.includes('public/storage/property') ?
-                                                video.path :
-                                                `public/storage/property/${property.PropertyID}/${video.path.split('/').pop()}`;
+                                            // Use the video path directly as it's already processed
+                                            const videoPath = video.path;
                                             videoContent = `<video src="${videoPath}" controls style="width: 200px; max-height: 120px;"></video>`;
                                         }
 

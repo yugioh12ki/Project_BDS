@@ -1,16 +1,25 @@
-@if(isset($error))
+{{-- @if(isset($error))
     <div class="alert alert-danger">
         {{ $error }}
     </div>
 @else
-<div class="table-responsive">
-    <table >
-        <thead >
+<div class="table-responsive-enhanced">
+    <table class="table table-enhanced table-hover">
+        <thead class="sticky-header">
             <tr>
-                <th>Mã HH</th>
-                <th>Số tiền</th>
-                <th>Trạng thái</th>
-                <th>Ngày thanh toán</th>
+                <th class="sortable" data-column="CommissionID">
+                    Mã HH
+                    <i class="fas fa-sort ms-auto sort-icon"></i>
+                </th>
+                <th class="sortable" data-column="Amount">
+                    Số tiền
+                    <i class="fas fa-sort ms-auto sort-icon"></i>
+                </th>
+                <th class="sortable hide-on-mobile" data-column="StatusCommission">
+                    Trạng thái
+                    <i class="fas fa-sort ms-auto sort-icon"></i>
+                </th>
+                <th class="hide-on-tablet">Ngày thanh toán</th>
                 <th class="text-center">Chức năng</th>
             </tr>
         </thead>
@@ -79,4 +88,4 @@
 
 
 
-@endif
+@endif --}}

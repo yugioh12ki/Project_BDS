@@ -33,6 +33,7 @@
                 @if($userPosition)
                     <span class="user-position">{{ $userPosition }}</span>
                 @endif
+
             </div>
             <div class="user-actions">
                 <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
@@ -41,6 +42,9 @@
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </form>
+                <a href="{{ route('home') }}" class="home-btn" title="Trang chủ">
+                    <i class="fas fa-home"></i>
+                </a>
             </div>
         @endif
     </div>
@@ -104,7 +108,7 @@
         @endif
 
         {{-- Transaction Management - Always show --}}
-        <li><a href="{{ route('admin.transaction') }}"><i class="fas fa-file-contract"></i> <span>Hợp đồng giao dịch BĐS</span></a></li>
+        <li><a href="{{ route('admin.transaction') }}"><i class="fas fa-file-contract"></i> <span>Hợp đồng giao dịch</span></a></li>
 
         {{-- Commission Management - Hide for Nhân Viên --}}
         @if($userPosition !== 'Nhân viên')
@@ -112,7 +116,10 @@
         @endif
 
         {{-- Feedback Management - Always show --}}
-        <li><a href="{{ route('admin.feedback') }}"><i class="fas fa-check-circle"></i> <span>Kiểm duyệt đánh giá KH</span></a></li>
+        <li><a href="{{ route('admin.feedback') }}"><i class="fas fa-check-circle"></i> <span>Kiểm duyệt đánh giá</span></a></li>
+
+        {{-- Agent Directory - Always show --}}
+        <li><a href="{{ route('customer.contact-agent') }}"><i class="fas fa-address-book"></i> <span>Danh bạ môi giới</span></a></li>
 
         {{-- Appointment Management - Hide for Nhân Viên --}}
         @if($userPosition !== 'Nhân viên')
@@ -124,7 +131,7 @@
 
         {{-- Chatbox Management - Hide for Nhân Viên --}}
         @if($userPosition !== 'Nhân viên')
-        <li><a href="{{ route('admin.chatbot.questions.index') }}"><i class="fas fa-comments"></i> <span>Quản lý Chatbox hỗ trợ KH</span></a></li>
+        <li><a href="{{ route('admin.chatbot.questions.index') }}"><i class="fas fa-comments"></i> <span>Quản lý Chatbox và FAQ</span></a></li>
         @endif
       </ul>
     </nav>

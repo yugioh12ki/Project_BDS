@@ -18,4 +18,12 @@ class Image extends Model
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
     }
+
+    protected $fillable = [
+        'ImageID',
+        'PropertyID',
+        'ImagePath',
+        'Caption',
+        'UploadDate',
+    ];
 }

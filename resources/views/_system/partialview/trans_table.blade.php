@@ -1,6 +1,6 @@
-<div class="table-container">
-    <table>
-        <thead>
+<div class="table-responsive-enhanced">
+    <table class="table table-enhanced table-hover">
+        <thead class="sticky-header">
             <tr>
                 @foreach ($columns as $column )
                 @if($column == 'TransactionID')

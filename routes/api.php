@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\HomeController;
 
 // API Controllers for Mobile App
 use App\Http\Controllers\API\AuthController;
@@ -31,17 +32,44 @@ Route::prefix('v1')->group(function () {
     // Authentication routes
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-    
+
     // Public property routes
     Route::get('/properties', [PropertyController::class, 'index']);
     Route::get('/properties/{id}', [PropertyController::class, 'show']);
     Route::get('/properties/search', [PropertyController::class, 'search']);
     Route::get('/properties/featured', [PropertyController::class, 'featured']);
     Route::get('/categories', [PropertyController::class, 'categories']);
-    
+
     // Chatbot (public access)
     Route::post('/chatbot/answer', [ChatbotController::class, 'answerChatbot']);
 });
+
+// ========================
+// CHATBOX PUBLIC ROUTES
+// ========================
+
+// Route cho chatbox component (sử dụng ChatbotController đã có sẵn)
+Route::post('/chatbot', [ChatbotController::class, 'answerChatbot']);
+Route::post('/chatbot/advanced', [ChatbotController::class, 'answerChatbot']);
+
+// Route để lấy thống kê chatbox (public)
+Route::get('/chatbot/stats', function() {
+    return response()->json([
+        'status' => 'online',
+        'response_time' => 'Tức thời',
+        'availability' => '24/7',
+        'topics' => [
+            'Mua bán bất động sản',
+            'Thuê nhà',
+            'Tư vấn giá cả',
+            'Thủ tục pháp lý',
+            'Đánh giá dự án'
+        ]
+    ]);
+});
+
+// Route để lấy các câu hỏi gợi ý từ FAQ
+Route::get('/chatbot/suggestions', [ChatbotController::class, 'getSuggestions']);
 
 // Protected routes (authentication required)
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
@@ -49,14 +77,14 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // Appointment routes
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::post('/appointments', [AppointmentController::class, 'store']);
     Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
     Route::put('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
     Route::delete('/appointments/{id}', [AppointmentController::class, 'cancel']);
-    
+
     // Chat routes (authenticated)
     Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
     Route::get('/chat/conversations', [ChatbotController::class, 'getConversations']);

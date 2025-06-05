@@ -21,12 +21,18 @@ class Document extends Model
         return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
     }
 
+    // Add relationship alias for customer security checks
+    public function doc_transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
+    }
+
     protected $fillable = [
         'DocumentID',
         'TransactionID',
         'UploadedDate',
         'DocumentType',
+        'DocumentName',
         'FilePath'
-
     ];
 }

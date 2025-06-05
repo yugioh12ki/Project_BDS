@@ -50,6 +50,43 @@ class Property extends Model
         return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
     }
 
+    // === NEW RELATIONSHIPS - KHÔNG ẢNH HƯỞNG CODE CŨ ===
+    
+    // Relationships mới với tên rõ ràng (dành cho code mới)
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
+    }
+
+    // Relationship mới để lấy thông tin profile_agent của agent
+    public function agent_profile()
+    {
+        return $this->hasOneThrough(
+            profile_agent::class,
+            User::class,
+            'UserID',      // FK on User table
+            'UserID',      // FK on profile_agent table
+            'AgentID',     // Local key on Property table
+            'UserID'       // Local key on User table
+        );
+    }
+
+    // Alternative: Direct relationship to profile_agent
+    public function agent_profile_direct()
+    {
+        return $this->belongsTo(profile_agent::class, 'AgentID', 'UserID');
+    }
+
     // Thêm mới quan hệ với video
     public function videos()
     {

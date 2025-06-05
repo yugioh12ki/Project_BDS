@@ -11,7 +11,11 @@ class Commission extends Model
 
     protected $table = 'commission'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
     protected $primaryKey = 'CommissionID'; // Chỉ định khóa chính là 'id'
+
+    public $incrementing = true;
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
+
+    protected $keyType = 'int';
 
     public function comm_agent()
     {
@@ -22,5 +26,17 @@ class Commission extends Model
     {
         return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
     }
+
+    protected $fillable = [
+        'CommissionID',
+        'TransactionID',
+        'AgentID',
+        'Amount',
+
+        'Percentage', // Phần trăm hoa hồng
+        'TypeCom', // Loại hoa hồng (ví dụ: 'sale', 'rent')
+        'PaidDate', // Ngày thanh toán hoa hồng
+        'StatusCommission', // Trạng thái hoa hồng (ví dụ: 'pending', 'success', 'Cancelled')
+    ];
 
 }

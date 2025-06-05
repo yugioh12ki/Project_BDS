@@ -4,13 +4,13 @@
 <!-- Hero Section with Modern Design -->
 <section class="modern-hero">
     <div class="hero-slider" id="heroSlider">
-        <div class="hero-slide active" style="background-image: url('/storage/banner1.jpg')">
+        <div class="hero-slide active" style="background-image: url('{{ asset('storage/banner-1.jpg') }}')">
             <div class="hero-overlay"></div>
         </div>
-        <div class="hero-slide" style="background-image: url('/storage/banner2.jpg')">
+        <div class="hero-slide" style="background-image: url('{{ asset('storage/banner-2.jpg') }}')">
             <div class="hero-overlay"></div>
         </div>
-        <div class="hero-slide" style="background-image: url('/storage/banner3.jpg')">
+        <div class="hero-slide" style="background-image: url('{{ asset('storage/banner-3.png') }}')">
             <div class="hero-overlay"></div>
         </div>
 
@@ -43,62 +43,6 @@
                 Khám phá hàng ngàn bất động sản cao cấp trên toàn quốc
             </p>
         </div>
-
-        <!-- Modern Search Box -->
-        <form action="{{ route('customer.search') }}" method="GET" class="modern-search-box">
-            <div class="search-header">
-                <i class="bi bi-search"></i>
-                <h3>Tìm kiếm bất động sản</h3>
-            </div>
-
-            <div class="search-main">
-                <div class="search-input-group">
-                    <i class="bi bi-geo-alt"></i>
-                    <input type="text" name="keyword" placeholder="Nhập địa điểm tìm kiếm..." value="{{ request('keyword') }}">
-                </div>
-            </div>
-
-            <div class="search-filters-grid">
-                <div class="filter-group">
-                    <label><i class="bi bi-rulers"></i> Diện tích</label>
-                    <select name="area">
-                        <option value="">Chọn diện tích</option>
-                        <option value="1" {{ request('area') == 1 ? 'selected' : '' }}>Dưới 30m²</option>
-                        <option value="2" {{ request('area') == 2 ? 'selected' : '' }}>30-50m²</option>
-                        <option value="3" {{ request('area') == 3 ? 'selected' : '' }}>50-80m²</option>
-                        <option value="4" {{ request('area') == 4 ? 'selected' : '' }}>Trên 80m²</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label><i class="bi bi-house"></i> Loại hình</label>
-                    <select name="type">
-                        <option value="">Chọn loại hình</option>
-                        @if(isset($danhmucs))
-                            @foreach($danhmucs as $dm)
-                                <option value="{{ $dm->Protype_ID }}" {{ request('type') == $dm->Protype_ID ? 'selected' : '' }}>{{ $dm->ten_pro }}</option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label><i class="bi bi-currency-dollar"></i> Mức giá</label>
-                    <select name="price">
-                        <option value="">Chọn mức giá</option>
-                        <option value="1" {{ request('price') == 1 ? 'selected' : '' }}>Dưới 1 tỷ</option>
-                        <option value="2" {{ request('price') == 2 ? 'selected' : '' }}>1-3 tỷ</option>
-                        <option value="3" {{ request('price') == 3 ? 'selected' : '' }}>3-5 tỷ</option>
-                        <option value="4" {{ request('price') == 4 ? 'selected' : '' }}>Trên 5 tỷ</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn-search-modern">
-                    <i class="bi bi-search"></i>
-                    <span>Tìm kiếm ngay</span>
-                </button>
-            </div>
-        </form>
     </div>
 </section>
 
@@ -109,27 +53,41 @@
             <div class="section-title">
                 <h2>
                     <i class="bi bi-house-heart"></i>
-                    Bất động sản Bán nổi bật
+                    Bất động sản nổi bật
                 </h2>
-                <p>Khám phá những bất động sản bán được quan tâm nhiều nhất</p>
+                <p>Khám phá những bất động sản được quan tâm nhiều nhất</p>
             </div>
         </div>
 
         <div class="modern-property-grid">
-            @foreach($saleProperties as $property)
+            @foreach($saleProperties->take(3) as $property)
                 <div class="modern-property-card">
                     <div class="property-image-container">
-                        @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
-                            <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
+                        @if($property->images->count() > 0)
+                            @php
+                                // Sắp xếp ảnh theo ImageID tăng dần và lấy ảnh đầu tiên
+                                $sortedImages = $property->images->sortBy('ImageID');
+                                $mainImage = $sortedImages->first();
+                                $imageUrl = asset('storage/images/properties/' . $property->PropertyID . '/' . basename($mainImage->ImagePath));
+
+                            @endphp
+                            <img src="{{ $imageUrl }}" alt="{{ $property->Title }}" loading="lazy">
                         @else
-                            <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
+                            <img src="{{ asset('/storage/images/no-image.jpeg') }}" alt="{{ $property->Title }}" loading="lazy">
                         @endif
                         <div class="property-badge">Mới</div>
                         <div class="property-overlay">
-                            <a href="{{ route('property.detail', $property->PropertyID) }}" class="btn-view-detail">
-                                <i class="bi bi-eye"></i>
-                                Xem chi tiết
-                            </a>
+                            @if($property->TypePro == 'Cho bán')
+                                <a href="{{ route('properties.sale.detail', $property->PropertyID) }}" class="btn-view-detail">
+                                    <i class="bi bi-eye"></i>
+                                    Xem chi tiết
+                                </a>
+                            @else
+                                <a href="{{ route('properties.rent.detail', $property->PropertyID) }}" class="btn-view-detail">
+                                    <i class="bi bi-eye"></i>
+                                    Xem chi tiết
+                                </a>
+                            @endif
                         </div>
                     </div>
 
@@ -150,48 +108,71 @@
     </div>
 </section>
 
-<!-- Rental Properties Section -->
-<section class="featured-section">
+<!-- About Section -->
+<section class="about-section">
     <div class="container">
-        <div class="section-header">
-            <div class="section-title">
-                <h2>
-                    <i class="bi bi-star-fill"></i>
-                    Bất động sản Thuê nổi bật
-                </h2>
-                <p>Những lựa chọn cho thuê được đánh giá cao và được quan tâm nhiều nhất</p>
-            </div>
-        </div>
+        <div class="about-content">
+            <div class="about-text">
+                <div class="section-title">
+                    <h2>
+                        <i class="bi bi-building-fill"></i>
+                        Về chúng tôi
+                    </h2>
+                    <p>Đối tác tin cậy trong lĩnh vực bất động sản</p>
+                </div>
 
-        <div class="featured-property-grid">
-            @foreach($rentProperties as $property)
-                <div class="featured-property-card">
-                    <div class="property-image-container">
-                        @if(file_exists(public_path('storage/image_properties/' . $property->PropertyID . '.jpg')))
-                            <img src="{{ asset('storage/image_properties/' . $property->PropertyID . '.jpg') }}" alt="{{ $property->Title }}">
-                        @else
-                            <img src="{{ asset('storage/properties/no-image.jpg') }}" alt="{{ $property->Title }}">
-                        @endif
-                        <div class="featured-badge">
-                            <i class="bi bi-star-fill"></i>
-                            Nổi bật
+                <div class="about-description">
+                    <p>
+                        Với hơn 10 năm kinh nghiệm trong lĩnh vực bất động sản, chúng tôi tự hào là đơn vị
+                        hàng đầu cung cấp dịch vụ tư vấn, mua bán và cho thuê bất động sản trên toàn quốc.
+                    </p>
+
+                    <div class="about-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">5000+</div>
+                            <div class="stat-label">Khách hàng tin tưởng</div>
                         </div>
-                        <div class="property-overlay">
-                            <a href="{{ route('property.detail', $property->PropertyID) }}" class="btn-view-featured">
-                                <i class="bi bi-arrow-right"></i>
-                                Khám phá ngay
-                            </a>
+                        <div class="stat-item">
+                            <div class="stat-number">1000+</div>
+                            <div class="stat-label">Bất động sản</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">50+</div>
+                            <div class="stat-label">Thành phố</div>
                         </div>
                     </div>
 
-                    <div class="property-content">
-                        <div class="property-price-featured">
-                            {{ number_format($property->Price, 0, ',', '.') }} VND
+                    <div class="about-features">
+                        <div class="feature-item">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Pháp lý minh bạch</span>
                         </div>
-                        <h3 class="property-title">{{ $property->Title }}</h3>
+                        <div class="feature-item">
+                            <i class="bi bi-person-hearts"></i>
+                            <span>Tư vấn tận tâm</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="bi bi-award"></i>
+                            <span>Uy tín hàng đầu</span>
+                        </div>
                     </div>
                 </div>
-            @endforeach
+            </div>
+
+            <div class="about-image">
+                <div class="image-container">
+                    <img src="{{ asset('storage/about-us.jpg') }}" alt="Về chúng tôi" class="main-image">
+                    <div class="floating-card">
+                        <div class="card-content">
+                            <i class="bi bi-trophy-fill"></i>
+                            <div class="card-text">
+                                <h4>Top 1</h4>
+                                <p>Công ty BĐS uy tín</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>

@@ -1,6 +1,6 @@
 
 .footer-realestate {
-  background: #eae2c8;
+  background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #fffbeb 100%);
   padding: 0 0 32px 0;
 
   &__container {
@@ -16,7 +16,7 @@
       flex: 1 1 0;
       padding: 0 12px;
       font-size: 15px;
-      color: #7a5428;
+      color: #8B6914;
       &.form { flex: 1.2 1 0; }
   }
 
@@ -24,9 +24,9 @@
   &__slogan {
       font-size: 17px;
       font-weight: 700;
-      color: #914200;
+      color: #B8860B;
       margin-bottom: 8px;
-      .highlight { color: #e5731d; }
+      .highlight { color: #B8860B; }
   }
   &__desc {
       font-size: 14px;
@@ -40,14 +40,14 @@
       font-weight: 600;
       margin-bottom: 8px;
       text-align: center;
-      color: #76522c;
+      color: #4A90A4;
       i { font-size: 20px; margin-right: 6px; }
   }
   &__form {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      background: #f9f6e8;
+      background: #f0fdf4;
       padding: 12px 10px;
       border-radius: 7px;
       input, textarea {
@@ -57,7 +57,7 @@
           font-size: 14px;
       }
       button {
-          background: #c5a574;
+          background: #B8860B;
           color: #fff;
           border: none;
           border-radius: 7px;
@@ -67,7 +67,7 @@
           font-size: 15px;
           cursor: pointer;
           transition: background 0.18s;
-          &:hover { background: #a48b4d; }
+          &:hover { background: #8B6914; }
       }
   }
 
@@ -75,7 +75,7 @@
   &__contact-title {
       font-size: 17px;
       font-weight: bold;
-      color: #e5731d;
+      color: #B8860B;
       margin-bottom: 10px;
       text-align: right;
   }
@@ -84,11 +84,56 @@
       padding: 0;
       margin: 0;
       font-size: 14px;
-      color: #6a4826;
+      color: #8B6914;
       text-align: right;
       li {
           margin-bottom: 6px;
-          i { color: #ad6325; margin-right: 6px;}
+          i { color: #4A90A4; margin-right: 6px;}
+      }
+  }
+
+  // Social Media
+  &__social {
+      margin-top: 20px;
+      text-align: right;
+  }
+  &__social-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #B8860B;
+      margin-bottom: 12px;
+  }
+  &__social-icons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      
+      .social-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #B8860B, #4A90A4);
+          color: white;
+          border-radius: 50%;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          font-size: 18px;
+          
+          &:hover {
+              transform: translateY(-3px) scale(1.1);
+              box-shadow: 0 6px 15px rgba(45, 139, 71, 0.3);
+              
+              &:nth-child(1) { background: linear-gradient(135deg, #B8860B, #8B6914); } // Website
+              &:nth-child(2) { background: linear-gradient(135deg, #1877f2, #0d5bb8); } // Facebook
+              &:nth-child(3) { background: linear-gradient(135deg, #ff0000, #cc0000); } // YouTube
+              &:nth-child(4) { background: linear-gradient(135deg, #1da1f2, #0d8bd9); } // Twitter
+          }
+          
+          i {
+              font-size: inherit;
+          }
       }
   }
 }
@@ -101,6 +146,15 @@
   }
   .footer-realestate__contact-list {
       text-align: left;
+  }
+  .footer-realestate__contact-title {
+      text-align: left;
+  }
+  .footer-realestate__social {
+      text-align: left;
+  }
+  .footer-realestate__social-icons {
+      justify-content: flex-start;
   }
 }
 

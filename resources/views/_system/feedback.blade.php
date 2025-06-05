@@ -274,9 +274,24 @@
 }
 
 .feedback-card .card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     padding: 15px 20px;
     border-bottom: 1px solid #e9ecef;
+}
+
+/* Card header colors based on status */
+.feedback-card.pending-card .card-header {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+}
+
+.feedback-card.approved-card .card-header {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    color: white;
+}
+
+/* Default fallback for card header */
+.feedback-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .feedback-card .card-header .customer-info {
@@ -288,8 +303,30 @@
 
 .feedback-card .card-header .customer-name {
     font-weight: 600;
-    color: var(--dark-color);
     font-size: 1rem;
+}
+
+/* Text colors for pending cards */
+.feedback-card.pending-card .card-header .customer-name {
+    color: white;
+}
+
+.feedback-card.pending-card .card-header .feedback-date {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Text colors for approved cards */
+.feedback-card.approved-card .card-header .customer-name {
+    color: white;
+}
+
+.feedback-card.approved-card .card-header .feedback-date {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Default text colors */
+.feedback-card .card-header .customer-name {
+    color: var(--dark-color);
 }
 
 .feedback-card .card-header .feedback-date {
@@ -319,9 +356,39 @@
     color: #e9ecef;
 }
 
+/* Rating stars for colored card headers */
+.feedback-card.pending-card .rating .fa-star:not(.active),
+.feedback-card.pending-card .rating .far.fa-star {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.feedback-card.approved-card .rating .fa-star:not(.active),
+.feedback-card.approved-card .rating .far.fa-star {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.feedback-card.pending-card .rating .fa-star.active,
+.feedback-card.pending-card .rating .fa-star-half-alt.active {
+    color: #fff3cd;
+}
+
+.feedback-card.approved-card .rating .fa-star.active,
+.feedback-card.approved-card .rating .fa-star-half-alt.active {
+    color: #fff3cd;
+}
+
 .feedback-card .rating-text {
     font-size: 0.875rem;
     color: #6c757d;
+}
+
+/* Rating text for colored headers */
+.feedback-card.pending-card .rating-text {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.feedback-card.approved-card .rating-text {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .feedback-card .card-body {
@@ -369,7 +436,7 @@
     gap: 10px;
     justify-content: flex-end;
     padding: 15px 20px;
-    background: #f8f9fa;
+    background: #f8faf8;
     border-top: 1px solid #e9ecef;
 }
 
@@ -874,12 +941,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Create feedback card HTML
     function createFeedbackCard(feedback, type) {
-        // Ưu tiên quan hệ user_cus -> user, nếu không có thì dùng customer_user
-        const customerName = (feedback.user__cus && feedback.user__cus.user) ? feedback.user__cus.user.Name :
-                            (feedback.customer_user ? feedback.customer_user.Name : 'N/A');
-        // Ưu tiên quan hệ user_agent -> user, nếu không có thì dùng agent_user
-        const agentName = (feedback.user__agent && feedback.user__agent.user) ? feedback.user__agent.user.Name :
-                         (feedback.agent_user ? feedback.agent_user.Name : 'N/A');
+        // ✅ NEW APPROACH: Ưu tiên relationships MỚI (customer_feedback, agent_feedback) trước, rồi fallback về relationships CŨ
+        // Phase 1: Prioritize NEW relationships with fallback to OLD ones
+        const customerName = feedback.customer_feedback?.Name ||  // NEW relationship (direct)
+                            (feedback.user__cus?.user?.Name) ||   // OLD relationship (via profile)
+                            feedback.customer_user?.Name ||       // OLD relationship (direct)
+                            'N/A';
+                            
+        const agentName = feedback.agent_feedback?.Name ||        // NEW relationship (direct)
+                         (feedback.user__agent?.user?.Name) ||   // OLD relationship (via profile)
+                         feedback.agent_user?.Name ||            // OLD relationship (direct)
+                         'N/A';
         const rating = parseFloat(feedback.Rating) || 0;
 
         // Tạo các sao với hỗ trợ nửa sao
@@ -945,12 +1017,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         container.innerHTML = cancelled.map(feedback => {
-            // Ưu tiên quan hệ user_cus -> user, nếu không có thì dùng customer_user
-            const customerName = (feedback.user__cus && feedback.user__cus.user) ? feedback.user__cus.user.Name :
-                                (feedback.customer_user ? feedback.customer_user.Name : 'N/A');
-            // Ưu tiên quan hệ user_agent -> user, nếu không có thì dùng agent_user
-            const agentName = (feedback.user__agent && feedback.user__agent.user) ? feedback.user__agent.user.Name :
-                             (feedback.agent_user ? feedback.agent_user.Name : 'N/A');
+            // ✅ NEW APPROACH: Ưu tiên relationships MỚI trước, rồi fallback về relationships CŨ
+            const customerName = feedback.customer_feedback?.Name ||  // NEW relationship (direct)
+                                (feedback.user__cus?.user?.Name) ||   // OLD relationship (via profile)
+                                feedback.customer_user?.Name ||       // OLD relationship (direct)
+                                'N/A';
+                                
+            const agentName = feedback.agent_feedback?.Name ||        // NEW relationship (direct)
+                             (feedback.user__agent?.user?.Name) ||   // OLD relationship (via profile)
+                             feedback.agent_user?.Name ||            // OLD relationship (direct)
+                             'N/A';
             const rating = parseFloat(feedback.Rating) || 0;
 
             // Tạo đánh giá sao

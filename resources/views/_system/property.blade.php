@@ -186,7 +186,7 @@
                                                     </div>
                                                     <div class="text-muted small">
                                                         <i class="fas fa-map-marker-alt me-1"></i>
-                                                        <span class="fw-medium">{{ $agent->profile_agent->AreaAgent ?? 'Chưa cơ sở' }}</span>
+                                                        <span class="fw-medium">{{ $agent->profile_agent->ProvinceAgent ?? ' ' }} - {{ $agent->profile_agent->DistrictAgent ?? 'Tùy ý' }}</span>
                                                     </div>
                                                 </div>
                                                 <div class="text-end">

@@ -21,9 +21,16 @@
           padding: 0.75rem 1rem;
           width: 80%;
           max-width: 600px;
-          border: 1px solid #ccc;
+          border: 2px solid #D4AF37;
           border-radius: 0.5rem;
           font-size: 1rem;
+          transition: all 0.3s ease;
+          
+          &:focus {
+            outline: none;
+            border-color: #B8860B;
+            box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.2);
+          }
         }
       }
 
@@ -36,22 +43,35 @@
         select {
           padding: 0.75rem 1rem;
           min-width: 180px;
-          border: 1px solid #ccc;
+          border: 2px solid #D4AF37;
           border-radius: 0.5rem;
           font-size: 1rem;
+          background: white;
+          transition: all 0.3s ease;
+          
+          &:focus {
+            outline: none;
+            border-color: #B8860B;
+            box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.2);
+          }
         }
 
         .btn-search {
           padding: 0.75rem 1.5rem;
-          background-color: #007bff;
+          background: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%);
           color: white;
-          border: none;
+          border: 2px solid #8B6914;
           border-radius: 0.5rem;
           font-size: 1rem;
+          font-weight: 600;
           cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(184, 134, 11, 0.3);
 
           &:hover {
-            background-color: #0056b3;
+            background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(184, 134, 11, 0.4);
           }
         }
       }
@@ -79,41 +99,4 @@
     }
   }
 
-  .property-card,
-  .utility-card,
-  .company-card,
-  .news-card {
-    background: #fff;
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    padding: 1.5rem;
-    max-width: 250px;
-    text-align: center;
-    transition: transform 0.3s ease;
-
-    h3, h4 {
-      margin: 0.5rem 0;
-      font-size: 1.1rem;
-    }
-
-    p {
-      font-size: 0.95rem;
-      color: #666;
-    }
-
-    span {
-      display: block;
-      margin-top: 0.5rem;
-      font-weight: bold;
-      color: #007bff;
-    }
-
-    small {
-      color: #aaa;
-    }
-
-    &:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    }
-  }
+  // Card styles are now imported from card-styles.scss

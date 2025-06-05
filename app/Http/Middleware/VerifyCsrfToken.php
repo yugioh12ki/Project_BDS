@@ -12,6 +12,8 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        'api/chatbot',
+        'api/chatbot/*',
+        'api/v1/chatbot/*'
     ];
 }

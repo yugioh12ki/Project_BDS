@@ -10,6 +10,7 @@
         'resources/sass/footer.scss',
         'resources/sass/home.scss',
         'resources/sass/modern-home.scss',
+        'resources/js/app.js',
         'resources/js/home.js',
         'resources/js/notifications.js',
         'resources/sass/apphome.scss',

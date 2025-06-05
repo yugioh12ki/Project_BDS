@@ -34,4 +34,15 @@ class Appointment extends Model
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
     }
+
+    protected $fillable = [
+        'AppointmentID',
+        'PropertyID',
+        'OwnerID',
+        'AgentID',
+        'CusID',
+        'AppointmentDate',
+        'Status', // Trạng thái cuộc hẹn (ví dụ: 'pending', 'confirmed', 'cancelled')
+        'Notes', // Ghi chú về cuộc hẹn
+    ];
 }

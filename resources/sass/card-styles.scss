@@ -1,0 +1,461 @@
+// Card Styles - Shared styles for all types of cards
+// ==================================================
+
+// Base Card Style - Applied to all card types
+.card-base {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(184, 134, 11, 0.15);
+    border-color: #B8860B;
+  }
+}
+
+// Property Card - Extended for property listings
+.property-card {
+  @extend .card-base;
+  
+  .property-image {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .property-badges {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 3;
+
+      .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+
+        &.badge-sale {
+          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          color: white;
+        }
+
+        &.badge-rent {
+          background: linear-gradient(135deg, #2563eb, #1d4ed8);
+          color: white;
+        }
+
+        &.badge-type {
+          background: rgba(255, 255, 255, 0.95);
+          color: #374151;
+          border: 1px solid #e5e7eb;
+        }
+      }
+    }
+
+    .property-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(184, 134, 11, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 2;
+
+      .btn-view-detail {
+        background: white;
+        color: #B8860B;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #f9fafb;
+        }
+
+        i {
+          font-size: 1.1rem;
+        }
+      }
+    }
+  }
+
+  .property-content {
+    padding: 1.25rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .property-price {
+      margin-bottom: 0.75rem;
+
+      .price-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #B8860B;
+      }
+
+      .price-unit {
+        font-size: 0.85rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-left: 0.25rem;
+      }
+    }
+
+    .property-title {
+      margin-bottom: 1rem;
+
+      a {
+        color: #1f2937;
+        text-decoration: none;
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.4;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: #B8860B;
+        }
+      }
+    }
+
+    .property-location {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      color: #6b7280;
+      font-weight: 500;
+
+      i {
+        color: #4A90A4;
+        font-size: 1.1rem;
+      }
+    }
+
+    .property-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem;
+      background: rgba(45, 139, 71, 0.05);
+      border-radius: 10px;
+      justify-content: space-between;
+
+      .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4b5563;
+        font-size: 0.9rem;
+        font-weight: 600;
+        min-width: 85px;
+        flex: 1;
+
+        i {
+          color: #B8860B;
+          font-size: 1rem;
+          width: 20px;
+          text-align: center;
+        }
+      }
+    }
+  }
+
+  .property-footer {
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    
+    .property-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      
+      .posted-date {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #9ca3af;
+        font-size: 0.85rem;
+
+        i {
+          color: #6b7280;
+        }
+      }
+
+      .btn-detail {
+        color: #B8860B;
+        text-decoration: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+
+        &:hover {
+          color: #1f5f32;
+          gap: 0.75rem;
+        }
+
+        i {
+          transition: transform 0.3s ease;
+        }
+
+        &:hover i {
+          transform: translateX(3px);
+        }
+      }
+    }
+    
+    .property-source {
+      font-size: 0.8rem;
+      color: #6b7280;
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      
+      i {
+        font-size: 0.9rem;
+        color: #B8860B;
+      }
+    }
+  }
+
+  .no-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #9ca3af;
+    font-weight: 600;
+
+    i {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      color: #d1d5db;
+    }
+
+    span {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+}
+
+// Utility Card - For amenities, features
+.utility-card {
+  @extend .card-base;
+  padding: 1.5rem;
+  text-align: center;
+  
+  .utility-icon {
+    font-size: 2rem;
+    color: #B8860B;
+    margin-bottom: 1rem;
+  }
+  
+  h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: #1f2937;
+  }
+  
+  p {
+    color: #6b7280;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+}
+
+// Company Card - For company profiles, agents
+.company-card {
+  @extend .card-base;
+  padding: 1.5rem;
+  text-align: center;
+  
+  .company-logo {
+    height: 80px;
+    width: 80px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+  
+  .company-role {
+    color: #4A90A4;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+  
+  .company-contact {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    
+    a {
+      color: #B8860B;
+      font-size: 1.1rem;
+      transition: color 0.3s ease;
+      
+      &:hover {
+        color: #1f5f32;
+      }
+    }
+  }
+}
+
+// News Card - For blog posts, news
+.news-card {
+  @extend .card-base;
+  
+  .news-image {
+    height: 200px;
+    overflow: hidden;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+  }
+  
+  .news-content {
+    padding: 1.5rem;
+    
+    .news-date {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      i {
+        color: #4A90A4;
+      }
+    }
+    
+    h4 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 1rem;
+      line-height: 1.4;
+      
+      a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.3s ease;
+        
+        &:hover {
+          color: #B8860B;
+        }
+      }
+    }
+    
+    p {
+      color: #6b7280;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    
+    .news-read-more {
+      color: #B8860B;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        gap: 0.75rem;
+      }
+      
+      i {
+        transition: transform 0.3s ease;
+      }
+      
+      &:hover i {
+        transform: translateX(3px);
+      }
+    }
+  }
+  
+  &:hover .news-image img {
+    transform: scale(1.1);
+  }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  .property-card,
+  .utility-card,
+  .company-card,
+  .news-card {
+    .property-image,
+    .news-image {
+      height: 180px;
+    }
+  }
+}

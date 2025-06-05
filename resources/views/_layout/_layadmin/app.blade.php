@@ -14,6 +14,9 @@
     <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
+    <!-- Responsive Table Enhancements CSS -->
+    <link href="{{ asset('css/responsive-table-enhancements.css') }}" rel="stylesheet">
+
     <!-- Scripts -->
     <script src="{{ asset('js/global-functions.js') }}"></script>
 
@@ -368,5 +371,8 @@
             }
         };
     </script>
+
+    <!-- Responsive Table Enhancements JavaScript -->
+    <script src="{{ asset('js/responsive-table-enhancements.js') }}"></script>
 </body>
 </html>

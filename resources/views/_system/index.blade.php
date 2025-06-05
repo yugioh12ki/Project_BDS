@@ -314,7 +314,7 @@
             </div>
         </div>
 
-        <!-- Bảng thống kê chi tiết -->
+        {{-- <!-- Bảng thống kê chi tiết -->
         <div class="row">
             <!-- Bảng Giao Dịch Mới Nhất -->
             <div class="col-lg-6 mb-4">
@@ -402,7 +402,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
 @push('scripts')
     <!-- Sử dụng Chart.js v4.4.9 -->

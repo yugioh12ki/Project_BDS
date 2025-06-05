@@ -2,6 +2,7 @@ import * as bootstrap from 'bootstrap';
 import Chart from 'chart.js/auto';
 import * as GoogleMaps from './google-maps';
 import * as PropertyManagement from './property-management';
+import './header'; // Import header functionality
 
 // Import Google Maps Services package
 // import { Client } from '@googlemaps/google-maps-services-js';

@@ -20,8 +20,8 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab" aria-controls="upload" aria-selected="false">
-                    <i class="fas fa-cloud-upload-alt me-2"></i>
-                    Tải lên mẫu
+                    <i class="fas fa-brain me-2"></i>
+                    Tải lên & Phân tích
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -55,17 +55,9 @@
                             <button class="btn btn-outline-primary btn-sm me-2" id="refreshContracts" data-bs-toggle="tooltip" title="Làm mới danh sách">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
-                            <div class="dropdown">
-                                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-plus me-1"></i>Thêm mẫu
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-upload me-2"></i>Tải lên file</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-link me-2"></i>Từ liên kết</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Quản lý thư mục</a></li>
-                                </ul>
-                            </div>
+                            <button class="btn btn-primary btn-sm" id="addContractBtn" data-bs-toggle="modal" data-bs-target="#addContractModal">
+                                <i class="fas fa-plus me-1"></i>Thêm mẫu hợp đồng
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -110,28 +102,47 @@
 
                                         <div class="contract-actions">
                                             <a href="{{ $template['download_url'] }}"
-                                               class="btn btn-primary btn-action"
-                                               download="{{ $template['name'] }}">
-                                                <i class="fas fa-download me-2"></i>
-                                                Tải xuống
+                                               class="btn btn-primary btn-sm me-1"
+                                               download="{{ $template['name'] }}"
+                                               data-bs-toggle="tooltip" title="Tải xuống">
+                                                <i class="fas fa-download"></i>
                                             </a>
                                             <button type="button"
-                                                    class="btn btn-outline-success btn-action btn-preview"
+                                                    class="btn btn-outline-secondary btn-sm me-1 btn-print"
+                                                    data-template="{{ $template['name'] }}"
+                                                    data-display-name="{{ $template['display_name'] }}"
+                                                    data-file-url="{{ $template['download_url'] }}"
+                                                    data-print-url="{{ $template['print_url'] }}"
+                                                    data-file-name="{{ $template['display_name'] }}"
+                                                    title="In hợp đồng">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-outline-success btn-sm me-1 btn-preview"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#previewModal"
                                                     data-file-url="{{ $template['download_url'] }}"
                                                     data-file-name="{{ $template['display_name'] }}"
-                                                    data-preview-url="{{ $template['preview_url'] }}">
-                                                <i class="fas fa-eye me-2"></i>
-                                                Xem trước
+                                                    data-preview-url="{{ $template['preview_url'] }}"
+                                                    title="Xem trước">
+                                                <i class="fas fa-eye"></i>
                                             </button>
                                             <button type="button"
-                                                    class="btn btn-outline-info btn-action btn-print"
-                                                    data-file-url="{{ $template['download_url'] }}"
-                                                    data-file-name="{{ $template['display_name'] }}"
-                                                    data-print-url="{{ $template['print_url'] }}">
-                                                <i class="fas fa-print me-2"></i>
-                                                In
+                                                    class="btn btn-outline-info btn-sm me-1 btn-edit"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editContractModal"
+                                                    data-template="{{ $template['name'] }}"
+                                                    data-display-name="{{ $template['display_name'] }}"
+                                                    title="Chỉnh sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm btn-delete"
+                                                    data-template="{{ $template['name'] }}"
+                                                    data-display-name="{{ $template['display_name'] }}"
+                                                    title="Xóa"
+                                                    onclick="confirmDelete('{{ $template['name'] }}', '{{ $template['display_name'] }}')">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -142,16 +153,16 @@
                     @else
                         <div class="empty-state text-center py-5">
                             <div class="empty-icon mb-4">
-                                <i class="fas fa-file-contract"></i>
+                                <i class="fas fa-file-contract fa-5x text-muted"></i>
                             </div>
                             <h4 class="empty-title">Chưa có mẫu hợp đồng</h4>
                             <p class="empty-text text-muted mb-4">
                                 Hiện tại chưa có file hợp đồng .docx nào trong thư mục.<br>
-                                Vui lòng liên hệ quản trị viên để cập nhật mẫu hợp đồng.
+                                Hãy thêm mẫu hợp đồng đầu tiên để bắt đầu sử dụng.
                             </p>
-                            <button class="btn btn-outline-primary">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addContractModal">
                                 <i class="fas fa-plus me-2"></i>
-                                Thêm mẫu hợp đồng
+                                Thêm mẫu hợp đồng đầu tiên
                             </button>
                         </div>
                     @endif
@@ -159,164 +170,169 @@
             </div>
         </div>
 
-        <!-- Tab 2: Upload Template -->
+        <!-- Tab 2: AI Contract Analysis -->
         <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-gradient-success">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="card-title mb-1 text-white">
-                                <i class="fas fa-cloud-upload-alt me-2"></i>
-                                Tải lên mẫu hợp đồng mới
+                                <i class="fas fa-brain me-2"></i>
+                                Phân tích hợp đồng thông minh
                             </h5>
                             <p class="text-white-50 mb-0 small">
-                                Thêm mẫu hợp đồng .docx vào thư viện
+                                Sử dụng AI để phân tích hợp đồng và đánh giá rủi ro
                             </p>
                         </div>
                         <div class="header-actions">
-                            <button class="btn btn-outline-light btn-sm" id="clearUploads" data-bs-toggle="tooltip" title="Xóa tất cả">
-                                <i class="fas fa-trash-alt"></i>
+                            <button class="btn btn-outline-light btn-sm" id="clearAnalysis" data-bs-toggle="tooltip" title="Xóa kết quả">
+                                <i class="fas fa-refresh"></i>
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="card-body p-4">
-                    <!-- Upload Methods -->
+                    <!-- Contract Source Selection -->
                     <div class="row mb-4">
                         <div class="col-12">
-                            <div class="upload-methods">
-                                <div class="method-tabs">
-                                    <button class="method-tab active" data-method="file">
-                                        <i class="fas fa-file-upload"></i>
-                                        <span>Tải lên file</span>
+                            <div class="source-selection">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-file-alt me-2"></i>Chọn nguồn hợp đồng để phân tích
+                                </h6>
+                                <div class="source-tabs">
+                                    <button class="source-tab active" data-source="template">
+                                        <i class="fas fa-file-contract"></i>
+                                        <span>Từ thư viện mẫu</span>
                                     </button>
-                                    <button class="method-tab" data-method="url">
-                                        <i class="fas fa-link"></i>
-                                        <span>Từ liên kết</span>
-                                    </button>
-                                    <button class="method-tab" data-method="multiple">
-                                        <i class="fas fa-layer-group"></i>
-                                        <span>Nhiều file</span>
+                                    <button class="source-tab" data-source="upload">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Tải lên file mới</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- File Upload Method -->
-                    <div class="upload-content" id="file-upload" style="display: block;">
-                        <div class="upload-zone" id="dropZone">
+                    <!-- Template Selection -->
+                    <div class="source-content" id="template-selection" style="display: block;">
+                        <div class="template-selector">
+                            <h6 class="mb-3">Chọn mẫu hợp đồng từ thư viện:</h6>
+                            <div class="template-list">
+                                @if(count($contractTemplates) > 0)
+                                    <div class="row g-3">
+                                        @foreach($contractTemplates as $template)
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="template-card" data-template="{{ $template['name'] }}" data-display-name="{{ $template['display_name'] }}">
+                                                <div class="template-icon">
+                                                    <i class="fas fa-file-word text-primary"></i>
+                                                </div>
+                                                <div class="template-info">
+                                                    <h6 class="template-name">{{ $template['display_name'] }}</h6>
+                                                    <small class="text-muted">{{ number_format($template['size'] / 1024, 1) }} KB</small>
+                                                </div>
+                                                <div class="template-check">
+                                                    <i class="fas fa-check-circle text-success" style="display: none;"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="empty-templates text-center py-4">
+                                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                        <h6 class="text-muted">Chưa có mẫu hợp đồng</h6>
+                                        <p class="text-muted">Vui lòng thêm mẫu hợp đồng trước khi phân tích</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="source-content" id="file-upload-analysis" style="display: none;">
+                        <div class="upload-zone-analysis" id="dropZoneAnalysis">
                             <div class="upload-zone-content">
                                 <div class="upload-icon">
                                     <i class="fas fa-cloud-upload-alt"></i>
                                 </div>
-                                <h4 class="upload-title">Kéo thả file vào đây</h4>
-                                <p class="upload-subtitle">hoặc <button type="button" class="btn-link" id="browseFiles">duyệt file</button> để chọn</p>
+                                <h4 class="upload-title">Tải lên hợp đồng để phân tích</h4>
+                                <p class="upload-subtitle">Kéo thả file vào đây hoặc <button type="button" class="btn-link" id="browseAnalysisFile">chọn file</button></p>
                                 <div class="upload-info">
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Chỉ chấp nhận file .docx, tối đa 10MB
+                                        Hỗ trợ file .doc, .docx và .pdf, tối đa 10MB
                                     </small>
                                 </div>
-                                <input type="file" id="fileInput" multiple accept=".docx" style="display: none;">
+                                <input type="file" id="analysisFileInput" accept=".doc,.docx,.pdf" style="display: none;">
                             </div>
                         </div>
 
-                        <!-- Upload Progress -->
-                        <div class="upload-progress" id="uploadProgress" style="display: none;">
-                            <h5 class="mb-3">Đang tải lên</h5>
-                            <div id="uploadList"></div>
-                        </div>
-
-                        <!-- Upload Results -->
-                        <div class="upload-results" id="uploadResults" style="display: none;">
-                            <h5 class="mb-3">Kết quả tải lên</h5>
-                            <div id="resultsList"></div>
-                            <div class="mt-3">
-                                <button class="btn btn-success" id="goToContracts">
-                                    <i class="fas fa-eye me-2"></i>Xem mẫu đã tải lên
-                                </button>
-                                <button class="btn btn-outline-primary" id="uploadMore">
-                                    <i class="fas fa-plus me-2"></i>Tải lên thêm
+                        <div class="upload-preview" id="uploadPreview" style="display: none;">
+                            <div class="selected-file">
+                                <div class="file-icon">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div class="file-info">
+                                    <h6 class="file-name"></h6>
+                                    <small class="file-size text-muted"></small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">
+                                    <i class="fas fa-times"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- URL Upload Method -->
-                    <div class="upload-content" id="url-upload" style="display: none;">
-                        <div class="url-upload-form">
-                            <div class="form-group mb-3">
-                                <label for="fileUrl" class="form-label">Liên kết file .docx</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-link"></i>
-                                    </span>
-                                    <input type="url" class="form-control" id="fileUrl" placeholder="https://example.com/contract.docx">
-                                    <button class="btn btn-primary" type="button" id="downloadFromUrl">
-                                        <i class="fas fa-download me-2"></i>Tải về
+                    <!-- Analysis Controls -->
+                    <div class="analysis-controls mt-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Sẵn sàng phân tích</h6>
+                                <small class="text-muted">AI sẽ phân tích hợp đồng và đưa ra đánh giá chi tiết</small>
+                            </div>
+                            <button class="btn btn-primary btn-lg" id="startAnalysis" disabled>
+                                <i class="fas fa-brain me-2"></i>
+                                Bắt đầu phân tích
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Progress -->
+                    <div class="analysis-progress" id="analysisProgress" style="display: none;">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Đang phân tích...</span>
+                            </div>
+                            <h5 class="text-primary">AI đang phân tích hợp đồng</h5>
+                            <p class="text-muted mb-0">Vui lòng chờ trong giây lát...</p>
+                            <div class="progress mt-3" style="height: 8px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-2 d-block" id="progressText">Đang khởi tạo phân tích...</small>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Results -->
+                    <div class="analysis-results" id="analysisResults" style="display: none;">
+                        <div class="results-header mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-line me-2 text-success"></i>
+                                    Kết quả phân tích hợp đồng
+                                </h5>
+                                <div class="results-actions">
+                                    <button class="btn btn-outline-secondary btn-sm me-2" id="exportAnalysis">
+                                        <i class="fas fa-download me-1"></i>Xuất báo cáo
+                                    </button>
+                                    <button class="btn btn-success btn-sm" id="newAnalysis">
+                                        <i class="fas fa-plus me-1"></i>Phân tích mới
                                     </button>
                                 </div>
-                                <div class="form-text">Nhập liên kết trực tiếp đến file .docx</div>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="fileName" class="form-label">Tên file (tùy chọn)</label>
-                                <input type="text" class="form-control" id="fileName" placeholder="Tên mẫu hợp đồng">
-                                <div class="form-text">Để trống để sử dụng tên từ URL</div>
-                            </div>
-
-                            <div class="url-preview" id="urlPreview" style="display: none;">
-                                <div class="alert alert-info">
-                                    <h6><i class="fas fa-info-circle me-2"></i>Thông tin file</h6>
-                                    <div id="urlFileInfo"></div>
-                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Multiple Files Upload Method -->
-                    <div class="upload-content" id="multiple-upload" style="display: none;">
-                        <div class="multiple-upload-area">
-                            <div class="batch-upload-zone">
-                                <div class="batch-upload-header">
-                                    <h5><i class="fas fa-layer-group me-2"></i>Tải lên nhiều file cùng lúc</h5>
-                                    <p class="text-muted">Chọn nhiều file .docx để tải lên hàng loạt</p>
-                                </div>
-
-                                <div class="batch-drop-zone" id="batchDropZone">
-                                    <div class="batch-drop-content">
-                                        <i class="fas fa-files"></i>
-                                        <h4>Thả nhiều file vào đây</h4>
-                                        <p>hoặc <button type="button" class="btn-link" id="browseBatchFiles">chọn nhiều file</button></p>
-                                        <input type="file" id="batchFileInput" multiple accept=".docx" style="display: none;">
-                                    </div>
-                                </div>
-
-                                <div class="batch-controls mt-3" style="display: none;">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="overwriteExisting">
-                                                <label class="form-check-label" for="overwriteExisting">
-                                                    Ghi đè file trùng tên
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6 text-end">
-                                            <button class="btn btn-primary" id="startBatchUpload">
-                                                <i class="fas fa-upload me-2"></i>Bắt đầu tải lên
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="batch-queue" id="batchQueue" style="display: none;">
-                                    <h6>Hàng đợi tải lên</h6>
-                                    <div id="batchList"></div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Results content will be dynamically populated -->
+                        <div id="analysisContent"></div>
                     </div>
                 </div>
             </div>
@@ -427,6 +443,9 @@
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Xuất PDF">
                                     <i class="fas fa-file-pdf"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="printTransactions" data-bs-toggle="tooltip" title="In danh sách">
+                                    <i class="fas fa-print"></i>
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="refreshTransactions" data-bs-toggle="tooltip" title="Làm mới">
                                     <i class="fas fa-sync-alt"></i>
@@ -636,19 +655,21 @@
                                                                         <tr>
                                                                             <td><span class="badge bg-info">#{{ $payment->Num_Pay }}</span></td>
                                                                             <td class="fw-bold text-success">{{ number_format($payment->Price, 0, ',', '.') }}₫</td>
-                                                                            <td>{{ date('d/m/Y', strtotime($payment->DTrans_Date)) }}</td>
+                                                                            <td>{{ date('d/m/Y', strtotime($payment->DTran_Date)) }}</td>
                                                                             <td>
                                                                                 <span class="badge bg-secondary-subtle text-secondary">
                                                                                     {{ $payment->PaymentType ?? 'N/A' }}
                                                                                 </span>
                                                                             </td>
                                                                             <td>
-                                                                                @if($payment->DTrans_Status == 'Completed')
+                                                                                @if($payment->DTran_Status == 'Hoàn Thành')
                                                                                     <span class="badge bg-success">Hoàn thành</span>
-                                                                                @elseif($payment->DTrans_Status == 'Pending')
+                                                                                @elseif($payment->DTran_Status == 'Chờ đợi')
                                                                                     <span class="badge bg-warning">Chờ xử lý</span>
+                                                                                @elseif($payment->DTran_Status == 'Hủy')
+                                                                                    <span class="badge bg-danger">Đã hủy</span>
                                                                                 @else
-                                                                                    <span class="badge bg-secondary">{{ $payment->DTrans_Status }}</span>
+                                                                                    <span class="badge bg-secondary">{{ $payment->DTran_Status }}</span>
                                                                                 @endif
                                                                             </td>
                                                                         </tr>
@@ -1065,10 +1086,10 @@
                                     <tr>
                                         <td>${payment.Num_Pay}</td>
                                         <td class="fw-bold text-success">${formatCurrency(payment.Price)}</td>
-                                        <td>${payment.DTrans_Date ? formatDate(payment.DTrans_Date) : 'N/A'}</td>
+                                        <td>${payment.DTran_Date ? formatDate(payment.DTran_Date) : 'N/A'}</td>
                                         <td>
-                                            <span class="badge ${payment.DTrans_Status === 'Hoàn Thành' ? 'bg-success' : 'bg-warning'}">
-                                                ${payment.DTrans_Status}
+                                            <span class="badge ${payment.DTran_Status === 'Hoàn Thành' ? 'bg-success' : 'bg-warning'}">
+                                                ${payment.DTran_Status}
                                             </span>
                                         </td>
                                     </tr>
@@ -1085,84 +1106,71 @@
                         }
 
                         // Populate documents tab
-                        function populateDocuments(documents, contracts) {
+                        function populateDocuments(documents) {
                             const content = document.getElementById('documentsContent');
-                            let html = '';
 
-                            // Add contracts section
-                            if (contracts && contracts.length > 0) {
-                                html += `
-                                    <div class="mb-4">
-                                        <h6 class="text-info mb-3">
-                                            <i class="fas fa-file-contract me-2"></i>Hợp đồng đã ký
-                                        </h6>
-                                `;
-
-                                contracts.forEach(contract => {
-                                    html += `
-                                        <div class="d-flex align-items-center justify-content-between border rounded p-3 mb-2">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-file-contract text-primary me-2"></i>
-                                                <div>
-                                                    <div class="fw-semibold">Hợp đồng #${contract.ContractID}</div>
-                                                    <small class="text-muted">Ký ngày: ${formatDate(contract.SignedDate)}</small>
-                                                </div>
-                                            </div>
-                                            <span class="badge bg-success">Đã ký</span>
-                                        </div>
-                                    `;
-                                });
-
-                                html += '</div>';
-                            }
-
-                            // Add documents section
-                            if (documents && documents.length > 0) {
-                                html += `
-                                    <div class="mb-4">
-                                        <h6 class="text-warning mb-3">
-                                            <i class="fas fa-folder-open me-2"></i>Tài liệu đính kèm
-                                        </h6>
-                                `;
-
-                                documents.forEach(doc => {
-                                    html += `
-                                        <div class="d-flex align-items-center justify-content-between border rounded p-3 mb-2">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-file-alt text-info me-2"></i>
-                                                <div>
-                                                    <div class="fw-semibold">${doc.DocumentType || 'Tài liệu'}</div>
-                                                    <small class="text-muted">Upload: ${formatDate(doc.UploadedDate)}</small>
-                                                </div>
-                                            </div>
-                                            <button class="btn btn-outline-primary btn-sm" onclick="viewDocument('${doc.FilePath}')">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    `;
-                                });
-
-                                html += '</div>';
-                            }
-
-                            // If no documents or contracts
-                            if ((!documents || documents.length === 0) && (!contracts || contracts.length === 0)) {
-                                html = `
+                            if (!documents || documents.length === 0) {
+                                content.innerHTML = `
                                     <div class="text-center py-4">
                                         <div class="text-muted mb-3">
                                             <i class="fas fa-folder-open fa-3x"></i>
                                         </div>
                                         <h6 class="text-muted">Chưa có tài liệu</h6>
-                                        <p class="text-muted">Giao dịch này chưa có tài liệu hoặc hợp đồng nào.</p>
+                                        <p class="text-muted">Giao dịch này chưa có tài liệu nào được tải lên.</p>
                                     </div>
                                 `;
+                                return;
                             }
 
+                            let html = '<div class="row">';
+
+                            documents.forEach(doc => {
+                                html += `
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-3">
+                                                        <i class="fas fa-file-alt fa-2x text-primary"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">${doc.DocumentName}</h6>
+                                                        <small class="text-muted">${doc.DocumentType}</small>
+                                                        <div class="mt-2">
+                                                            <button class="btn btn-sm btn-outline-primary me-2" onclick="viewDocument('${doc.FilePath}')">
+                                                                <i class="fas fa-eye me-1"></i>Xem
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-success" onclick="downloadDocument('${doc.FilePath}')">
+                                                                <i class="fas fa-download me-1"></i>Tải xuống
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+
+                            html += '</div>';
                             content.innerHTML = html;
                         }
 
-                        // Helper functions for formatting
+                        // Toggle payment button visibility
+                        function togglePaymentButton(status) {
+                            const paymentBtn = document.getElementById('processPaymentBtn');
+                            if (paymentBtn) {
+                                if (status === 'Paid') {
+                                    paymentBtn.style.display = 'none';
+                                } else {
+                                    paymentBtn.style.display = 'inline-block';
+                                }
+                            }
+                        }
+
+                        // Helper functions
                         function formatCurrency(amount) {
+                            if (!amount) return 'N/A';
                             return new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
                                 currency: 'VND'
@@ -1176,19 +1184,233 @@
                         }
 
                         function getStatusBadgeClass(status) {
-                            const statusClasses = {
-                                'Pending': 'bg-warning',
-                                'Paid': 'bg-primary',
-                                'Completed': 'bg-success',
-                                'Cancelled': 'bg-danger'
-                            };
-                            return statusClasses[status] || 'bg-secondary';
+                            switch (status) {
+                                case 'Paid': return 'bg-success';
+                                case 'Pending': return 'bg-warning';
+                                case 'Cancelled': return 'bg-danger';
+                                default: return 'bg-secondary';
+                            }
                         }
 
-                        // Function to view document (placeholder)
-                        function viewDocument(filePath) {
-                            // This could open the document in a new window or modal
-                            window.open(`/storage/${filePath}`, '_blank');
+                        // Contract Template Event Handlers
+                        document.addEventListener('DOMContentLoaded', function() {
+                            console.log('🚀 Contract Template Handlers Loaded');
+
+                            // Handle Preview buttons
+                            document.addEventListener('click', function(e) {
+                                if (e.target.closest('.btn-preview')) {
+                                    e.preventDefault();
+                                    const button = e.target.closest('.btn-preview');
+                                    handleContractPreview(button);
+                                }
+
+                                if (e.target.closest('.btn-print')) {
+                                    e.preventDefault();
+                                    const button = e.target.closest('.btn-print');
+                                    handleContractPrint(button);
+                                }
+                            });
+
+                            // Handle modal preview buttons
+                            document.getElementById('downloadFromPreview')?.addEventListener('click', function() {
+                                const currentFileUrl = this.getAttribute('data-current-file-url');
+                                const currentFileName = this.getAttribute('data-current-file-name');
+                                if (currentFileUrl && currentFileName) {
+                                    const link = document.createElement('a');
+                                    link.href = currentFileUrl;
+                                    link.download = currentFileName;
+                                    link.click();
+                                }
+                            });
+
+                            document.getElementById('printFromPreview')?.addEventListener('click', function() {
+                                const currentPrintUrl = this.getAttribute('data-current-print-url');
+                                if (currentPrintUrl) {
+                                    window.open(currentPrintUrl, '_blank');
+                                } else {
+                                    // Fallback to print current modal content
+                                    window.print();
+                                }
+                            });
+
+                            // Handle zoom in/out functionality
+                            let currentZoom = 100; // Default zoom level
+                            const zoomStep = 20; // Zoom step in percentage
+
+                            document.getElementById('zoomIn')?.addEventListener('click', function() {
+                                currentZoom += zoomStep;
+                                updateZoom();
+                            });
+
+                            document.getElementById('zoomOut')?.addEventListener('click', function() {
+                                if (currentZoom > zoomStep) {
+                                    currentZoom -= zoomStep;
+                                    updateZoom();
+                                }
+                            });
+
+                            // Function to apply zoom level to preview content
+                            function updateZoom() {
+                                const zoomLabel = document.querySelector('.zoom-level');
+                                const previewDocument = document.querySelector('.preview-document');
+
+                                if (zoomLabel) {
+                                    zoomLabel.textContent = `${currentZoom}%`;
+                                }
+
+                                if (previewDocument) {
+                                    previewDocument.style.transform = `scale(${currentZoom/100})`;
+                                    previewDocument.style.transformOrigin = 'top left';
+                                }
+                            }
+                        });
+
+                        // Handle contract preview
+                        function handleContractPreview(button) {
+                            const previewUrl = button.getAttribute('data-preview-url');
+                            const fileName = button.getAttribute('data-file-name');
+                            const fileUrl = button.getAttribute('data-file-url');
+
+                            console.log('Preview clicked:', { previewUrl, fileName, fileUrl });
+
+                            // Update modal title
+                            const modalTitle = document.querySelector('#previewModal .preview-file-name');
+                            if (modalTitle) {
+                                modalTitle.textContent = fileName || 'Hợp đồng';
+                            }
+
+                            // Store file info for download/print buttons
+                            const downloadBtn = document.getElementById('downloadFromPreview');
+                            const printBtn = document.getElementById('printFromPreview');
+
+                            if (downloadBtn) {
+                                downloadBtn.setAttribute('data-current-file-url', fileUrl);
+                                downloadBtn.setAttribute('data-current-file-name', fileName);
+                            }
+
+                            if (printBtn) {
+                                printBtn.setAttribute('data-current-print-url', button.getAttribute('data-print-url'));
+                            }
+
+                            // Load preview content
+                            loadContractPreview(previewUrl, fileName);
+                        }
+
+                        // Handle contract print
+                        function handleContractPrint(button) {
+                            const printUrl = button.getAttribute('data-print-url');
+                            const fileName = button.getAttribute('data-file-name');
+
+                            console.log('Print clicked:', { printUrl, fileName });
+
+                            if (printUrl) {
+                                // Lấy nội dung từ print endpoint và hiển thị trong cửa sổ in
+                                fetch(printUrl)
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                                        }
+                                        return response.json();
+                                    })
+                                    .then(data => {
+                                        if (data && data.print_html) {
+                                            // Tạo cửa sổ mới để in
+                                            const printWindow = window.open('', '_blank');
+                                            printWindow.document.write(data.print_html);
+                                            printWindow.document.close();
+                                            // Tự động mở hộp thoại in sau khi tải xong trang
+                                            printWindow.onload = function() {
+                                                printWindow.print();
+                                            };
+                                        } else {
+                                            throw new Error('Không tìm thấy nội dung để in');
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Print error:', error);
+                                        alert('Không thể in tài liệu: ' + error.message);
+
+                                        // Fallback: tải xuống file nếu không in được
+                                        const fileUrl = button.getAttribute('data-file-url');
+                                        if (fileUrl) {
+                                            window.open(fileUrl, '_blank');
+                                        }
+                                    });
+                            } else {
+                                // Fallback: download and let user print manually
+                                const fileUrl = button.getAttribute('data-file-url');
+                                if (fileUrl) {
+                                    window.open(fileUrl, '_blank');
+                                }
+                            }
+                        }
+
+                        // Load contract preview content
+                        function loadContractPreview(previewUrl, fileName) {
+                            const previewContent = document.getElementById('previewContent');
+
+                            if (!previewContent) {
+                                console.error('Preview content container not found');
+                                return;
+                            }
+
+                            // Show loading state
+                            previewContent.innerHTML = `
+                                <div class="preview-loading text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Đang tải nội dung xem trước...</p>
+                                </div>
+                            `;
+
+                            if (previewUrl) {
+                                // Load content via AJAX
+                                fetch(previewUrl)
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                                        }
+                                        return response.json(); // Chuyển từ text sang json vì endpoint trả về JSON
+                                    })
+                                    .then(data => {
+                                        // Kiểm tra nếu có dữ liệu preview_html trong response
+                                        if (data && data.preview_html) {
+                                            // Hiển thị HTML từ response
+                                            previewContent.innerHTML = `
+                                                <div class="preview-document p-4">
+                                                    ${data.preview_html}
+                                                </div>
+                                            `;
+                                        } else {
+                                            throw new Error('Không tìm thấy nội dung xem trước');
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Preview loading error:', error);
+                                        previewContent.innerHTML = `
+                                            <div class="text-center py-5">
+                                                <div class="text-warning mb-3">
+                                                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+                                                </div>
+                                                <h6 class="text-warning">Không thể tải xem trước</h6>
+                                                <p class="text-muted mb-3">Lỗi: ${error.message}</p>
+                                                <p class="text-muted">Vui lòng tải xuống file để xem nội dung</p>
+                                            </div>
+                                        `;
+                                    });
+                            } else {
+                                // Show message when no preview URL available
+                                previewContent.innerHTML = `
+                                    <div class="text-center py-5">
+                                        <div class="text-info mb-3">
+                                            <i class="fas fa-info-circle fa-3x"></i>
+                                        </div>
+                                        <h6 class="text-info">Xem trước không khả dụng</h6>
+                                        <p class="text-muted">Vui lòng tải xuống file để xem nội dung</p>
+                                    </div>
+                                `;
+                            }
                         }
                         </script>
                         <div class="modal-body p-0">
@@ -1632,7 +1854,7 @@
 .upload-item-icon {
     width: 40px;
     height: 40px;
-    background: linear-gradient(135deg, #4e73df 0%, #5a67d8 100%);
+    background: linear-gradient(135deg, #4e73df   0%, #5a67d8 100%);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -1968,22 +2190,55 @@
     font-weight: 600;
 }
 
-/* Print specific styles */
+.preview-document {
+    padding: 2rem;
+    background: white;
+    min-width: 80%;
+    margin: 0 auto;
+    transform-origin: top left;
+    transition: transform 0.3s ease;
+    overflow-x: auto;
+}
+
+.preview-document h1,
+.preview-document h2,
+.preview-document h3,
+.preview-document h4,
+.preview-document h5 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.preview-document p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.preview-document table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+}
+
+.preview-document table th,
+.preview-document table td {
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.preview-document table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
 @media print {
-    .modal-header,
-    .preview-toolbar,
-    .modal-footer {
-        display: none !important;
-    }
-
-    .modal-content {
-        box-shadow: none !important;
-        border: none !important;
-    }
-
-    .preview-content {
-        height: auto !important;
-        overflow: visible !important;
+    .preview-document {
+        transform: scale(1) !important;
+        width: 100% !important;
+        padding: 0 !important;
     }
 }
 
@@ -2383,36 +2638,404 @@
         margin-bottom: 1rem;
     }
 }
+
+/* AI Analysis Interface Styles */
+.source-selection {
+    background: #f8f9fc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #e3e6f0;
+}
+
+.source-tabs {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.source-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: white;
+    border: 2px solid #e3e6f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 180px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.source-tab i {
+    font-size: 2rem;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.source-tab span {
+    font-weight: 500;
+    color: #5a5c69;
+    transition: all 0.3s ease;
+}
+
+.source-tab:hover {
+    border-color: #4e73df;
+    background: rgba(78, 115, 223, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 115, 223, 0.2);
+    text-decoration: none;
+    color: inherit;
+}
+
+.source-tab:hover i,
+.source-tab:hover span {
+    color: #4e73df;
+}
+
+.source-tab.active {
+    background: linear-gradient(135deg, #4e73df 0%, #5a67d8 100%);
+    border-color: #4e73df;
+    color: white;
+    box-shadow: 0 8px 25px rgba(78, 115, 223, 0.3);
+}
+
+.source-tab.active i,
+.source-tab.active span {
+    color: white;
+}
+
+/* Template Selection */
+.template-selector {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e3e6f0;
+}
+
+.template-list .row {
+    margin: 0;
+}
+
+.template-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border: 2px solid #e3e6f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    height: 100%;
+}
+
+.template-card:hover {
+    border-color: #4e73df;
+    background: rgba(78, 115, 223, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 115, 223, 0.2);
+}
+
+.template-card.selected {
+    border-color: #1cc88a;
+    background: rgba(28, 200, 138, 0.1);
+    box-shadow: 0 5px 15px rgba(28, 200, 138, 0.3);
+}
+
+.template-icon {
+    margin-right: 1rem;
+    font-size: 2rem;
+}
+
+.template-info {
+    flex: 1;
+}
+
+.template-name {
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.template-check {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+.template-check i {
+    font-size: 1.2rem;
+}
+
+/* Upload Zone for Analysis */
+.upload-zone-analysis {
+    border: 3px dashed #4e73df;
+    border-radius: 15px;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(90, 103, 216, 0.05) 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+.upload-zone-analysis:hover,
+.upload-zone-analysis.dragover {
+    border-color: #1cc88a;
+    background: linear-gradient(135deg, rgba(28, 200, 138, 0.1) 0%, rgba(23, 162, 184, 0.1) 100%);
+    transform: scale(1.02);
+}
+
+.upload-zone-analysis .upload-icon {
+    font-size: 4rem;
+    color: #4e73df;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+.upload-zone-analysis:hover .upload-icon {
+    color: #1cc88a;
+    transform: scale(1.1);
+}
+
+/* Upload Preview */
+.upload-preview {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fc;
+    border-radius: 12px;
+    border: 1px solid #e3e6f0;
+}
+
+.selected-file {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selected-file .file-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #4e73df 0%, #5a67d8 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.selected-file .file-info {
+    flex: 1;
+}
+
+.selected-file .file-name {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.25rem;
+}
+
+/* Analysis Controls */
+.analysis-controls {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fc 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 1px solid #e3e6f0;
+}
+
+/* Analysis Progress */
+.analysis-progress {
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e3e6f0;
+    margin-top: 1.5rem;
+}
+
+.analysis-progress .progress {
+    background: #e3e6f0;
+    border-radius: 10px;
+}
+
+.analysis-progress .progress-bar {
+    background: linear-gradient(135deg, #4e73df 0%, #5a67d8 100%);
+    border-radius: 10px;
+}
+
+/* Analysis Results */
+.analysis-results {
+    margin-top: 1.5rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e3e6f0;
+}
+
+.results-header {
+    border-bottom: 2px solid #e3e6f0;
+    padding-bottom: 1rem;
+}
+
+.analysis-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.summary-card {
+    text-align: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fc 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 1px solid #e3e6f0;
+}
+
+.summary-card.excellent {
+    background: linear-gradient(135deg, rgba(28, 200, 138, 0.1) 0%, rgba(23, 162, 184, 0.1) 100%);
+    border-color: #1cc88a;
+}
+
+.summary-card.good {
+    background: linear-gradient(135deg, rgba(54, 185, 204, 0.1) 0%, rgba(78, 115, 223, 0.1) 100%);
+    border-color: #36b9cc;
+}
+
+.summary-card.warning {
+    background: linear-gradient(135deg, rgba(246, 194, 62, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
+    border-color: #f6c23e;
+}
+
+.summary-card.danger {
+    background: linear-gradient(135deg, rgba(231, 74, 59, 0.1) 0%, rgba(220, 53, 69, 0.1) 100%);
+    border-color: #e74a3b;
+}
+
+.summary-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.summary-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.analysis-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8f9fc;
+    border-radius: 12px;
+    border-left: 4px solid #4e73df;
+}
+
+.analysis-section h6 {
+    color: #2d3748;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.analysis-list {
+    list-style: none;
+    padding: 0;
+}
+
+.analysis-list li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e3e6f0;
+    display: flex;
+    align-items: flex-start;
+}
+
+.analysis-list li:last-child {
+    border-bottom: none;
+}
+
+.analysis-list li i {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+    font-size: 1rem;
+}
+
+.analysis-list .benefit i {
+    color: #1cc88a;
+}
+
+.analysis-list .risk i {
+    color: #e74a3b;
+}
+
+.analysis-list .recommendation i {
+    color: #36b9cc;
+}
+
+/* Empty states */
+.empty-templates {
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #e3e6f0;
+}
+
+.empty-templates i {
+    opacity: 0.5;
+}
+
+/* Responsive for AI Analysis */
+@media (max-width: 768px) {
+    .source-tabs {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .source-tab {
+        min-width: auto;
+        padding: 1rem;
+    }
+
+    .template-card {
+        padding: 0.75rem;
+    }
+
+    .upload-zone-analysis {
+        padding: 2rem 1rem;
+    }
+
+    .upload-zone-analysis .upload-icon {
+        font-size: 3rem;
+    }
+
+    .analysis-summary {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .analysis-controls {
+        padding: 1rem;
+    }
+
+    .analysis-results {
+        padding: 1rem;
+    }
+}
 </style>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM Content Loaded - Initializing...');
-
-    // Bỏ gọi hàm setupTransactionList() vì chưa định nghĩa
-    // Chỉ gọi setupTransactionModal()
-    setupTransactionModal();
-
-    // Initialize tooltips for all buttons with title attribute
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Add a test button for debugging
-    setTimeout(() => {
-        console.log('🔍 Checking for modal trigger buttons...');
-        const buttons = document.querySelectorAll('[data-bs-target="#transactionDetailsModal"]');
-        console.log('Found modal trigger buttons:', buttons.length);
-        buttons.forEach((btn, index) => {
-            console.log(`Button ${index + 1}:`, {
-                element: btn,
-                transactionId: btn.getAttribute('data-transaction-id'),
-                toggle: btn.getAttribute('data-bs-toggle'),
-                target: btn.getAttribute('data-bs-target')
-            });
-        });
-    }, 1000);
-});
 
 // Setup transaction modal event handlers - Simplified version
 function setupTransactionModal() {
@@ -2578,13 +3201,22 @@ function populatePaymentHistory(paymentHistory) {
     `;
 
     paymentHistory.forEach(payment => {
+        let badgeClass = 'bg-secondary';
+        if (payment.DTran_Status === 'Hoàn Thành') {
+            badgeClass = 'bg-success';
+        } else if (payment.DTran_Status === 'Chờ đợi') {
+            badgeClass = 'bg-warning';
+        } else if (payment.DTran_Status === 'Hủy') {
+            badgeClass = 'bg-danger';
+        }
+        
         html += `
             <tr>
                 <td>${payment.Num_Pay}</td>
                 <td class="fw-bold text-success">${formatCurrency(payment.Price)}</td>
                 <td>${payment.DTran_Date ? formatDate(payment.DTran_Date) : 'N/A'}</td>
                 <td>
-                    <span class="badge ${payment.DTran_Status === 'Hoàn Thành' ? 'bg-success' : 'bg-warning'}">
+                    <span class="badge ${badgeClass}">
                         ${payment.DTran_Status}
                     </span>
                 </td>
@@ -2687,6 +3319,1406 @@ function getStatusBadgeClass(status) {
         default: return 'bg-secondary';
     }
 }
+
+// Contract Template Event Handlers
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Contract Template Handlers Loaded');
+
+    // Handle Preview buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-preview')) {
+            e.preventDefault();
+            const button = e.target.closest('.btn-preview');
+            handleContractPreview(button);
+        }
+
+        if (e.target.closest('.btn-print')) {
+            e.preventDefault();
+            const button = e.target.closest('.btn-print');
+            handleContractPrint(button);
+        }
+    });
+
+    // Handle modal preview buttons
+    document.getElementById('downloadFromPreview')?.addEventListener('click', function() {
+        const currentFileUrl = this.getAttribute('data-current-file-url');
+        const currentFileName = this.getAttribute('data-current-file-name');
+        if (currentFileUrl && currentFileName) {
+            const link = document.createElement('a');
+            link.href = currentFileUrl;
+            link.download = currentFileName;
+            link.click();
+        }
+    });
+
+    document.getElementById('printFromPreview')?.addEventListener('click', function() {
+        const currentPrintUrl = this.getAttribute('data-current-print-url');
+        if (currentPrintUrl) {
+            window.open(currentPrintUrl, '_blank');
+        } else {
+            // Fallback to print current modal content
+            window.print();
+        }
+    });
+
+    // Handle zoom in/out functionality
+    let currentZoom = 100; // Default zoom level
+    const zoomStep = 20; // Zoom step in percentage
+
+    document.getElementById('zoomIn')?.addEventListener('click', function() {
+        currentZoom += zoomStep;
+        updateZoom();
+    });
+
+    document.getElementById('zoomOut')?.addEventListener('click', function() {
+        if (currentZoom > zoomStep) {
+            currentZoom -= zoomStep;
+            updateZoom();
+        }
+    });
+
+    // Function to apply zoom level to preview content
+    function updateZoom() {
+        const zoomLabel = document.querySelector('.zoom-level');
+        const previewDocument = document.querySelector('.preview-document');
+
+        if (zoomLabel) {
+            zoomLabel.textContent = `${currentZoom}%`;
+        }
+
+        if (previewDocument) {
+            previewDocument.style.transform = `scale(${currentZoom/100})`;
+            previewDocument.style.transformOrigin = 'top left';
+        }
+    }
+});
+
+// Handle contract preview
+function handleContractPreview(button) {
+    const previewUrl = button.getAttribute('data-preview-url');
+    const fileName = button.getAttribute('data-file-name');
+    const fileUrl = button.getAttribute('data-file-url');
+
+    console.log('Preview clicked:', { previewUrl, fileName, fileUrl });
+
+    // Update modal title
+    const modalTitle = document.querySelector('#previewModal .preview-file-name');
+    if (modalTitle) {
+        modalTitle.textContent = fileName || 'Hợp đồng';
+    }
+
+    // Store file info for download/print buttons
+    const downloadBtn = document.getElementById('downloadFromPreview');
+    const printBtn = document.getElementById('printFromPreview');
+
+    if (downloadBtn) {
+        downloadBtn.setAttribute('data-current-file-url', fileUrl);
+        downloadBtn.setAttribute('data-current-file-name', fileName);
+    }
+
+    if (printBtn) {
+        printBtn.setAttribute('data-current-print-url', button.getAttribute('data-print-url'));
+    }
+
+    // Load preview content
+    loadContractPreview(previewUrl, fileName);
+}
+
+// Handle contract print
+function handleContractPrint(button) {
+    const printUrl = button.getAttribute('data-print-url');
+    const fileName = button.getAttribute('data-file-name');
+
+    console.log('Print clicked:', { printUrl, fileName });
+
+    if (printUrl) {
+        // Lấy nội dung từ print endpoint và hiển thị trong cửa sổ in
+        fetch(printUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.print_html) {
+                    // Tạo cửa sổ mới để in
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(data.print_html);
+                    printWindow.document.close();
+                    // Tự động mở hộp thoại in sau khi tải xong trang
+                    printWindow.onload = function() {
+                        printWindow.print();
+                    };
+                } else {
+                    throw new Error('Không tìm thấy nội dung để in');
+                }
+            })
+            .catch(error => {
+                console.error('Print error:', error);
+                alert('Không thể in tài liệu: ' + error.message);
+
+                // Fallback: tải xuống file nếu không in được
+                const fileUrl = button.getAttribute('data-file-url');
+                if (fileUrl) {
+                    window.open(fileUrl, '_blank');
+                }
+            });
+    } else {
+        // Fallback: download and let user print manually
+        const fileUrl = button.getAttribute('data-file-url');
+        if (fileUrl) {
+            window.open(fileUrl, '_blank');
+        }
+    }
+}
+
+// Load contract preview content
+function loadContractPreview(previewUrl, fileName) {
+    const previewContent = document.getElementById('previewContent');
+
+    if (!previewContent) {
+        console.error('Preview content container not found');
+        return;
+    }
+
+    // Show loading state
+    previewContent.innerHTML = `
+        <div class="preview-loading text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-3 text-muted">Đang tải nội dung xem trước...</p>
+        </div>
+    `;
+
+    if (previewUrl) {
+        // Load content via AJAX
+        fetch(previewUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json(); // Chuyển từ text sang json vì endpoint trả về JSON
+            })
+            .then(data => {
+                // Kiểm tra nếu có dữ liệu preview_html trong response
+                if (data && data.preview_html) {
+                    // Hiển thị HTML từ response
+                    previewContent.innerHTML = `
+                        <div class="preview-document p-4">
+                            ${data.preview_html}
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Không tìm thấy nội dung xem trước');
+                }
+            })
+            .catch(error => {
+                console.error('Preview loading error:', error);
+                previewContent.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-exclamation-triangle fa-3x"></i>
+                        </div>
+                        <h6 class="text-warning">Không thể tải xem trước</h6>
+                        <p class="text-muted mb-3">Lỗi: ${error.message}</p>
+                        <p class="text-muted">Vui lòng tải xuống file để xem nội dung</p>
+                    </div>
+                `;
+            });
+    } else {
+        // Show message when no preview URL available
+        previewContent.innerHTML = `
+            <div class="text-center py-5">
+                <div class="text-info mb-3">
+                    <i class="fas fa-info-circle fa-3x"></i>
+                </div>
+                <h6 class="text-info">Xem trước không khả dụng</h6>
+                <p class="text-muted">Vui lòng tải xuống file để xem nội dung</p>
+            </div>
+        `;
+    }
+}
+
+// AI Contract Analysis Functionality
+function initializeAIAnalysis() {
+    console.log('🤖 Initializing AI Contract Analysis...');
+
+    // Source tab switching
+    const sourceTabs = document.querySelectorAll('.source-tab');
+    const sourceContents = document.querySelectorAll('.source-content');
+
+    sourceTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const source = this.dataset.source;
+
+            // Update active tab
+            sourceTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            // Show corresponding content
+            sourceContents.forEach(content => {
+                content.style.display = 'none';
+            });
+
+            if (source === 'template') {
+                document.getElementById('template-selection').style.display = 'block';
+            } else if (source === 'upload') {
+                document.getElementById('file-upload-analysis').style.display = 'block';
+            }
+
+            // Reset analysis button state
+            updateAnalysisButtonState();
+        });
+    });
+
+    // Template selection
+    const templateCards = document.querySelectorAll('.template-card');
+    templateCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selection from all cards
+            templateCards.forEach(c => {
+                c.classList.remove('selected');
+                c.querySelector('.template-check i').style.display = 'none';
+            });
+
+            // Select current card
+            this.classList.add('selected');
+            this.querySelector('.template-check i').style.display = 'block';
+
+            // Update analysis button state
+            updateAnalysisButtonState();
+        });
+    });
+
+    // File upload functionality
+    const dropZone = document.getElementById('dropZoneAnalysis');
+    const fileInput = document.getElementById('analysisFileInput');
+    const browseButton = document.getElementById('browseAnalysisFile');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const removeFileButton = document.getElementById('removeFile');
+
+    let selectedFile = null;
+
+    // Browse file button
+    if (browseButton) {
+        browseButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+    }
+
+    // File input change
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileSelection(file);
+            }
+        });
+    }
+
+    // Drag and drop functionality
+    if (dropZone) {
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+    }
+
+    // Remove file button
+    if (removeFileButton) {
+        removeFileButton.addEventListener('click', function() {
+            selectedFile = null;
+            uploadPreview.style.display = 'none';
+            dropZone.style.display = 'block';
+            fileInput.value = '';
+            updateAnalysisButtonState();
+        });
+    }
+
+    // File selection handler
+    function handleFileSelection(file) {
+        // Validate file type
+        const allowedTypes = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Chỉ hỗ trợ file .docx và .pdf');
+            return;
+        }
+
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File quá lớn. Vui lòng chọn file dưới 10MB');
+            return;
+        }
+
+        selectedFile = file;
+
+        // Update UI
+        dropZone.style.display = 'none';
+        uploadPreview.style.display = 'block';
+
+        // Set file info
+        uploadPreview.querySelector('.file-name').textContent = file.name;
+        uploadPreview.querySelector('.file-size').textContent = formatFileSize(file.size);
+
+        // Update icon based on file type
+        const fileIcon = uploadPreview.querySelector('.file-icon i');
+        if (file.type.includes('pdf')) {
+            fileIcon.className = 'fas fa-file-pdf';
+        } else {
+            fileIcon.className = 'fas fa-file-word';
+        }
+
+        updateAnalysisButtonState();
+    }
+
+    // Analysis button and process
+    const startAnalysisButton = document.getElementById('startAnalysis');
+    if (startAnalysisButton) {
+        startAnalysisButton.addEventListener('click', function() {
+            startContractAnalysis();
+        });
+    }
+
+    // Clear analysis button
+    const clearAnalysisButton = document.getElementById('clearAnalysis');
+    if (clearAnalysisButton) {
+        clearAnalysisButton.addEventListener('click', function() {
+            clearAnalysisResults();
+        });
+    }
+
+    // Export analysis button
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'exportAnalysis') {
+            exportAnalysisReport();
+        } else if (e.target && e.target.id === 'newAnalysis') {
+            resetAnalysisInterface();
+        }
+    });
+
+    function updateAnalysisButtonState() {
+        const startButton = document.getElementById('startAnalysis');
+        if (!startButton) return;
+
+        const activeTab = document.querySelector('.source-tab.active');
+        if (!activeTab) return;
+
+        const source = activeTab.dataset.source;
+        let canAnalyze = false;
+
+        if (source === 'template') {
+            const selectedTemplate = document.querySelector('.template-card.selected');
+            canAnalyze = !!selectedTemplate;
+        } else if (source === 'upload') {
+            canAnalyze = !!selectedFile;
+        }
+
+        startButton.disabled = !canAnalyze;
+
+        if (canAnalyze) {
+            startButton.classList.remove('btn-secondary');
+            startButton.classList.add('btn-primary');
+        } else {
+            startButton.classList.remove('btn-primary');
+            startButton.classList.add('btn-secondary');
+        }
+    }
+
+    function startContractAnalysis() {
+        const activeTab = document.querySelector('.source-tab.active');
+        if (!activeTab) return;
+
+        const source = activeTab.dataset.source;
+        const analysisProgress = document.getElementById('analysisProgress');
+        const analysisResults = document.getElementById('analysisResults');
+
+        // Hide results if visible
+        analysisResults.style.display = 'none';
+
+        // Show progress
+        analysisProgress.style.display = 'block';
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        if (source === 'template') {
+            const selectedTemplate = document.querySelector('.template-card.selected');
+            if (!selectedTemplate) return;
+
+            formData.append('source', 'template');
+            formData.append('template_name', selectedTemplate.dataset.template);
+        } else if (source === 'upload') {
+            if (!selectedFile) return;
+
+            formData.append('source', 'upload');
+            formData.append('contract_file', selectedFile);
+        }
+
+        // Progress simulation
+        simulateProgress();
+
+        // Make AJAX request
+        fetch('/admin/contract/analyze', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    if (response.status === 400 && errorData.error) {
+                        throw new Error(`VALIDATION:${errorData.error}`);
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                displayAnalysisResults(data.analysis);
+            } else {
+                throw new Error(data.message || 'Lỗi không xác định');
+            }
+        })
+        .catch(error => {
+            console.error('Analysis error:', error);
+
+            // Kiểm tra nếu là lỗi validation
+            if (error.message.startsWith('VALIDATION:')) {
+                const validationMessage = error.message.replace('VALIDATION:', '');
+                displayValidationError(validationMessage);
+            } else {
+                displayAnalysisError(error.message);
+            }
+        })
+        .finally(() => {
+            analysisProgress.style.display = 'none';
+        });
+    }
+
+    function simulateProgress() {
+        const progressBar = document.querySelector('#analysisProgress .progress-bar');
+        const progressText = document.getElementById('progressText');
+
+        if (!progressBar || !progressText) return;
+
+        const steps = [
+            { percent: 20, text: 'Đang đọc nội dung hợp đồng...' },
+            { percent: 40, text: 'Phân tích cấu trúc văn bản...' },
+            { percent: 60, text: 'Đánh giá điều khoản và rủi ro...' },
+            { percent: 80, text: 'Tạo khuyến nghị...' },
+            { percent: 100, text: 'Hoàn thành phân tích!' }
+        ];
+
+        let stepIndex = 0;
+
+        const progressInterval = setInterval(() => {
+            if (stepIndex < steps.length) {
+                const step = steps[stepIndex];
+                progressBar.style.width = step.percent + '%';
+                progressText.textContent = step.text;
+                stepIndex++;
+            } else {
+                clearInterval(progressInterval);
+            }
+        }, 800);
+    }
+
+    function displayAnalysisResults(analysis) {
+        const analysisResults = document.getElementById('analysisResults');
+        const analysisContent = document.getElementById('analysisContent');
+
+        if (!analysisResults || !analysisContent) return;
+
+        // Create results HTML
+        const resultsHTML = `
+            <div class="analysis-summary">
+                <div class="summary-card ${getRatingClass(analysis.overall_rating)}">
+                    <div class="summary-icon">
+                        <i class="fas ${getRatingIcon(analysis.overall_rating)}"></i>
+                    </div>
+                    <div class="summary-value">${analysis.overall_rating}/10</div>
+                    <div class="summary-label">Điểm tổng quan</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                    <div class="summary-value">${analysis.benefits.length}</div>
+                    <div class="summary-label">Lợi ích</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                    </div>
+                    <div class="summary-value">${analysis.risks.length}</div>
+                    <div class="summary-label">Rủi ro</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="fas fa-lightbulb text-info"></i>
+                    </div>
+                    <div class="summary-value">${analysis.recommendations.length}</div>
+                    <div class="summary-label">Khuyến nghị</div>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h6><i class="fas fa-thumbs-up me-2 text-success"></i>Lợi ích của hợp đồng</h6>
+                <ul class="analysis-list">
+                    ${analysis.benefits.map(benefit => `
+                        <li class="benefit">
+                            <i class="fas fa-check-circle"></i>
+                            <span>${benefit}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+
+            <div class="analysis-section">
+                <h6><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Rủi ro cần lưu ý</h6>
+                <ul class="analysis-list">
+                    ${analysis.risks.map(risk => `
+                        <li class="risk">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>${risk}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+
+            <div class="analysis-section">
+                <h6><i class="fas fa-lightbulb me-2 text-info"></i>Khuyến nghị cải thiện</h6>
+                <ul class="analysis-list">
+                    ${analysis.recommendations.map(recommendation => `
+                        <li class="recommendation">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>${recommendation}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+
+        analysisContent.innerHTML = resultsHTML;
+        analysisResults.style.display = 'block';
+
+        // Scroll to results
+        analysisResults.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function displayAnalysisError(message) {
+        const analysisResults = document.getElementById('analysisResults');
+        const analysisContent = document.getElementById('analysisContent');
+
+        if (!analysisResults || !analysisContent) return;
+
+        analysisContent.innerHTML = `
+            <div class="text-center py-5">
+                <div class="text-danger mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+                </div>
+                <h5 class="text-danger">Lỗi phân tích hợp đồng</h5>
+                <p class="text-muted">${message}</p>
+                <button class="btn btn-primary" onclick="resetAnalysisInterface()">
+                    <i class="fas fa-redo me-2"></i>Thử lại
+                </button>
+            </div>
+        `;
+
+        analysisResults.style.display = 'block';
+    }
+
+    function displayValidationError(message) {
+        const analysisResults = document.getElementById('analysisResults');
+        const analysisContent = document.getElementById('analysisContent');
+
+        if (!analysisResults || !analysisContent) return;
+
+        analysisContent.innerHTML = `
+            <div class="text-center py-5">
+                <div class="text-warning mb-3">
+                    <i class="fas fa-file-times fa-3x"></i>
+                </div>
+                <h5 class="text-warning">Tài liệu không phù hợp</h5>
+                <p class="text-muted">${message}</p>
+                <div class="alert alert-info mt-3">
+                    <h6><i class="fas fa-info-circle me-2"></i>Hệ thống hỗ trợ phân tích:</h6>
+                    <ul class="mb-0 text-start">
+                        <li>Hợp đồng mua bán bất động sản</li>
+                        <li>Hợp đồng cho thuê nhà, đất</li>
+                        <li>Hợp đồng môi giới bất động sản</li>
+                        <li>Các thỏa thuận liên quan đến giao dịch BDS</li>
+                    </ul>
+                </div>
+                <button class="btn btn-primary mt-3" onclick="resetAnalysisInterface()">
+                    <i class="fas fa-upload me-2"></i>Tải file khác
+                </button>
+            </div>
+        `;
+
+        analysisResults.style.display = 'block';
+    }
+
+    function clearAnalysisResults() {
+        const analysisResults = document.getElementById('analysisResults');
+        if (analysisResults) {
+            analysisResults.style.display = 'none';
+        }
+    }
+
+    function resetAnalysisInterface() {
+        // Reset file selection
+        selectedFile = null;
+        const uploadPreview = document.getElementById('uploadPreview');
+        const dropZone = document.getElementById('dropZoneAnalysis');
+        const fileInput = document.getElementById('analysisFileInput');
+
+        if (uploadPreview) uploadPreview.style.display = 'none';
+        if (dropZone) dropZone.style.display = 'block';
+        if (fileInput) fileInput.value = '';
+
+        // Reset template selection
+        const templateCards = document.querySelectorAll('.template-card');
+        templateCards.forEach(card => {
+            card.classList.remove('selected');
+            card.querySelector('.template-check i').style.display = 'none';
+        });
+
+        // Reset tabs to template
+        const sourceTabs = document.querySelectorAll('.source-tab');
+        const sourceContents = document.querySelectorAll('.source-content');
+
+        sourceTabs.forEach(tab => tab.classList.remove('active'));
+        sourceContents.forEach(content => content.style.display = 'none');
+
+        const templateTab = document.querySelector('.source-tab[data-source="template"]');
+        if (templateTab) {
+            templateTab.classList.add('active');
+            document.getElementById('template-selection').style.display = 'block';
+        }
+
+        // Hide results
+        clearAnalysisResults();
+
+        // Update button state
+        updateAnalysisButtonState();
+    }
+
+    function exportAnalysisReport() {
+        // Simple implementation - could be enhanced to generate PDF
+        const analysisContent = document.getElementById('analysisContent');
+        if (!analysisContent) return;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Báo cáo phân tích hợp đồng</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .analysis-section { margin: 20px 0; }
+                        .analysis-list { list-style: none; padding: 0; }
+                        .analysis-list li { padding: 5px 0; }
+                        .summary-card { display: inline-block; margin: 10px; padding: 15px; border: 1px solid #ddd; text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Báo cáo phân tích hợp đồng</h1>
+                        <p>Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}</p>
+                    </div>
+                    ${analysisContent.innerHTML}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    function getRatingClass(rating) {
+        if (rating >= 8) return 'excellent';
+        if (rating >= 6) return 'good';
+        if (rating >= 4) return 'warning';
+        return 'danger';
+    }
+
+    function getRatingIcon(rating) {
+        if (rating >= 8) return 'fa-star';
+        if (rating >= 6) return 'fa-thumbs-up';
+        if (rating >= 4) return 'fa-exclamation-triangle';
+        return 'fa-times-circle';
+    }
+
+}
+
+// Utility function for file size formatting (global scope)
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Initialize AI Analysis when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM Content Loaded - Initializing...');
+
+    // Initialize existing functionality
+    setupTransactionModal();
+
+    // Initialize AI Analysis functionality
+    initializeAIAnalysis();
+
+    // Initialize Contract Template Management
+    initializeContractManagement();
+
+    // Initialize edit modal handlers
+    initializeEditModalHandlers();
+
+    // Initialize tooltips for all buttons with title attribute
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Add a test button for debugging
+    setTimeout(() => {
+        console.log('🔍 Checking for modal trigger buttons...');
+        const buttons = document.querySelectorAll('[data-bs-target="#transactionDetailsModal"]');
+        console.log('Found modal trigger buttons:', buttons.length);
+        buttons.forEach((btn, index) => {
+            console.log(`Button ${index + 1}:`, {
+                element: btn,
+                transactionId: btn.getAttribute('data-transaction-id'),
+                toggle: btn.getAttribute('data-bs-toggle'),
+                target: btn.getAttribute('data-bs-target')
+            });
+        });
+    }, 1000);
+});
+
+// Contract Template Management Functions
+function initializeContractManagement() {
+    // File upload handling
+    const fileInput = document.getElementById('contractFileInput');
+    const dropZone = document.getElementById('contractDropZone');
+    const filePreview = document.getElementById('contractFilePreview');
+
+    if (fileInput && dropZone) {
+        // File input change
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('drop', handleFileDrop);
+        dropZone.addEventListener('click', () => fileInput.click());
+    }
+
+    // Form submission
+    const addForm = document.getElementById('addContractForm');
+    if (addForm) {
+        addForm.addEventListener('submit', handleAddContract);
+    }
+
+    const editForm = document.getElementById('editContractForm');
+    if (editForm) {
+        editForm.addEventListener('submit', handleEditContract);
+    }
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        displayFilePreview(file);
+    }
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add('drag-over');
+}
+
+function handleFileDrop(event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        document.getElementById('contractFileInput').files = files;
+        displayFilePreview(file);
+    }
+}
+
+function displayFilePreview(file) {
+    const preview = document.getElementById('contractFilePreview');
+    const fileName = document.querySelector('#contractFilePreview .file-name');
+    const fileSize = document.querySelector('#contractFilePreview .file-size');
+
+    if (preview && fileName && fileSize) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        preview.style.display = 'block';
+        document.getElementById('contractDropZone').style.display = 'none';
+    }
+}
+
+function removeContractFile() {
+    const fileInput = document.getElementById('contractFileInput');
+    const preview = document.getElementById('contractFilePreview');
+    const dropZone = document.getElementById('contractDropZone');
+
+    if (fileInput) fileInput.value = '';
+    if (preview) preview.style.display = 'none';
+    if (dropZone) dropZone.style.display = 'block';
+}
+
+function handleAddContract(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    // Find submit button in modal footer (outside form)
+    const submitBtn = document.querySelector('#addContractModal button[type="submit"]');
+
+    // Show loading state
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tải lên...';
+    }
+
+    fetch('/admin/contracts/add', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showNotification('Thêm mẫu hợp đồng thành công!', 'success');
+
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addContractModal'));
+            modal.hide();
+            event.target.reset();
+            removeContractFile();
+
+            // Refresh page
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra khi tải lên file!', 'error');
+    })
+    .finally(() => {
+        // Reset loading state
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Tải lên';
+        }
+    });
+}
+
+function handleEditContract(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    // Find submit button in modal footer (outside form)
+    const submitBtn = document.querySelector('#editContractModal button[type="submit"]');
+
+    // Show loading state
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật...';
+    }
+
+    fetch('/admin/contracts/edit', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Cập nhật mẫu hợp đồng thành công!', 'success');
+
+            // Close modal and refresh
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editContractModal'));
+            modal.hide();
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra khi cập nhật!', 'error');
+    })
+    .finally(() => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Cập nhật';
+        }
+    });
+}
+
+function confirmDelete(templateName, displayName) {
+    if (confirm(`Bạn có chắc chắn muốn xóa mẫu hợp đồng "${displayName}"?`)) {
+        deleteContract(templateName);
+    }
+}
+
+function deleteContract(templateName) {
+    fetch('/admin/contracts/delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ template: templateName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Xóa mẫu hợp đồng thành công!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra khi xóa!', 'error');
+    });
+}
+
+function initializeEditModalHandlers() {
+    // Handle edit button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-edit')) {
+            const btn = e.target.closest('.btn-edit');
+            const templateName = btn.getAttribute('data-template');
+            const displayName = btn.getAttribute('data-display-name');
+            
+            // Populate edit modal
+            document.getElementById('editTemplateName').value = templateName;
+            document.getElementById('editContractName').value = displayName;
+            
+            // Clear description (will be populated from server if needed)
+            document.getElementById('editContractDescription').value = '';
+        }
+    });
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
 </script>
+
+<!-- Add Contract Modal -->
+<div class="modal fade" id="addContractModal" tabindex="-1" aria-labelledby="addContractModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addContractModalLabel">
+                    <i class="fas fa-plus me-2"></i>Thêm mẫu hợp đồng mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addContractForm" enctype="multipart/form-data">
+                    @csrf
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="contractName" class="form-label">
+                                <i class="fas fa-signature me-1"></i>Tên mẫu hợp đồng
+                            </label>
+                            <input type="text" class="form-control" id="contractName" name="contract_name" required
+                                   placeholder="VD: Hợp đồng mua bán nhà đất">
+                            <small class="form-text text-muted">Tên hiển thị của mẫu hợp đồng</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="contractDescription" class="form-label">
+                                <i class="fas fa-align-left me-1"></i>Mô tả
+                            </label>
+                            <textarea class="form-control" id="contractDescription" name="description" rows="3"
+                                     placeholder="Mô tả ngắn gọn về mẫu hợp đồng này..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-file-upload me-1"></i>File hợp đồng
+                            </label>
+
+                            <!-- Drop Zone -->
+                            <div class="upload-zone" id="contractDropZone">
+                                <div class="upload-zone-content">
+                                    <div class="upload-icon">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="upload-title">Kéo thả file vào đây</h5>
+                                    <p class="upload-subtitle">hoặc <button type="button" class="btn-link">chọn file từ máy tính</button></p>
+                                    <div class="upload-info">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Chỉ hỗ trợ file .docx, tối đa 10MB
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- File Preview -->
+                            <div class="upload-preview" id="contractFilePreview" style="display: none;">
+                                <div class="selected-file">
+                                    <div class="file-icon">
+                                        <i class="fas fa-file-word text-primary fa-2x"></i>
+                                    </div>
+                                    <div class="file-info">
+                                        <h6 class="file-name mb-1"></h6>
+                                        <small class="file-size text-muted"></small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeContractFile()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <input type="file" id="contractFileInput" name="contract_file"
+                                   accept=".docx" style="display: none;" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="submit" form="addContractForm" class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Tải lên
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Contract Modal -->
+<div class="modal fade" id="editContractModal" tabindex="-1" aria-labelledby="editContractModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="editContractModalLabel">
+                    <i class="fas fa-edit me-2"></i>Chỉnh sửa mẫu hợp đồng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editContractForm" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" id="editTemplateName" name="template_name">
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="editContractName" class="form-label">
+                                <i class="fas fa-signature me-1"></i>Tên mẫu hợp đồng
+                            </label>
+                            <input type="text" class="form-control" id="editContractName" name="contract_name" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="editContractDescription" class="form-label">
+                                <i class="fas fa-align-left me-1"></i>Mô tả
+                            </label>
+                            <textarea class="form-control" id="editContractDescription" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Lưu ý:</strong> Để trống nếu không muốn thay đổi file hợp đồng hiện tại.
+                            </div>
+
+                            <label class="form-label">
+                                <i class="fas fa-file-upload me-1"></i>File hợp đồng mới (tùy chọn)
+                            </label>
+                            <input type="file" class="form-control" name="contract_file" accept=".docx">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="submit" form="editContractForm" class="btn btn-info">
+                    <i class="fas fa-save me-2"></i>Cập nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="previewModalLabel">
+                    <i class="fas fa-eye me-2"></i>Xem trước hợp đồng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="previewContent" class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-3">Đang tải nội dung xem trước...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Đóng
+                </button>
+                <a href="#" class="btn btn-primary" id="downloadFromPreview" download>
+                    <i class="fas fa-download me-2"></i>Tải xuống
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 @endif
 @endsection
+
+<style>
+/* Contract Card Styling */
+.contract-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.contract-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 8px 25px rgba(0,123,255,0.15);
+    transform: translateY(-2px);
+}
+
+.contract-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1rem;
+    position: relative;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.contract-icon i {
+    font-size: 1.5rem;
+}
+
+.contract-status .badge {
+    font-size: 0.75rem;
+}
+
+.contract-title {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.contract-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.contract-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Upload Zone Styling */
+.upload-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-zone:hover {
+    border-color: #007bff;
+    background: #e7f3ff;
+}
+
+.upload-zone.drag-over {
+    border-color: #28a745;
+    background: #d4edda;
+}
+
+.upload-icon {
+    margin-bottom: 1rem;
+}
+
+.upload-title {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.upload-subtitle {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.btn-link {
+    color: #007bff;
+    text-decoration: none;
+    border: none;
+    background: none;
+    padding: 0;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+/* File Preview Styling */
+.upload-preview {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.selected-file {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-name {
+    color: #495057;
+    margin: 0;
+}
+
+/* Empty State Styling */
+.empty-state .empty-icon i {
+    color: #dee2e6;
+}
+
+.empty-title {
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.empty-text {
+    font-size: 0.95rem;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .contract-actions {
+        justify-content: center;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .upload-zone {
+        padding: 1rem;
+    }
+}
+</style>

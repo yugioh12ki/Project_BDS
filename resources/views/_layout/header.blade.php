@@ -1,23 +1,32 @@
 <header>
     <nav class="navbar">
         <div class="navbar__left">
-            <img src="#" alt="" class="navbar__logo">
+            <img src="{{ asset('storage/logo.png') }}" alt="" class="navbar__logo">
             <ul class="navbar__menu">
                 <li><a href="{{ route('home') }}">Trang chủ</a></li>
-                <li><a href="#">Giới thiệu</a></li>
-                <li><a href="#">Mua</a></li>
-                <li><a href="#">Cho Thuê</a></li>
+                <li><a href="{{ route('properties.sale') }}">Mua</a></li>
+                <li><a href="{{ route('properties.rent') }}">Cho Thuê</a></li>
+                <li><a href="{{ route('customer.contact-agent') }}">Danh bạ</a></li>
                 @auth
                     @if(Auth::user()->Role == 'Customer')
-                        <li><a href="{{ route('customer.appointments.index') }}">Lịch hẹn</a></li>
+                        <li>
+                            <a href="{{ route('customer.appointments.index') }}" style="position: relative;">
+                                Lịch hẹn
+                                @php
+                                    $pendingAppointments = Auth::user()->appoint_customer()
+                                        ->whereIn('Status', ['Khởi tạo', 'Đang Thực hiện'])
+                                        ->count();
+                                @endphp
+                                @if($pendingAppointments > 0)
+                                <span class="menu-badge">{{ $pendingAppointments }}</span>
+                                @endif
+                            </a>
+                        </li>
                     @endif
-                @else
-                    <li><a href="{{ route('login') }}">Lịch hẹn</a></li>
+                    @if(Auth::user()->Role == 'Customer')
+                        <li><a href="{{ route('customer.transaction.history') }}">Lịch sử giao dịch</a></li>
+                    @endif
                 @endauth
-                <li><a href="#">Danh bạ</a></li>
-                @if(!Auth::check() || Auth::user()->Role == 'Customer')
-                    <li><a href="#">Lịch sử giao dịch</a></li>
-                @endif
             </ul>
         </div>
         <div class="navbar__right">
@@ -26,24 +35,6 @@
                 <span>19001881</span>
             </div>
             @auth
-                <!-- Notification Icon - chỉ hiển thị cho Customer -->
-                @if(Auth::user()->Role == 'Customer')
-                <div class="notification-dropdown">
-                    <button class="notification-btn" id="notificationBtn">
-                        <i class="bi bi-bell"></i>
-                        <span class="notification-badge" id="notificationCount">0</span>
-                    </button>
-                    <div class="notification-content" id="notificationContent">
-                        <div class="notification-header">
-                            <h6>Thông báo</h6>
-                        </div>
-                        <div class="notification-list" id="notificationList">
-                            <!-- Notifications will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 <!-- User Dropdown - hiển thị cho tất cả role đã đăng nhập -->
                 <div class="user-dropdown">
                     <button class="user-dropdown-btn" type="button" id="userDropdownBtn">

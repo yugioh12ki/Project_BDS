@@ -217,7 +217,7 @@ class PropertyController extends Controller
     private function formatProperty($property, $includeDetails = false)
     {
         $mainImage = $property->images->first();
-        $imagePath = $mainImage ? asset('storage/' . str_replace('storage/app/public/', '', $mainImage->ImagePath)) : null;
+        $imagePath = $mainImage ? \App\Helpers\ImageHelper::getImageUrl($mainImage->ImagePath) : null;
 
         $data = [
             'id' => $property->PropertyID,
@@ -276,7 +276,7 @@ class PropertyController extends Controller
             $data['images'] = $property->images->map(function ($image) {
                 return [
                     'id' => $image->ImageID,
-                    'url' => asset('storage/' . str_replace('storage/app/public/', '', $image->ImagePath)),
+                    'url' => \App\Helpers\ImageHelper::getImageUrl($image->ImagePath),
                     'caption' => $image->Caption ?? ''
                 ];
             });

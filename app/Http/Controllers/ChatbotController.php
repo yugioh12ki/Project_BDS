@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\FirebaseServices;
 use App\Services\GeminiAIService;
 use App\Models\User;
+use Carbon\Exceptions\Exception;
 use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Exception\FirebaseException;
 
@@ -71,28 +72,124 @@ class ChatbotController extends Controller
         }
     }
 
-    // API để AI chatbot trả lời
+    // API để AI chatbot trả lời (tương thích với cả mobile app và chatbox)
     public function answerChatbot(Request $request)
     {
         $data = $request->validate([
-            'message' => 'required|string',
-            'conversation_id' => 'required|string',
-            'user_type' => 'required|string' // 'guest' hoặc 'user'
+            'message' => 'nullable|string',
+            'question' => 'nullable|string', // Hỗ trợ cả 2 format
+            'conversation_id' => 'nullable|string',
+            'session_id' => 'nullable|string', // Hỗ trợ session_id cho chatbox
+            'user_type' => 'nullable|string' // 'guest' hoặc 'user'
         ]);
+
+        // Xử lý message/question compatibility
+        $message = $data['message'] ?? $data['question'] ?? '';
+        if (empty($message)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Message hoặc question là bắt buộc'
+            ], 400);
+        }
+
+        // Xử lý conversation_id/session_id compatibility
+        $conversationId = $data['conversation_id'] ?? $data['session_id'] ?? 'guest_' . uniqid();
+        $userType = $data['user_type'] ?? (Auth::check() ? 'user' : 'guest');
 
         try {
             // Lấy thông tin user nếu có
             $user = null;
-            if ($data['user_type'] === 'user' && Auth::check()) {
+            if ($userType === 'user' && Auth::check()) {
+                $user = Auth::user();
+            }
+
+            // Kiểm tra xem conversation đã được escalate hay chưa
+            $conversationData = $this->firebase->getReference("chats/{$conversationId}")->getValue();
+            $isEscalated = isset($conversationData['needs_admin']) && $conversationData['needs_admin'] === true;
+
+            // Nếu đã escalate, chỉ thông báo chờ admin
+            if ($isEscalated) {
+                $waitingMessage = "⏳ **Đang chờ Admin phản hồi**\n\n" .
+                    "Cuộc trò chuyện này đã được chuyển cho Admin. " .
+                    "Vui lòng chờ Admin trả lời hoặc liên hệ trực tiếp:\n\n" .
+                    "📧 **Email**: info.real_eslate@gmail.co.uk\n" .
+                    "📞 **Hotline**: 0123456789\n\n" .
+                    "💡 Bạn có thể bắt đầu cuộc trò chuyện mới bằng cách nhấn nút '+' trên chatbox.";
+
+                // Lưu tin nhắn user
+                $this->saveMessageToFirebase($conversationId, 'user', $message);
+
+                // Response format cho chatbox
+                if ($data['question'] ?? false || $data['session_id'] ?? false) {
+                    return response()->json([
+                        'status' => 'success',
+                        'answer' => $waitingMessage,
+                        'session_id' => $conversationId,
+                        'source' => 'escalated_waiting',
+                        'escalated' => true,
+                        'timestamp' => now()->format('H:i')
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'type' => 'escalated_waiting',
+                    'response' => $waitingMessage,
+                    'escalated' => true
+                ]);
+            }
+
+            // Kiểm tra xem có yêu cầu liên hệ admin không
+            if ($this->isAdminContactRequest($message)) {
+                // Lưu tin nhắn user trước
+                $this->saveMessageToFirebase($conversationId, 'user', $message);
+
+                // Tạo phản hồi escalation
+                $escalationMessage = "📞 **Đã chuyển cho Admin**\n\n" .
+                    "Yêu cầu của bạn đã được chuyển đến bộ phận quản lý. " .
+                    "Admin sẽ liên hệ và hỗ trợ bạn trong thời gian sớm nhất.\n\n" .
+                    "🕒 **Thời gian phản hồi**: Trong vòng 30 phút (giờ hành chính)\n" .
+                    "📧 **Hoặc liên hệ trực tiếp**: info.real_eslate@gmail.co.uk\n" .
+                    "📞 **Hotline**: 0123456789\n\n" .
+                    "Bạn có thể tiếp tục chat tại đây và Admin sẽ trả lời trực tiếp.";
+
+                // Lưu tin nhắn escalation
+                $this->saveMessageToFirebase($conversationId, 'bot', $escalationMessage);
+
+                // Đánh dấu conversation cần admin
+                $this->markConversationForAdmin($conversationId, $user, $message);
+
+                // Trả về response cho chatbox
+                if ($data['question'] ?? false || $data['session_id'] ?? false) {
+                    return response()->json([
+                        'status' => 'success',
+                        'answer' => $escalationMessage,
+                        'session_id' => $conversationId,
+                        'source' => 'admin_escalated',
+                        'escalated' => true,
+                        'timestamp' => now()->format('H:i')
+                    ]);
+                }
+
+                // Trả về response cho mobile app
+                return response()->json([
+                    'success' => true,
+                    'type' => 'bot',
+                    'response' => $escalationMessage,
+                    'escalated' => true
+                ]);
+            }
+            $user = null;
+            if ($userType === 'user' && Auth::check()) {
                 $user = Auth::user();
             }
 
             // Lấy lịch sử cuộc trò chuyện để cung cấp context
-            $conversationHistory = $this->getConversationHistory($data['conversation_id']);
+            $conversationHistory = $this->getConversationHistory($conversationId);
 
             // Sử dụng Gemini AI để trả lời
             $geminiResponse = $this->geminiAI->askGemini(
-                $data['message'],
+                $message,
                 $this->loadFAQContext(),
                 $conversationHistory
             );
@@ -102,25 +199,47 @@ class ChatbotController extends Controller
                 $confidence = $geminiResponse['confidence'] ?? 0.8;
 
                 // Lưu tin nhắn AI vào Firebase
-                $this->saveMessageToFirebase($data['conversation_id'], 'bot', $aiResponse);
+                $this->saveMessageToFirebase($conversationId, 'bot', $aiResponse);
 
                 // Kiểm tra nếu confidence thấp và user đã đăng nhập
-                if ($confidence < 0.6 && $data['user_type'] === 'user' && $user) {
+                if ($confidence < 0.6 && $userType === 'user' && $user) {
                     // Thêm thông báo escalation
                     $escalationNote = "\n\n---\nLưu ý: Nếu câu trả lời trên không hữu ích, câu hỏi của bạn sẽ được chuyển đến admin để hỗ trợ tốt hơn.";
                     $fullResponse = $aiResponse . $escalationNote;
 
                     // Đánh dấu conversation để có thể escalate sau
-                    $this->firebase->getReference("chats/{$data['conversation_id']}")->update([
+                    $this->firebase->getReference("chats/{$conversationId}")->update([
                         'low_confidence_response' => true,
                         'last_confidence' => $confidence
                     ]);
+
+                    // Response format cho chatbox
+                    if (isset($data['question'])) {
+                        return response()->json([
+                            'status' => 'success',
+                            'answer' => $fullResponse,
+                            'session_id' => $conversationId,
+                            'source' => 'ai_low_confidence',
+                            'timestamp' => now()->format('H:i')
+                        ]);
+                    }
 
                     return response()->json([
                         'success' => true,
                         'type' => 'bot_low_confidence',
                         'response' => $fullResponse,
                         'confidence' => $confidence
+                    ]);
+                }
+
+                // Response format cho chatbox
+                if (isset($data['question'])) {
+                    return response()->json([
+                        'status' => 'success',
+                        'answer' => $aiResponse,
+                        'session_id' => $conversationId,
+                        'source' => 'ai',
+                        'timestamp' => now()->format('H:i')
                     ]);
                 }
 
@@ -133,10 +252,21 @@ class ChatbotController extends Controller
 
             } else {
                 // Gemini AI không thể trả lời
-                if ($data['user_type'] === 'guest') {
+                if ($userType === 'guest') {
                     // Guest user: Trả lời mặc định
                     $defaultResponse = "Xin lỗi, tôi không hiểu câu hỏi của bạn. Bạn có thể đặt câu hỏi khác hoặc liên hệ qua email info.real_eslate@gmail.co.uk để được hỗ trợ tốt hơn.";
-                    $this->saveMessageToFirebase($data['conversation_id'], 'bot', $defaultResponse);
+                    $this->saveMessageToFirebase($conversationId, 'bot', $defaultResponse);
+
+                    // Response format cho chatbox
+                    if (isset($data['question'])) {
+                        return response()->json([
+                            'status' => 'success',
+                            'answer' => $defaultResponse,
+                            'session_id' => $conversationId,
+                            'source' => 'fallback',
+                            'timestamp' => now()->format('H:i')
+                        ]);
+                    }
 
                     return response()->json([
                         'success' => true,
@@ -146,10 +276,21 @@ class ChatbotController extends Controller
                 } else {
                     // Logged-in user: Escalate to admin
                     $escalationMessage = "Câu hỏi của bạn khá phức tạp và đã được chuyển đến admin. Chúng tôi sẽ phản hồi sớm nhất có thể.";
-                    $this->saveMessageToFirebase($data['conversation_id'], 'bot', $escalationMessage);
+                    $this->saveMessageToFirebase($conversationId, 'bot', $escalationMessage);
 
                     // Đánh dấu conversation cần admin
-                    $this->markConversationForAdmin($data['conversation_id'], $user, $data['message']);
+                    $this->markConversationForAdmin($conversationId, $user, $message);
+
+                    // Response format cho chatbox
+                    if (isset($data['question'])) {
+                        return response()->json([
+                            'status' => 'success',
+                            'answer' => $escalationMessage,
+                            'session_id' => $conversationId,
+                            'source' => 'escalated',
+                            'timestamp' => now()->format('H:i')
+                        ]);
+                    }
 
                     return response()->json([
                         'success' => true,
@@ -163,7 +304,16 @@ class ChatbotController extends Controller
 
             // Fallback response
             $fallbackResponse = "Xin lỗi, hệ thống đang gặp sự cố tạm thời. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.";
-            $this->saveMessageToFirebase($data['conversation_id'], 'bot', $fallbackResponse);
+            $this->saveMessageToFirebase($conversationId, 'bot', $fallbackResponse);
+
+            // Response format cho chatbox
+            if (isset($data['question'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'answer' => $fallbackResponse,
+                    'timestamp' => now()->format('H:i')
+                ], 500);
+            }
 
             return response()->json([
                 'success' => true,
@@ -266,6 +416,85 @@ class ChatbotController extends Controller
         } catch (\Exception $e) {
             Log::error('Save message to Firebase error: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Kiểm tra xem tin nhắn có yêu cầu liên hệ admin không
+     */
+    private function isAdminContactRequest($message)
+    {
+        $message = mb_strtolower($message);
+
+        // Danh sách từ khóa liên quan đến liên hệ admin
+        $adminKeywords = [
+            // Tiếng Việt - Liên hệ trực tiếp
+            'liên hệ admin',
+            'liên hệ với admin',
+            'liên hệ quản trị',
+            'liên hệ quản lý',
+            'gặp admin',
+            'gặp quản trị',
+            'gặp quản lý',
+            'nói chuyện với admin',
+            'nói chuyện với quản trị',
+            'tôi muốn gặp admin',
+            'tôi muốn liên hệ admin',
+            'tôi muốn nói chuyện với admin',
+            'cho tôi liên hệ admin',
+            'có admin không',
+            'admin ở đâu',
+            'kết nối admin',
+            'chuyển cho admin',
+            'chuyển đến admin',
+            'cần admin',
+            'cần quản trị',
+            'cần quản lý',
+
+            // Tiếng Việt - Hỗ trợ chuyên sâu
+            'hỗ trợ trực tiếp',
+            'hỗ trợ cá nhân',
+            'tư vấn trực tiếp',
+            'tư vấn cá nhân',
+            'hỗ trợ chuyên viên',
+            'nói chuyện với người thật',
+            'gặp người thật',
+            'không muốn chat với bot',
+            'tôi cần người thật',
+
+            // Tiếng Anh
+            'escalate',
+            'escalate to admin',
+            'contact admin',
+            'speak to admin',
+            'talk to admin',
+            'admin help',
+            'human support',
+            'human agent',
+            'real person',
+            'live chat',
+            'live support',
+            'transfer to admin',
+            'need admin',
+            'want admin',
+
+            // Cụm từ khác
+            'không giải quyết được',
+            'cần hỗ trợ thêm',
+            'vấn đề phức tạp',
+            'cần giải quyết gấp',
+            'khẩn cấp',
+            'urgent',
+            'emergency'
+        ];
+
+        // Kiểm tra xem message có chứa từ khóa nào không
+        foreach ($adminKeywords as $keyword) {
+            if (str_contains($message, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Đánh dấu conversation cần admin
@@ -1271,5 +1500,77 @@ class ChatbotController extends Controller
             'percentage' => $percentage,
             'health' => $health
         ];
+    }
+
+    /**
+     * Lấy danh sách câu hỏi gợi ý từ file FAQ
+     */
+    public function getSuggestions()
+    {
+        try {
+            // Đọc file FAQ
+            $faqPath = storage_path('app/faq.json');
+
+            if (!file_exists($faqPath)) {
+                // Fallback nếu file không tồn tại
+                $suggestions = [
+                    'Tôi muốn mua nhà, cần tư vấn gì?',
+                    'Giá nhà đất hiện tại như thế nào?',
+                    'Thủ tục mua bán nhà cần những gì?',
+                    'Cách liên hệ hỗ trợ',
+                    'Giờ làm việc của công ty'
+                ];
+            } else {
+                $faqContent = file_get_contents($faqPath);
+                $faqData = json_decode($faqContent, true);
+
+                $suggestions = [];
+
+                if ($faqData) {
+                    // Lấy 1-2 câu hỏi từ mỗi category FAQ để làm suggestions
+                    foreach ($faqData as $category => $data) {
+                        if (isset($data['questions']) && is_array($data['questions'])) {
+                            // Lấy tối đa 2 câu hỏi đầu tiên từ mỗi category
+                            $categoryQuestions = array_slice($data['questions'], 0, 2);
+                            $suggestions = array_merge($suggestions, $categoryQuestions);
+                        }
+                    }
+
+                    // Giới hạn tổng số suggestions về 8-10 câu
+                    $suggestions = array_slice($suggestions, 0, 10);
+                }
+
+                // Nếu không có suggestions từ FAQ, dùng fallback
+                if (empty($suggestions)) {
+                    $suggestions = [
+                        'Tôi muốn mua nhà, cần tư vấn gì?',
+                        'Giá nhà đất hiện tại như thế nào?',
+                        'Thủ tục mua bán nhà cần những gì?',
+                        'Cách liên hệ hỗ trợ',
+                        'Giờ làm việc của công ty'
+                    ];
+                }
+            }
+
+            return response()->json([
+                'suggestions' => $suggestions,
+                'status' => 'success',
+                'total' => count($suggestions)
+            ]);
+
+        } catch (Exception $e) {
+            // Fallback response nếu có lỗi
+            return response()->json([
+                'suggestions' => [
+                    'Tôi muốn mua nhà, cần tư vấn gì?',
+                    'Giá nhà đất hiện tại như thế nào?',
+                    'Thủ tục mua bán nhà cần những gì?',
+                    'Cách liên hệ hỗ trợ',
+                    'Giờ làm việc của công ty'
+                ],
+                'status' => 'success',
+                'note' => 'Using fallback suggestions due to error'
+            ]);
+        }
     }
 }

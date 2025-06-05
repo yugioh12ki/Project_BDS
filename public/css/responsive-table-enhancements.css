@@ -1,0 +1,239 @@
+/* ================================================================= 
+   RESPONSIVE TABLE SCROLL ENHANCEMENTS - Cải tiến cuộn bảng
+   Tạo bởi: Assistant AI  
+   Mục đích: Chỉ cải thiện khả năng cuộn mà không thay đổi design hiện có
+   ================================================================= */
+
+/* =================================================================
+   ENHANCED SCROLLING WRAPPER - CHỈ CUỘN, KHÔNG THAY ĐỔI DESIGN
+   ================================================================= */
+
+.table-responsive-enhanced {
+    position: relative;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Không thay đổi background, border, shadow - giữ nguyên design hiện có */
+}
+
+/* Custom scrollbar - chỉ thay đổi thanh cuộn */
+.table-responsive-enhanced::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.table-responsive-enhanced::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+.table-responsive-enhanced::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.table-responsive-enhanced::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.table-responsive-enhanced::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* =================================================================
+   SCROLL BEHAVIOR - CHỈ TĂNG CƯỜNG CUỘN
+   ================================================================= */
+
+.table-enhanced {
+    /* Chỉ đảm bảo có thể cuộn được - không thay đổi style hiện có */
+    width: 100%;
+    min-width: fit-content; /* Tự động điều chỉnh theo nội dung */
+}
+
+/* Sticky header - giữ header cố định khi cuộn dọc */
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    /* Không thay đổi background - sẽ dùng background hiện có */
+}
+
+/* Đảm bảo bảng có thể cuộn ngang khi cần thiết */
+.table-enhanced thead th,
+.table-enhanced tbody td {
+    white-space: nowrap; /* Ngăn không cho text wrap để có cuộn ngang */
+}
+
+/* =================================================================
+   MOBILE SCROLL OPTIMIZATIONS - CHỈ CẢI THIỆN CUỘN
+   ================================================================= */
+
+/* Tablet landscape */
+@media (max-width: 1024px) {
+    .table-responsive-enhanced {
+        /* Thêm smooth scrolling cho tablet */
+        scroll-behavior: smooth;
+    }
+}
+
+/* Tablet portrait */
+@media (max-width: 768px) {
+    .table-responsive-enhanced {
+        /* Tối ưu cuộn cho tablet */
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* Ẩn các cột ít quan trọng để giảm scroll ngang */
+    .hide-on-mobile {
+        display: none;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 576px) {
+    .table-responsive-enhanced {
+        /* Tối ưu tối đa cho mobile */
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* Ẩn thêm cột trên mobile */
+    .hide-on-tablet {
+        display: none;
+    }
+    
+    /* Hiện thị scroll hint cho mobile */
+    .table-responsive-enhanced::after {
+        content: '← Vuốt để xem thêm →';
+        position: absolute;
+        bottom: 5px;
+        right: 10px;
+        font-size: 0.7rem;
+        color: #6c757d;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 6px;
+        border-radius: 10px;
+        pointer-events: none;
+        animation: fadeInOut 3s ease-in-out infinite;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+/* =================================================================
+   SORTING ENHANCEMENTS - CHỈ THÊM TÍNH NĂNG SORT
+   ================================================================= */
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sort-icon {
+    opacity: 0.5;
+    font-size: 0.8rem;
+    transition: opacity 0.2s ease;
+}
+
+.sortable:hover .sort-icon {
+    opacity: 0.8;
+}
+
+.sortable[data-sort="asc"] .sort-icon {
+    opacity: 1;
+}
+
+.sortable[data-sort="desc"] .sort-icon {
+    opacity: 1;
+}
+
+/* =================================================================
+   ACTION BUTTONS MOBILE OPTIMIZATION - CHỈ CẢI THIỆN BUTTONS
+   ================================================================= */
+
+@media (max-width: 768px) {
+    .action-buttons-mobile {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.25rem;
+    }
+    
+    .action-buttons-mobile .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .action-buttons-mobile {
+        flex-direction: row !important;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons-mobile .btn {
+        flex: 1;
+        min-width: auto;
+        padding: 0.375rem 0.25rem;
+    }
+    
+    .action-buttons-mobile .btn span {
+        display: none;
+    }
+}
+
+/* =================================================================
+   SCROLL ACCESSIBILITY & PERFORMANCE
+   ================================================================= */
+
+/* Accessibility support */
+.table-enhanced:focus-within {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .table-responsive-enhanced,
+    .sortable {
+        scroll-behavior: auto;
+        transition: none;
+    }
+    
+    .table-responsive-enhanced::after {
+        animation: none;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .table-responsive-enhanced::-webkit-scrollbar {
+        display: none; /* Ẩn scrollbar trên touch device */
+    }
+    
+    .table-responsive-enhanced {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+}
+
+/* Print optimization */
+@media print {
+    .table-responsive-enhanced {
+        overflow: visible !important;
+    }
+    
+    .table-responsive-enhanced::after {
+        display: none !important;
+    }
+}
