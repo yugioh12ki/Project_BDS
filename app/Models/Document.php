@@ -12,9 +12,16 @@ class Document extends Model
     protected $table = 'documents';
     protected $primaryKey = 'DocumentID';
 
-    public $incrementing = false;
+    public $incrementing = true; // DocumentID is auto-increment
     public $timestamps = false;
-    public $keyType = 'string';
+    public $keyType = 'int'; // DocumentID is integer
+
+    protected $fillable = [
+        'TransactionID',
+        'UploadedDate', // Match database column name
+        'FilePath', // Match database column name
+        'DocumentType'
+    ];
 
     public function transaction()
     {

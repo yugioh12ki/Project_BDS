@@ -8,6 +8,7 @@ use App\Models\profile_agent;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Models\Transaction;
+use App\Models\Document;
 use App\Models\DetailProperty;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -224,7 +225,9 @@ class AgentController extends Controller
             })
             ->select('UserID', 'Name')
             ->get();
-    }    public function index()
+    }  
+
+    public function index()
     {
         $agent = Auth::user();
         
@@ -234,9 +237,203 @@ class AgentController extends Controller
                 $query->where('AgentID', $agent->UserID);
             })
             ->orderBy('TransactionDate', 'desc')
-            ->paginate(10);
+            ->get(); // Use get() instead of paginate() for now
 
-        return view('agents.transactions', compact('transactions'));
+        // Get properties managed by this agent for the modal dropdown
+        $properties = Property::where('AgentID', $agent->UserID)
+            ->where('Status', 'active')  // Only active properties
+            ->select('PropertyID', 'Title', 'Address', 'Price', 'PropertyType', 'TypePro')
+            ->get();
+
+        // Get customers (users with role Customer) for the modal dropdown
+        $customers = User::where('Role', 'Customer')
+            ->select('UserID', 'Name', 'Phone', 'Email')
+            ->get();
+
+        // Ensure we always have empty collections, not null
+        $transactions = $transactions ?? collect();
+        $properties = $properties ?? collect();
+        $customers = $customers ?? collect();
+
+        return view('agents.transactions', compact('transactions', 'properties', 'customers'));
+    }
+
+    /**
+     * Store a new transaction (4-step workflow)
+     */
+    public function store(Request $request)
+    {
+        try {
+            // Get authenticated agent first
+            $agent = Auth::user();
+            
+            if (!$agent) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn cần đăng nhập để tạo giao dịch.'
+                ], 401);
+            }
+
+            // Get property and validate agent ownership
+            $property = Property::where('PropertyID', $request->property_id)
+                ->where('AgentID', $agent->UserID)
+                ->first();
+                
+            if (!$property) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bất động sản không tồn tại hoặc bạn không có quyền quản lý.'
+                ], 403);
+            }
+
+            // Validate the request for 4-step workflow
+            $validator = Validator::make($request->all(), [
+                'property_id' => 'required|exists:properties,PropertyID',
+                'customer_id' => 'required|exists:user,UserID',
+                'transaction_date' => 'required|date',
+                'payment_method' => 'required|in:cash,bank',
+                'rental_months' => 'required_if:property.TypePro,Rent|integer|min:1',
+                'payment_type' => 'required_if:property.TypePro,Rent|in:monthly,quarterly,yearly,advance',
+                'monthly_price' => 'required_if:property.TypePro,Rent|numeric|min:0',
+                'total_price' => 'required|numeric|min:0',
+                'contract_documents.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
+                'notes' => 'nullable|string|max:1000'
+            ]);
+
+            // Additional validation for rental properties
+            if ($property->TypePro === 'Rent') {
+                $validator->sometimes(['rental_months', 'payment_type', 'monthly_price'], 'required', function ($input) {
+                    return true;
+                });
+            }
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Create transaction with 4-step workflow data
+            $transaction = new Transaction();
+            $transaction->PropertyID = $request->property_id;
+            $transaction->CusID = $request->customer_id;
+            $transaction->TotalPrice = $request->total_price;
+            $transaction->TransactionDate = $request->transaction_date;
+            
+            // Set status based on payment method
+            if ($request->payment_method === 'cash') {
+                $transaction->TranStatus = 'Paid'; // Cash payment is immediate
+            } else {
+                $transaction->TranStatus = 'Pending'; // Bank transfer needs confirmation
+            }
+            
+            $transaction->save();
+
+            // Get the generated TransactionID
+            $transactionId = $transaction->TransactionID;
+
+            // Handle document uploads with new path structure
+            if ($request->hasFile('contract_documents')) {
+                // Create transaction-specific directory
+                $documentPath = 'storage/document/' . $transactionId;
+                $fullPath = public_path($documentPath);
+                
+                if (!file_exists($fullPath)) {
+                    mkdir($fullPath, 0755, true);
+                }
+
+                foreach ($request->file('contract_documents') as $file) {
+                    // Generate unique filename
+                    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    
+                    // Move file to public/storage/document/{transactionID}/
+                    $file->move($fullPath, $filename);
+                    
+                    // Determine document type based on file extension
+                    $extension = strtolower($file->getClientOriginalExtension());
+                    $documentType = 'Document'; // Default
+                    
+                    if (in_array($extension, ['pdf', 'doc', 'docx'])) {
+                        $documentType = 'Contract';
+                    } elseif (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                        $documentType = 'Image';
+                    }
+                    
+                    // Create document record with correct path
+                    $document = new Document();
+                    $document->TransactionID = $transactionId;
+                    $document->UploadedDate = now();
+                    $document->DocumentType = $documentType;
+                    $document->FilePath = $documentPath . '/' . $filename;
+                    $document->save();
+                    
+                    // Verify file was saved successfully
+                    if (!file_exists($fullPath . '/' . $filename)) {
+                        throw new \Exception("Failed to save document: " . $filename);
+                    }
+                }
+            }
+
+            // Create detail_transaction record for Rent with RentMonth
+            if ($property->TypePro === 'Rent') {
+                DB::table('detail_transaction')->insert([
+                    'TransactionID' => $transactionId,
+                    'Num_Pay' => 1, // First payment
+                    'RentMonth' => $request->rental_months, // For contract management
+                    'PaymentType' => $request->payment_type,
+                    'DTran_Status' => $request->payment_method === 'cash' ? 'Hoàn thành' : 'Chờ xử lý',
+                    'Price' => $request->monthly_price,
+                    'DTran_Date' => now(),
+                ]);
+            }
+
+            // Add notes if provided
+            if ($request->filled('notes')) {
+                // You might want to add a notes field to the transaction or create a separate notes table
+                // For now, we'll store it in a transaction log or similar
+                DB::table('transactionlog')->insert([
+                    'TransactionID' => $transactionId,
+                    'Action' => 'Transaction Created',
+                    'Description' => $request->notes,
+                    'LogDate' => now(),
+                    'UserID' => $agent->UserID
+                ]);
+            }
+
+            // Refresh transaction to get any trigger-updated values
+            $transaction->refresh();
+
+            // Prepare response message based on payment method
+            $message = 'Giao dịch đã được tạo thành công!';
+            if ($request->payment_method === 'cash') {
+                $message .= ' Thanh toán tiền mặt đã được xác nhận.';
+            } else {
+                $message .= ' Vui lòng hoàn tất chuyển khoản để hoàn thành giao dịch.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'transaction' => [
+                    'id' => $transaction->TransactionID,
+                    'type' => $transaction->TransactionType ?? $property->TypePro,
+                    'total_price' => number_format($transaction->TotalPrice, 0, ',', '.') . ' VND',
+                    'property_title' => $property->Title,
+                    'status' => $transaction->TranStatus,
+                    'payment_method' => $request->payment_method,
+                    'documents_uploaded' => $request->hasFile('contract_documents') ? count($request->file('contract_documents')) : 0
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error creating transaction: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tạo giao dịch. Vui lòng thử lại.'
+            ], 500);
+        }
     }
 
     /**

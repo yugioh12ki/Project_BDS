@@ -156,6 +156,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/appointments/create', [AgentController::class, 'createAppointment'])->name('appointments.create');
         Route::put('/appointments/{id}/status', [AgentController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
         Route::get('/transactions', [AgentController::class, 'index'])->name('transactions');
+        Route::post('/transactions', [AgentController::class, 'store'])->name('transactions.store');
         Route::get('/transactions/search', [AgentController::class, 'search'])->name('transactions.search');
         Route::get('/transactions/export', [AgentController::class, 'export'])->name('transactions.export');
         Route::get('/transactions/{id}', [AgentController::class, 'show'])->name('transactions.show');
