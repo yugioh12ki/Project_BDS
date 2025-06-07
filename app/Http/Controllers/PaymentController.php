@@ -35,7 +35,7 @@ class PaymentController extends Controller
         $secretKey = 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa';
         $orderInfo = "Thanh toán qua MoMo";
         $amount = "10000"; // Số tiền thanh toán, ví dụ 10.000 VND ($_POST['Price "của name field trong form thanh toán');
-        $orderId = time() . ""; 
+        $orderId = time() . "";
         $redirectUrl = "https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b"; //Thay đổi URL này thành URL bạn muốn người dùng được chuyển hướng sau khi thanh toán thành công
         $ipnUrl = "https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b";
         $extraData = "";
@@ -80,5 +80,10 @@ class PaymentController extends Controller
 
             //header('Location: ' . $jsonResult['payUrl']);
         }
+    }
+
+    public function paymentVNPAY(Request $request)
+    {
+
     }
 }

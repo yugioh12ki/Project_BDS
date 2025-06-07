@@ -6,79 +6,849 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary-gold: #D4A574;
+    --secondary-gold: #B8956A;
+    --dark-brown: #8B4513;
+    --light-brown: #DEB887;
+    --cream: #FFF8DC;
+    --white: #FFFFFF;
+    --text-dark: #2C1810;
+    --text-light: #6B5B4F;
+    --shadow-light: rgba(212, 165, 116, 0.1);
+    --shadow-medium: rgba(212, 165, 116, 0.2);
+    --shadow-heavy: rgba(139, 69, 19, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: var(--text-dark);
+    background: linear-gradient(135deg, #FFF8DC 0%, #F5F0E8 100%);
+}
+
+.property-detail-page {
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Hero Section */
+.property-hero {
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 40px;
+    box-shadow: 0 15px 50px var(--shadow-medium);
+    position: relative;
+    overflow: hidden;
+}
+
+.property-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.property-hero .row {
+    align-items: center;
+}
+
+.property-hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 12px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    line-height: 1.3;
+}
+
+.property-hero .location {
+    color: rgba(255,255,255,0.9);
+    font-size: 1rem;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.property-hero .location i {
+    font-size: 1.1rem;
+}
+
+.property-price {
+    text-align: right;
+}
+
+.property-price h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    line-height: 1.2;
+}
+
+/* Gallery Section */
+.property-gallery {
+    margin-bottom: 40px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px var(--shadow-light);
+}
+
+.main-image {
+    position: relative;
+    height: 500px;
+    overflow: hidden;
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.main-image:hover img {
+    transform: scale(1.02);
+}
+
+.thumbnail-list {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    background: var(--white);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-gold) var(--cream);
+}
+
+.thumbnail-list::-webkit-scrollbar {
+    height: 6px;
+}
+
+.thumbnail-list::-webkit-scrollbar-track {
+    background: var(--cream);
+    border-radius: 3px;
+}
+
+.thumbnail-list::-webkit-scrollbar-thumb {
+    background: var(--primary-gold);
+    border-radius: 3px;
+}
+
+.thumbnail {
+    min-width: 100px;
+    height: 80px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+}
+
+.thumbnail.active {
+    border-color: var(--primary-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--shadow-medium);
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--shadow-light);
+}
+
+/* Card Styles */
+.luxury-card {
+    background: var(--white);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px var(--shadow-light);
+    margin-bottom: 30px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.luxury-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px var(--shadow-medium);
+}
+
+.luxury-card-header {
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    color: var(--white);
+    padding: 20px 25px;
+    border: none;
+    margin: 0;
+}
+
+.luxury-card-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.luxury-card-header i {
+    font-size: 1.2rem;
+}
+
+.luxury-card-body {
+    padding: 25px;
+}
+
+/* Detail Items */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    background: var(--cream);
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid var(--primary-gold);
+    transition: all 0.3s ease;
+}
+
+.detail-item:hover {
+    background: var(--white);
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px var(--shadow-light);
+}
+
+.detail-item p {
+    margin: 0;
+    font-weight: 500;
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.detail-item strong {
+    color: var(--dark-brown);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+}
+
+.detail-item i {
+    color: var(--primary-gold);
+    font-size: 1rem;
+}
+
+/* Highlights */
+.highlights-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.highlights-list li {
+    background: var(--cream);
+    margin-bottom: 12px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--primary-gold);
+}
+
+.highlights-list li:hover {
+    background: var(--white);
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px var(--shadow-light);
+}
+
+.highlights-list li i {
+    color: var(--primary-gold);
+    margin-right: 10px;
+}
+
+/* Payment Table */
+.table {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px var(--shadow-light);
+    border: none;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    color: var(--white);
+    font-weight: 600;
+    border: none;
+    padding: 20px 15px;
+    font-size: 0.95rem;
+}
+
+.table tbody td {
+    padding: 18px 15px;
+    border-color: var(--cream);
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.table tbody tr:hover {
+    background: var(--cream);
+}
+
+.table-warning {
+    background: linear-gradient(135deg, var(--light-brown), var(--primary-gold)) !important;
+    color: var(--white) !important;
+}
+
+/* Contact Sidebar */
+.contact-sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+.contact-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 15px 40px var(--shadow-light);
+    border: 2px solid var(--cream);
+}
+
+.agent-profile {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--cream);
+}
+
+.agent-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    border: 3px solid var(--primary-gold);
+    box-shadow: 0 5px 15px var(--shadow-light);
+}
+
+.letter-avatar {
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.agent-info h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    margin: 0 0 3px 0;
+    color: var(--dark-brown);
+}
+
+.agent-info p {
+    margin: 0;
+    color: var(--text-light);
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.contact-details {
+    margin-bottom: 15px;
+}
+
+.contact-details p {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dark);
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.contact-details i {
+    color: var(--primary-gold);
+    font-size: 0.9rem;
+    width: 16px;
+}
+
+.contact-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.contact-buttons .btn {
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.8rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--secondary-gold), var(--dark-brown));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--shadow-medium);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: var(--white);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: var(--white);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #fd7e14, #dc3545);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 193, 7, 0.3);
+}
+
+/* Related Properties */
+.related-properties {
+    margin-top: 50px;
+}
+
+.related-properties h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--dark-brown);
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.related-properties h3::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    border-radius: 2px;
+}
+
+.property-card {
+    background: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px var(--shadow-light);
+    transition: all 0.3s ease;
+    height: 100%;
+    border: 2px solid var(--cream);
+}
+
+.property-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px var(--shadow-medium);
+    border-color: var(--primary-gold);
+}
+
+.property-image {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+}
+
+.property-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.property-card:hover .property-image img {
+    transform: scale(1.1);
+}
+
+.property-content {
+    padding: 25px;
+}
+
+.property-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--dark-brown);
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.property-location {
+    color: var(--text-light);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.property-location i {
+    color: var(--primary-gold);
+}
+
+.property-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.property-details .detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    background: var(--cream);
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.property-details .detail i {
+    color: var(--primary-gold);
+    font-size: 1rem;
+}
+
+.property-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 20px;
+    border-top: 2px solid var(--cream);
+}
+
+.property-price-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--dark-brown);
+}
+
+.property-price-display small {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.btn-view {
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    color: var(--white);
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-view:hover {
+    background: linear-gradient(135deg, var(--secondary-gold), var(--dark-brown));
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px var(--shadow-medium);
+    color: var(--white);
+}
+
+/* Map Styles */
+#propertyMap {
+    border-radius: 15px;
+    box-shadow: 0 10px 30px var(--shadow-light);
+    border: 3px solid var(--cream);
+}
+
+.full-address {
+    background: var(--cream) !important;
+    border: 2px solid var(--primary-gold) !important;
+    border-radius: 15px !important;
+}
+
+/* Modal Styles */
+.modal-content {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    border: none;
+    border-radius: 20px 20px 0 0;
+    padding: 25px 30px;
+}
+
+.modal-title {
+    color: var(--white);
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--dark-brown);
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border: 2px solid var(--cream);
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-gold);
+    box-shadow: 0 0 0 0.2rem var(--shadow-light);
+}
+
+/* Responsive Design */
+@media (min-width: 1200px) {
+    .property-detail-page {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .property-hero {
+        padding: 40px 50px;
+    }
+
+    .detail-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .property-hero {
+        padding: 25px;
+        text-align: center;
+    }
+
+    .property-hero h1 {
+        font-size: 1.7rem;
+    }
+
+    .property-hero .location {
+        font-size: 0.9rem;
+    }
+
+    .property-price h2 {
+        font-size: 1.5rem;
+    }
+
+    .property-price {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .main-image {
+        height: 300px;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .detail-item {
+        padding: 12px;
+    }
+
+    .detail-item p {
+        font-size: 0.85rem;
+    }
+
+    .detail-item strong {
+        font-size: 0.8rem;
+    }
+
+    .luxury-card-body {
+        padding: 20px;
+    }
+
+    .luxury-card-header {
+        padding: 15px 20px;
+    }
+
+    .luxury-card-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .property-details {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-buttons .btn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+
+    /* Stack layout on mobile */
+    .col-lg-8, .col-lg-4 {
+        margin-bottom: 20px;
+    }
+
+    .contact-sidebar {
+        position: static;
+        margin-top: 20px;
+    }
+}
+
+/* Animation */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.luxury-card {
+    animation: slideInUp 0.6s ease forwards;
+}
+
+.luxury-card:nth-child(2) { animation-delay: 0.1s; }
+.luxury-card:nth-child(3) { animation-delay: 0.2s; }
+.luxury-card:nth-child(4) { animation-delay: 0.3s; }
+</style>
 @endsection
 
 @section('home')
-<div class="container mt-4">
+<div class="container-fluid px-3">
     <div class="property-detail-page">
 
-        <!-- 1. Tiêu đề & Mô tả ngắn -->
-        <div class="property-header">
-            <div class="row">
-                <div class="col-md-8">
-                    <h1>{{ $property->Title }}</h1>
-                    <p class="location">
-                        <i class="bi bi-geo-alt-fill"></i>
-                         {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
-                    </p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <div class="property-price">
-                        <h2>{{ number_format($property->Price, 0, ',', '.') }} VND</h2>
+            <!-- 1. Hero Section -->
+            <div class="property-hero">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h1>{{ $property->Title }}</h1>
+                        <p class="location">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
+                        </p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 2. Hình ảnh & Thư viện ảnh -->
-        <div class="property-gallery">
-            <!-- Main gallery image -->
-            <div class="main-image">
-                @if($property->images->count() > 0)
-                    @php
-                        // Get first image or primary image if exists
-                        $mainImage = $property->images->first();
-                        $imageUrl = \App\Helpers\ImageHelper::getImageUrl($mainImage->ImagePath);
-                    @endphp
-                    <img src="{{ $imageUrl }}" alt="{{ $mainImage->Caption ?? $property->Title }}" id="mainImage">
-                @else
-                    <img src="{{ asset('storage/images/no-image.jpg') }}" alt="{{ $property->Title }}" id="mainImage">
-                @endif
-            </div>
-
-            <!-- Thumbnail gallery -->
-            <div class="thumbnail-list">
-                @if($property->images->count() > 0)
-                    @foreach($property->images as $image)
-                        @php
-                            $thumbUrl = \App\Helpers\ImageHelper::getImageUrl($image->ImagePath);
-                        @endphp
-                        <div class="thumbnail {{ $loop->first ? 'active' : '' }}" onclick="changeImage('{{ $thumbUrl }}')">
-                            <img src="{{ $thumbUrl }}" alt="{{ $image->Caption ?? $property->Title }}">
+                    <div class="col-lg-4">
+                        <div class="property-price">
+                            <h2>{{ number_format($property->Price, 0, ',', '.') }} VND</h2>
                         </div>
-                    @endforeach
-                @else
-                    <!-- No images found, display placeholder -->
-                    <div class="thumbnail active">
-                        <img src="{{ asset('storage/images/no-image.jpg') }}" alt="{{ $property->Title }}">
                     </div>
-                @endif
+                </div>
             </div>
-        </div>
 
-        <div class="row mt-4">
-            <div class="col-lg-8">
-                <!-- 3. Thông tin chi tiết về bất động sản -->
-                <div class="card info-card mb-4">
-                    <div class="card-header">
-                        <h3><i class="bi bi-info-circle me-2"></i>Thông tin chi tiết</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-4">
-                            <div class="col-md-6">
+            <!-- 2. Hình ảnh & Thư viện ảnh -->
+            <div class="property-gallery">
+                <!-- Main gallery image -->
+                <div class="main-image">
+                    @if($property->images->count() > 0)
+                        @php
+                            // Get first image or primary image if exists
+                            $mainImage = $property->images->first();
+                            $imageUrl = \App\Helpers\ImageHelper::getImageUrl($mainImage->ImagePath);
+                        @endphp
+                        <img src="{{ $imageUrl }}" alt="{{ $mainImage->Caption ?? $property->Title }}" id="mainImage">
+                    @else
+                        <img src="{{ asset('storage/images/no-image.jpg') }}" alt="{{ $property->Title }}" id="mainImage">
+                    @endif
+                </div>
+
+                <!-- Thumbnail gallery -->
+                <div class="thumbnail-list">
+                    @if($property->images->count() > 0)
+                        @foreach($property->images as $image)
+                            @php
+                                $thumbUrl = \App\Helpers\ImageHelper::getImageUrl($image->ImagePath);
+                            @endphp
+                            <div class="thumbnail {{ $loop->first ? 'active' : '' }}" onclick="changeImage('{{ $thumbUrl }}')">
+                                <img src="{{ $thumbUrl }}" alt="{{ $image->Caption ?? $property->Title }}">
+                            </div>
+                        @endforeach
+                    @else
+                        <!-- No images found, display placeholder -->
+                        <div class="thumbnail active">
+                            <img src="{{ asset('storage/images/no-image.jpg') }}" alt="{{ $property->Title }}">
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- 3. Thông tin chi tiết về bất động sản -->
+                    <div class="luxury-card">
+                        <div class="luxury-card-header">
+                            <h3><i class="bi bi-info-circle-fill"></i>Thông tin chi tiết</h3>
+                        </div>
+                        <div class="luxury-card-body">
+                            <div class="detail-grid">
                                 @if($property->danhMuc && $property->danhMuc->ten_pro)
                                     <div class="detail-item">
-                                        <p><strong><i class="bi bi-house-door me-2"></i>Loại BĐS:</strong> {{ $property->danhMuc->ten_pro }}</p>
+                                        <p><strong><i class="bi bi-house-door-fill"></i>Loại BĐS:</strong></p>
+                                        <p>{{ $property->danhMuc->ten_pro }}</p>
                                     </div>
                                 @endif
 
@@ -86,140 +856,152 @@
                                     <!-- Diện tích -->
                                     @if($property->chiTiet->TotalLength && $property->chiTiet->TotalWidth)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-rulers me-2"></i>Diện tích:</strong> {{ $property->chiTiet->TotalLength * $property->chiTiet->TotalWidth }} m²</p>
+                                            <p><strong><i class="bi bi-rulers"></i>Diện tích:</strong></p>
+                                            <p>{{ $property->chiTiet->TotalLength * $property->chiTiet->TotalWidth }} m²</p>
                                         </div>
                                     @elseif($property->chiTiet->HouseLength && $property->chiTiet->HouseWidth)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-rulers me-2"></i>Diện tích:</strong> {{ $property->chiTiet->HouseLength * $property->chiTiet->HouseWidth }} m²</p>
+                                            <p><strong><i class="bi bi-rulers"></i>Diện tích:</strong></p>
+                                            <p>{{ $property->chiTiet->HouseLength * $property->chiTiet->HouseWidth }} m²</p>
                                         </div>
                                     @elseif($property->chiTiet->Area && $property->chiTiet->Area > 0)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-rulers me-2"></i>Diện tích:</strong> {{ $property->chiTiet->Area }} m²</p>
+                                            <p><strong><i class="bi bi-rulers"></i>Diện tích:</strong></p>
+                                            <p>{{ $property->chiTiet->Area }} m²</p>
                                         </div>
                                     @endif
 
                                     <!-- Số phòng ngủ -->
                                     @if($property->chiTiet->Bedroom && $property->chiTiet->Bedroom > 0)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-door-open me-2"></i>Số phòng ngủ:</strong> {{ $property->chiTiet->Bedroom }} phòng</p>
+                                            <p><strong><i class="bi bi-door-open-fill"></i>Số phòng ngủ:</strong></p>
+                                            <p>{{ $property->chiTiet->Bedroom }} phòng</p>
                                         </div>
                                     @endif
 
                                     <!-- Số phòng tắm -->
                                     @if($property->chiTiet->Bath_WC && $property->chiTiet->Bath_WC > 0)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-droplet me-2"></i>Số phòng tắm/WC:</strong> {{ $property->chiTiet->Bath_WC }} phòng</p>
+                                            <p><strong><i class="bi bi-droplet-fill"></i>Số phòng tắm/WC:</strong></p>
+                                            <p>{{ $property->chiTiet->Bath_WC }} phòng</p>
                                         </div>
                                     @endif
 
                                     <!-- Số tầng -->
                                     @if($property->chiTiet->Floor && $property->chiTiet->Floor > 0)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-building me-2"></i>Số tầng:</strong> {{ $property->chiTiet->Floor }} tầng</p>
+                                            <p><strong><i class="bi bi-building"></i>Số tầng:</strong></p>
+                                            <p>{{ $property->chiTiet->Floor }} tầng</p>
                                         </div>
                                     @endif
 
                                     <!-- Cấp nhà -->
                                     @if($property->chiTiet->Levelhouse && $property->chiTiet->Levelhouse != 'N/A' && trim($property->chiTiet->Levelhouse) != '')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-house me-2"></i>Cấp nhà:</strong> {{ $property->chiTiet->Levelhouse }}</p>
+                                            <p><strong><i class="bi bi-house-fill"></i>Cấp nhà:</strong></p>
+                                            <p>{{ $property->chiTiet->Levelhouse }}</p>
                                         </div>
                                     @endif
 
                                     <!-- Ban công -->
                                     @if($property->chiTiet->Balcony !== null)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-door-open-fill me-2"></i>Ban công:</strong> {{ $property->chiTiet->Balcony == 1 ? 'Có' : 'Không' }}</p>
+                                            <p><strong><i class="bi bi-door-open-fill"></i>Ban công:</strong></p>
+                                            <p>{{ $property->chiTiet->Balcony == 1 ? 'Có' : 'Không' }}</p>
                                         </div>
                                     @endif
-                                @endif
-                            </div>
-                            <div class="col-md-6">
-                                @if($property->chiTiet)
+
                                     <!-- Đường rộng -->
                                     @if($property->chiTiet->Road && $property->chiTiet->Road > 0)
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-signpost me-2"></i>Đường rộng:</strong> {{ $property->chiTiet->Road }} m</p>
+                                            <p><strong><i class="bi bi-signpost-fill"></i>Đường rộng:</strong></p>
+                                            <p>{{ $property->chiTiet->Road }} m</p>
                                         </div>
                                     @endif
 
                                     <!-- Pháp lý -->
                                     @if($property->chiTiet->legal && $property->chiTiet->legal != 'N/A' && trim($property->chiTiet->legal) != '')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-file-earmark-text me-2"></i>Pháp lý:</strong> {{ $property->chiTiet->legal }}</p>
+                                            <p><strong><i class="bi bi-file-earmark-text-fill"></i>Pháp lý:</strong></p>
+                                            <p>{{ $property->chiTiet->legal }}</p>
                                         </div>
                                     @endif
 
                                     <!-- Hướng view -->
                                     @if($property->chiTiet->view && $property->chiTiet->view != 'N/A' && trim($property->chiTiet->view) != '')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-compass me-2"></i>Hướng:</strong> {{ $property->chiTiet->view }}</p>
+                                            <p><strong><i class="bi bi-compass-fill"></i>Hướng:</strong></p>
+                                            <p>{{ $property->chiTiet->view }}</p>
                                         </div>
                                     @endif
 
                                     <!-- Gần -->
                                     @if($property->chiTiet->near && $property->chiTiet->near != 'N/A' && trim($property->chiTiet->near) != '')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-geo-alt me-2"></i>Gần:</strong> {{ $property->chiTiet->near }}</p>
+                                            <p><strong><i class="bi bi-geo-alt-fill"></i>Gần:</strong></p>
+                                            <p>{{ $property->chiTiet->near }}</p>
                                         </div>
                                     @endif
 
                                     <!-- Nội thất -->
                                     @if($property->chiTiet->Interior && $property->chiTiet->Interior != 'N/A' && trim($property->chiTiet->Interior) != '')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-house-gear me-2"></i>Nội thất:</strong> {{ $property->chiTiet->Interior }}</p>
+                                            <p><strong><i class="bi bi-house-gear-fill"></i>Nội thất:</strong></p>
+                                            <p>{{ $property->chiTiet->Interior }}</p>
                                         </div>
                                     @endif
 
                                     <!-- Giá điện -->
                                     @if($property->chiTiet->PowerPrice && $property->chiTiet->PowerPrice != 'N/A' && trim($property->chiTiet->PowerPrice) != '' && $property->chiTiet->PowerPrice != '0')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-lightning me-2"></i>Giá điện:</strong> {{ $property->chiTiet->PowerPrice }}</p>
+                                            <p><strong><i class="bi bi-lightning-fill"></i>Giá điện:</strong></p>
+                                            <p>{{ $property->chiTiet->PowerPrice }}</p>
                                         </div>
                                     @endif
 
                                     <!-- Giá nước -->
                                     @if($property->chiTiet->WaterPrice && $property->chiTiet->WaterPrice != 'N/A' && trim($property->chiTiet->WaterPrice) != '' && $property->chiTiet->WaterPrice != '0')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-droplet-half me-2"></i>Giá nước:</strong> {{ $property->chiTiet->WaterPrice }}</p>
+                                            <p><strong><i class="bi bi-droplet-half"></i>Giá nước:</strong></p>
+                                            <p>{{ $property->chiTiet->WaterPrice }}</p>
                                         </div>
                                     @endif
 
                                     <!-- Tiện ích -->
                                     @if($property->chiTiet->Utilities && $property->chiTiet->Utilities != 'N/A' && trim($property->chiTiet->Utilities) != '' && $property->chiTiet->Utilities != '0')
                                         <div class="detail-item">
-                                            <p><strong><i class="bi bi-tools me-2"></i>Tiện ích:</strong> {{ $property->chiTiet->Utilities }}</p>
+                                            <p><strong><i class="bi bi-tools"></i>Tiện ích:</strong></p>
+                                            <p>{{ $property->chiTiet->Utilities }}</p>
                                         </div>
                                     @endif
                                 @endif
                             </div>
-                        </div>
 
-                        <!-- Thông tin kích thước chi tiết -->
-                        @if($property->chiTiet && ($property->chiTiet->HouseLength || $property->chiTiet->HouseWidth || $property->chiTiet->TotalLength || $property->chiTiet->TotalWidth))
-                            <div class="mt-4">
-                                <h5><i class="bi bi-rulers me-2"></i>Kích thước chi tiết</h5>
-                                <div class="row g-3">
-                                    @if($property->chiTiet->HouseLength && $property->chiTiet->HouseWidth)
-                                        <div class="col-md-6">
+                            <!-- Thông tin kích thước chi tiết -->
+                            @if($property->chiTiet && ($property->chiTiet->HouseLength || $property->chiTiet->HouseWidth || $property->chiTiet->TotalLength || $property->chiTiet->TotalWidth))
+                                <div class="mt-4">
+                                    <h5 style="color: var(--dark-brown); font-family: 'Playfair Display', serif; margin-bottom: 20px;">
+                                        <i class="bi bi-rulers me-2" style="color: var(--primary-gold);"></i>Kích thước chi tiết
+                                    </h5>
+                                    <div class="detail-grid">
+                                        @if($property->chiTiet->HouseLength && $property->chiTiet->HouseWidth)
                                             <div class="detail-item">
-                                                <p><strong><i class="bi bi-house me-2"></i>Kích thước nhà:</strong> {{ $property->chiTiet->HouseLength }}m x {{ $property->chiTiet->HouseWidth }}m</p>
+                                                <p><strong><i class="bi bi-house-fill"></i>Kích thước nhà:</strong></p>
+                                                <p>{{ $property->chiTiet->HouseLength }}m x {{ $property->chiTiet->HouseWidth }}m</p>
                                             </div>
-                                        </div>
-                                    @endif
+                                        @endif
 
-                                    @if($property->chiTiet->TotalLength && $property->chiTiet->TotalWidth)
-                                        <div class="col-md-6">
+                                        @if($property->chiTiet->TotalLength && $property->chiTiet->TotalWidth)
                                             <div class="detail-item">
-                                                <p><strong><i class="bi bi-bounding-box me-2"></i>Kích thước tổng:</strong> {{ $property->chiTiet->TotalLength }}m x {{ $property->chiTiet->TotalWidth }}m</p>
+                                                <p><strong><i class="bi bi-bounding-box"></i>Kích thước tổng:</strong></p>
+                                                <p>{{ $property->chiTiet->TotalLength }}m x {{ $property->chiTiet->TotalWidth }}m</p>
                                             </div>
-                                        </div>
-                                    @endif
+                                        @endif
+                                    </div>
                                 </div>
-                            </div>
-                        @endif
+                            @endif
+                        </div>
                     </div>
-                </div>
 
                 <!-- 4. Mô tả chi tiết & điểm nổi bật -->
                 <div class="card mb-4">
@@ -237,7 +1019,7 @@
                         <div class="property-highlights mt-4">
                             <h4>Điểm nổi bật</h4>
                             <ul class="highlights-list">
-                                @if($property->TypePro == 'Sale')
+                                @if($property->TypePro == 'Sale' || $property->TypePro == 'Cho bán')
                                     <!-- Điểm nổi bật cho BĐS bán -->
                                     @if($property->danhMuc && str_contains(strtolower($property->danhMuc->ten_pro), 'nhà'))
                                         <li><i class="bi bi-check-circle-fill text-success me-2"></i>Sổ đỏ chính chủ, pháp lý hoàn chỉnh</li>
@@ -301,7 +1083,7 @@
                 <div class="card mb-4">
                     <div class="card-header">
                         <h3><i class="bi bi-credit-card me-2"></i>
-                            @if($property->PropertyType == 'sale')
+                            @if($property->TypePro == 'Sale' || $property->TypePro == 'Cho bán')
                                 Tiến độ thanh toán
                             @else
                                 Bảng giá thuê
@@ -311,7 +1093,7 @@
                     <div class="card-body">
                         <div class="payment-schedule">
                             <div class="table-responsive">
-                                @if($property->TypePro == 'Sale')
+                                @if($property->TypePro == 'Sale' || $property->TypePro == 'Cho bán')
                                     <!-- Bảng thanh toán cho BĐS bán -->
                                     <table class="table table-bordered">
                                         <thead>
@@ -404,14 +1186,14 @@
 
                             <div class="payment-notes mt-3">
                                 <h5><i class="bi bi-info-circle me-2"></i>
-                                    @if($property->PropertyType == 'sale')
+                                    @if($property->TypePro == 'Sale' || $property->TypePro == 'Cho bán')
                                         Lưu ý về thanh toán:
                                     @else
                                         Lưu ý về thuê:
                                     @endif
                                 </h5>
                                 <ul class="list-unstyled">
-                                    @if($property->PropertyType == 'sale')
+                                    @if($property->TypePro == 'Sale' || $property->TypePro == 'Cho bán')
                                         <li><i class="bi bi-check2 text-success me-2"></i>Các đợt thanh toán có thể được điều chỉnh theo thỏa thuận</li>
                                         <li><i class="bi bi-check2 text-success me-2"></i>Hỗ trợ vay ngân hàng lên đến 70% giá trị bất động sản</li>
                                         <li><i class="bi bi-check2 text-success me-2"></i>Miễn phí thủ tục pháp lý và chuyển nhượng</li>
@@ -484,7 +1266,6 @@
                             <div class="contact-details">
                                 <p><i class="bi bi-telephone-fill"></i> {{ $property->moigioi->Phone }}</p>
                                 <p><i class="bi bi-envelope-fill"></i> {{ $property->moigioi->Email }}</p>
-                                <p><i class="bi bi-geo-alt-fill"></i> {{ $property->moigioi->Address }}, {{ $property->moigioi->District }}, {{ $property->moigioi->Province }}</p>
                             </div>
                         @elseif($property->chusohuu)
                             <!-- Thông tin chủ sở hữu -->
@@ -505,7 +1286,6 @@
                             <div class="contact-details">
                                 <p><i class="bi bi-telephone-fill"></i> {{ $property->chusohuu->Phone }}</p>
                                 <p><i class="bi bi-envelope-fill"></i> {{ $property->chusohuu->Email }}</p>
-                                <p><i class="bi bi-geo-alt-fill"></i> {{ $property->chusohuu->Address }}, {{ $property->chusohuu->District }}, {{ $property->chusohuu->Province }}</p>
                             </div>
                         @else
                             <!-- Thông tin mặc định -->
@@ -522,7 +1302,6 @@
                             <div class="contact-details">
                                 <p><i class="bi bi-telephone-fill"></i> {{ $property->ContactPhone ?? '0901.234.567' }}</p>
                                 <p><i class="bi bi-envelope-fill"></i> {{ $property->ContactEmail ?? 'info@batdongsan.vn' }}</p>
-                                <p><i class="bi bi-geo-alt-fill"></i> TP. Hồ Chí Minh</p>
                             </div>
                         @endif
 
@@ -535,10 +1314,6 @@
                                 $propertyPrice = number_format($property->Price, 0, ',', '.');
                                 $zaloMessage = urlencode("Xin chào! Tôi quan tâm đến BĐS: {$propertyTitle} - Giá: {$propertyPrice} VND. Vui lòng tư vấn thêm.");
                             @endphp
-
-                            <a href="#" onclick="openMessageModal('{{ $contactName }}', '{{ $contactPhone }}')" class="btn btn-primary">
-                                <i class="bi bi-chat-dots-fill me-2"></i>Nhắn tin
-                            </a>
 
                             <a href="https://zalo.me/{{ str_replace(['(', ')', ' ', '-'], '', $contactPhone) }}?text={{ $zaloMessage }}"
                                target="_blank" class="btn btn-success">
@@ -585,26 +1360,7 @@
                                     {{ $relatedProperty->District }}, {{ $relatedProperty->Province }}
                                 </p>
 
-                                <div class="property-details">
-                                    @if($relatedProperty->chiTiet)
-                                        <div class="detail">
-                                            <i class="bi bi-arrows-angle-expand"></i>
-                                            <span>{{ $relatedProperty->chiTiet->getDienTichText() }}</span>
-                                        </div>
-                                        <div class="detail">
-                                            <i class="bi bi-door-open"></i>
-                                            <span>{{ $relatedProperty->chiTiet->getSoPhongNguText() }}</span>
-                                        </div>
-                                        <div class="detail">
-                                            <i class="bi bi-droplet"></i>
-                                            <span>{{ $relatedProperty->chiTiet->getSoPhongTamWCText() }}</span>
-                                        </div>
-                                    @endif
-                                    <div class="detail">
-                                        <i class="bi bi-building"></i>
-                                        <span>{{ $relatedProperty->danhMuc->ten_pro ?? 'BĐS' }}</span>
-                                    </div>
-                                </div>
+
 
                                 <div class="property-footer">
                                     <div class="property-price-display">

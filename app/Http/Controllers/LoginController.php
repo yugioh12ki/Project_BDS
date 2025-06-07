@@ -59,6 +59,11 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|min:6',
+        ], [
+            'email.required' => 'Vui lòng nhập địa chỉ email',
+            'email.email' => 'Email không đúng định dạng',
+            'password.required' => 'Vui lòng nhập mật khẩu',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
         ]);
 
         // Lấy thông tin đăng nhập
@@ -71,8 +76,7 @@ class LoginController extends Controller
         if ($user && $user->PasswordHash === md5($credentials['password'])) {
             // Kiểm tra trạng thái người dùng
             if (!$user->isActive()) { // Sử dụng phương thức isActive() từ model User
-                Auth::logout();
-                return redirect()->back()->withErrors(['status' => 'Tài khoản của bạn bị khóa']);
+                return redirect()->back()->with('error', 'Tài khoản của bạn đã bị khóa hoặc chưa được kích hoạt');
             }
 
             // Đăng nhập người dùng
@@ -80,19 +84,17 @@ class LoginController extends Controller
 
             session(['name' => $user->Name]);
 
-            session(['name' => $user->Name]);
-
             // Điều hướng theo vai trò
             return match ($user->Role) {
-                'Admin' => redirect()->route('admin.dashboard'),
-                'Owner', 'Agent' => redirect()->route('home'),
-                'Customer' => redirect()->route('home'),
-                default => redirect()->route('login')->withErrors(['role' => 'Vai trò không hợp lệ.']),
+                'Admin' => redirect()->route('admin.dashboard')->with('success', 'Đăng nhập thành công!'),
+                'Owner', 'Agent' => redirect()->route('home')->with('success', 'Đăng nhập thành công!'),
+                'Customer' => redirect()->route('home')->with('success', 'Đăng nhập thành công!'),
+                default => redirect()->route('login')->with('error', 'Vai trò tài khoản không hợp lệ'),
             };
         }
 
         // Nếu thông tin đăng nhập không chính xác
-        return back()->withErrors(['login' => 'Email hoặc mật khẩu không đúng.']);
+        return back()->with('error', 'Email hoặc mật khẩu không chính xác. Vui lòng thử lại!');
     }
 
 }

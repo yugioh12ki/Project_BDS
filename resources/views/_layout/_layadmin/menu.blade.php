@@ -118,8 +118,7 @@
         {{-- Feedback Management - Always show --}}
         <li><a href="{{ route('admin.feedback') }}"><i class="fas fa-check-circle"></i> <span>Kiểm duyệt đánh giá</span></a></li>
 
-        {{-- Agent Directory - Always show --}}
-        <li><a href="{{ route('customer.contact-agent') }}"><i class="fas fa-address-book"></i> <span>Danh bạ môi giới</span></a></li>
+
 
         {{-- Appointment Management - Hide for Nhân Viên --}}
         @if($userPosition !== 'Nhân viên')

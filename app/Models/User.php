@@ -45,6 +45,8 @@ class User extends Authenticatable
         'StatusUser',
         'PasswordHash',
         'Avatar',
+        'otp',
+        'otp_expires_at', // Đổi từ otp_expired_at thành otp_expires_at để khớp với SQL
     ];
 
     // Mối quan hệ với bảng 'Property'

@@ -2137,7 +2137,7 @@ class SystemController extends Controller
                 'detailTransaction',
                 'document',
                 'trans_commission.comm_agent',
-                'trans_contract'
+
             ])->find($id);
 
             if (!$transaction) {
@@ -2149,7 +2149,7 @@ class SystemController extends Controller
                 'transaction' => $transaction,
                 'payment_history' => $transaction->detailTransaction,
                 'documents' => $transaction->document,
-                'contracts' => $transaction->trans_contract,
+
                 'commissions' => $transaction->trans_commission
             ]);
 

@@ -19,6 +19,7 @@ use App\Models\Document;
 use App\Models\feedback;
 use App\Notifications\NewAppointmentNotification;
 
+
 class CustomerController extends Controller
 {
     public function index()
@@ -45,7 +46,60 @@ class CustomerController extends Controller
 
     public function showProfile()
     {
-        return view('_layout._layhome.profile');
+        try {
+            $user = Auth::user();
+            Log::info('User is logged in', ['user' => $user]);
+            
+            // Load customer profile with preferences
+            $customerProfile = $user->profile_customer;
+            
+            // Get property types for preferences dropdown
+            $propertyTypes = DB::table('danhmuc_pro')->select('Protype_ID', 'ten_pro', 'Type')->get();
+            
+            // Parse customer preferences if they exist
+            $preferences = [
+                'preferred_property_types' => [],
+                'price_range' => ['min' => null, 'max' => null],
+                'area_range' => ['min' => null, 'max' => null],
+                'notifications' => [
+                    'email' => false,
+                    'sms' => false,
+                    'new_properties' => false,
+                    'price_changes' => false
+                ]
+            ];
+            
+            if ($customerProfile) {
+                // Parse preferred property types
+                if ($customerProfile->PreferredPropertyType) {
+                    $preferences['preferred_property_types'] = explode(',', $customerProfile->PreferredPropertyType);
+                }
+                
+                // Parse whitelist (contains other preferences)
+                if ($customerProfile->Whitelist) {
+                    $whitelist = json_decode($customerProfile->Whitelist, true);
+                    if ($whitelist) {
+                        if (isset($whitelist['price_range']) && $whitelist['price_range']) {
+                            $preferences['price_range'] = $whitelist['price_range'];
+                        }
+                        if (isset($whitelist['area_range']) && $whitelist['area_range']) {
+                            $preferences['area_range'] = $whitelist['area_range'];
+                        }
+                        if (isset($whitelist['notifications']) && $whitelist['notifications']) {
+                            $preferences['notifications'] = array_merge($preferences['notifications'], $whitelist['notifications']);
+                        }
+                    }
+                }
+            }
+            
+            Log::info('Profile data prepared', ['preferences' => $preferences, 'propertyTypes' => $propertyTypes]);
+            
+            return view('_layout._layhome.profile', compact('propertyTypes', 'preferences'));
+            
+        } catch (\Exception $e) {
+            Log::error('Profile view error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function updateProfile(Request $request)
@@ -53,20 +107,129 @@ class CustomerController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $request->validate([
+        // Validation rules
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:user,Email,' . $user->UserID . ',UserID'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:user,Phone,' . $user->UserID . ',UserID'],
             'address' => ['required', 'string', 'max:255'],
-        ]);
+            'birth' => ['nullable', 'date', 'before:today'],
+            'sex' => ['nullable', 'in:Nam,Nữ,Khác'],
+            'identity_card' => ['nullable', 'string', 'regex:/^[0-9]{9}$|^[0-9]{12}$/', 'unique:user,IdentityCard,' . $user->UserID . ',UserID'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'district' => ['nullable', 'string', 'max:100'],
+            'ward' => ['nullable', 'string', 'max:100'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'], // 5MB max
+            
+            // Customer preferences validation
+            'preferred_property_types' => ['nullable', 'array'],
+            'preferred_property_types.*' => ['nullable', 'string'],
+            'price_range_min' => ['nullable', 'numeric', 'min:0'],
+            'price_range_max' => ['nullable', 'numeric', 'min:0', 'gt:price_range_min'],
+            'area_range_min' => ['nullable', 'numeric', 'min:0'],
+            'area_range_max' => ['nullable', 'numeric', 'min:0', 'gt:area_range_min'],
+            'notification_email' => ['nullable', 'boolean'],
+            'notification_sms' => ['nullable', 'boolean'],
+            'notification_new_properties' => ['nullable', 'boolean'],
+            'notification_price_changes' => ['nullable', 'boolean'],
+        ];
 
-        $user->Name = $request->name;
-        $user->Email = $request->email;
-        $user->Phone = $request->phone;
-        $user->Address = $request->address;
-        $user->save();
+        // Custom validation messages
+        $messages = [
+            'phone.regex' => 'Số điện thoại phải có đúng 10 chữ số.',
+            'phone.unique' => 'Số điện thoại này đã được sử dụng.',
+            'identity_card.regex' => 'CMND/CCCD phải có 9 hoặc 12 chữ số.',
+            'identity_card.unique' => 'CMND/CCCD này đã được sử dụng.',
+            'birth.before' => 'Ngày sinh phải trước ngày hiện tại.',
+            'avatar.image' => 'File phải là hình ảnh.',
+            'avatar.mimes' => 'Chỉ chấp nhận file JPG, PNG, JPEG, GIF.',
+            'avatar.max' => 'Kích thước file không được vượt quá 5MB.',
+            'price_range_max.gt' => 'Giá tối đa phải lớn hơn giá tối thiểu.',
+            'area_range_max.gt' => 'Diện tích tối đa phải lớn hơn diện tích tối thiểu.',
+        ];
 
-        return redirect()->route('customer.profile')->with('success', 'Thông tin cá nhân đã được cập nhật thành công.');
+        $request->validate($rules, $messages);
+
+        try {
+            // Handle avatar upload
+            $avatarFileName = $user->Avatar; // Keep existing avatar if no new upload
+            if ($request->hasFile('avatar')) {
+                $avatar = $request->file('avatar');
+                $avatarFileName = time() . '_' . uniqid() . '.' . $avatar->getClientOriginalExtension();
+                
+                // Create avatars directory if it doesn't exist
+                $avatarPath = public_path('storage/avatars');
+                if (!file_exists($avatarPath)) {
+                    mkdir($avatarPath, 0755, true);
+                }
+                
+                // Delete old avatar if exists
+                if ($user->Avatar && file_exists(public_path('storage/avatars/' . $user->Avatar))) {
+                    unlink(public_path('storage/avatars/' . $user->Avatar));
+                }
+                
+                $avatar->move($avatarPath, $avatarFileName);
+            }
+
+            // Update user information
+            $user->update([
+                'Name' => $request->name,
+                'Email' => $request->email,
+                'Phone' => $request->phone,
+                'Address' => $request->address,
+                'Birth' => $request->birth,
+                'Sex' => $request->sex,
+                'IdentityCard' => $request->identity_card,
+                'Province' => $request->province,
+                'District' => $request->district,
+                'Ward' => $request->ward,
+                'Avatar' => $avatarFileName,
+            ]);
+
+            // Update customer preferences
+            $customerProfile = $user->profile_customer;
+            if ($customerProfile) {
+                // Prepare preferences data
+                $preferences = [
+                    'preferred_property_types' => $request->preferred_property_types ? 
+                        implode(',', $request->preferred_property_types) : null,
+                    'price_range' => ($request->price_range_min || $request->price_range_max) ? 
+                        json_encode([
+                            'min' => $request->price_range_min,
+                            'max' => $request->price_range_max
+                        ]) : null,
+                    'area_range' => ($request->area_range_min || $request->area_range_max) ? 
+                        json_encode([
+                            'min' => $request->area_range_min,
+                            'max' => $request->area_range_max
+                        ]) : null,
+                    'notifications' => json_encode([
+                        'email' => $request->boolean('notification_email'),
+                        'sms' => $request->boolean('notification_sms'),
+                        'new_properties' => $request->boolean('notification_new_properties'),
+                        'price_changes' => $request->boolean('notification_price_changes'),
+                    ])
+                ];
+
+                // Update using DB query for flexibility with dynamic fields
+                DB::table('profile_customer')
+                    ->where('UserID', $user->UserID)
+                    ->update([
+                        'PreferredPropertyType' => $preferences['preferred_property_types'],
+                        'Whitelist' => json_encode([
+                            'price_range' => $preferences['price_range'] ? json_decode($preferences['price_range'], true) : null,
+                            'area_range' => $preferences['area_range'] ? json_decode($preferences['area_range'], true) : null,
+                            'notifications' => json_decode($preferences['notifications'], true)
+                        ])
+                    ]);
+            }
+
+            return redirect()->route('customer.profile')->with('success', 'Thông tin cá nhân và sở thích đã được cập nhật thành công.');
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating profile: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.');
+        }
     }
 
     public function showChangePasswordForm()
@@ -74,22 +237,45 @@ class CustomerController extends Controller
         return view('_layout._layhome.change-password');
     }
 
-    public function changePassword(Request $request)
+    public function changePassword()
     {
-        $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
+        return view('_layout._layhome.change-password');
+    }
 
-        /** @var User $user */
-        $user = Auth::user();
+    public function updatePassword(Request $request)
+    {
+        try {
+            $request->validate([
+                'current_password' => 'required',
+                'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()],
+            ], [
+                'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại',
+                'password.required' => 'Vui lòng nhập mật khẩu mới',
+                'password.confirmed' => 'Xác nhận mật khẩu không khớp',
+                'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự',
+                'password.letters' => 'Mật khẩu phải chứa ít nhất một chữ cái',
+                'password.mixed_case' => 'Mật khẩu phải chứa cả chữ hoa và chữ thường',
+                'password.numbers' => 'Mật khẩu phải chứa ít nhất một số',
+            ]);
 
-        $user->update([
-            'PasswordHash' => Hash::make($request->password) // Sử dụng Hash::make thay vì md5
-        ]);
+            // Kiểm tra mật khẩu hiện tại
+            if (md5($request->current_password) !== Auth::user()->PasswordHash) {
+                return back()->with('error', 'Mật khẩu hiện tại không đúng');
+            }
 
-        return redirect()->route('customer.change-password')
-            ->with('success', 'Mật khẩu đã được thay đổi thành công.');
+            // Cập nhật mật khẩu mới
+            DB::table('user')->where('UserID', Auth::user()->UserID)->update([
+                'PasswordHash' => md5($request->password)
+            ]);
+
+            Log::info('Password changed successfully for user: ' . Auth::user()->UserID);
+
+            return back()->with('success', 'Đổi mật khẩu thành công');
+
+        } catch (\Exception $e) {
+            Log::error('Error changing password: ' . $e->getMessage());
+            return back()->with('error', 'Có lỗi xảy ra khi đổi mật khẩu');
+        }
     }
 
     public function search(Request $request)

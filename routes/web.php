@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\OwnerController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\OtpPassController;
 use PHPUnit\Event\Telemetry\System;
 use App\Http\Controllers\SystemController;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,31 @@ Route::post('/login', [LoginController::class, "authenticate"])->name('login.aut
 
 //Đăng Ký
 Route::get('/register',[RegisterController::class,"register"])->name('register');
+Route::post('/register',[RegisterController::class,"formRegister"])->name('register.submit');
+
+// Reset Password Routes
+Route::prefix('password')->name('password.')->group(function () {
+    // Trang chọn phương thức reset
+    Route::get('/reset', function() {
+        return view('auth.resetpass');
+    })->name('reset');
+
+    // Form yêu cầu reset password (email)
+    Route::get('/request', [OtpPassController::class, 'showResetRequestForm'])->name('request');
+    Route::post('/send-otp-email', [OtpPassController::class, 'sendOtpEmail'])->name('send-otp-email');
+    Route::post('/send-otp-sms', [OtpPassController::class, 'sendOtpSms'])->name('send-otp-sms');
+
+    // Form xác thực OTP
+    Route::get('/verify-otp', [OtpPassController::class, 'showVerifyOtpForm'])->name('verify-otp-form');
+    Route::post('/verify-otp', [OtpPassController::class, 'verifyOtp'])->name('verify-otp');
+
+    // Form đặt lại mật khẩu
+    Route::get('/reset-password', [OtpPassController::class, 'showResetForm'])->name('reset-form');
+    Route::post('/reset-password', [OtpPassController::class, 'resetPassword'])->name('password-reset');
+
+    // API gửi lại OTP
+    Route::post('/resend-otp', [OtpPassController::class, 'resendOtp'])->name('resend-otp');
+});
 
 Route::middleware(['auth'])->group(function()
     {
@@ -67,8 +93,8 @@ Route::middleware(['auth'])->group(function()
             Route::get('/profile', [CustomerController::class, 'showProfile'])->name('profile');
             Route::put('/profile', [CustomerController::class, 'updateProfile'])->name('profile.update');
             // Change password routes
-            Route::get('/change-password', [CustomerController::class, 'showChangePasswordForm'])->name('change-password');
-            Route::post('/change-password', [CustomerController::class, 'changePassword'])->name('password.change');
+            Route::get('/change-password', [CustomerController::class, 'changePassword'])->name('change-password');
+            Route::post('/change-password', [CustomerController::class, 'updatePassword'])->name('updatePassword');
             Route::get('/appointments', [CustomerController::class, 'showAppointments'])->name('appointments.index');
             Route::post('/appointments/{id}/cancel', [CustomerController::class, 'cancelAppointment'])->name('appointments.cancel');
 

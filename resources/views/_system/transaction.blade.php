@@ -693,25 +693,7 @@
                                                     </h6>
                                                     <div class="documents-section">
                                                         <!-- Contracts -->
-                                                        @if($transaction->trans_contract && count($transaction->trans_contract) > 0)
-                                                            <div class="mb-3">
-                                                                <h6 class="text-info small mb-2">Hợp đồng đã ký:</h6>
-                                                                @foreach($transaction->trans_contract as $contract)
-                                                                <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
-                                                                    <div class="d-flex align-items-center">
-                                                                        <i class="fas fa-file-contract text-primary me-2"></i>
-                                                                        <div>
-                                                                            <div class="fw-semibold small">Hợp đồng #{{ $contract->ContractID }}</div>
-                                                                            <small class="text-muted">
-                                                                                Ký ngày: {{ date('d/m/Y', strtotime($contract->SignedDate)) }}
-                                                                            </small>
-                                                                        </div>
-                                                                    </div>
-                                                                    <span class="badge bg-success">Đã ký</span>
-                                                                </div>
-                                                                @endforeach
-                                                            </div>
-                                                        @endif
+
 
                                                         <!-- Documents -->
                                                         @if($transaction->document && count($transaction->document) > 0)
@@ -736,12 +718,7 @@
                                                             </div>
                                                         @endif
 
-                                                        @if((!$transaction->trans_contract || count($transaction->trans_contract) == 0) && (!$transaction->document || count($transaction->document) == 0))
-                                                            <div class="text-center text-muted py-3">
-                                                                <i class="fas fa-folder-open fa-2x mb-2"></i>
-                                                                <p class="mb-0">Chưa có tài liệu</p>
-                                                            </div>
-                                                        @endif
+
                                                     </div>
                                                 </div>
                                             </div>
@@ -3209,7 +3186,7 @@ function populatePaymentHistory(paymentHistory) {
         } else if (payment.DTran_Status === 'Hủy') {
             badgeClass = 'bg-danger';
         }
-        
+
         html += `
             <tr>
                 <td>${payment.Num_Pay}</td>
@@ -4338,11 +4315,11 @@ function initializeEditModalHandlers() {
             const btn = e.target.closest('.btn-edit');
             const templateName = btn.getAttribute('data-template');
             const displayName = btn.getAttribute('data-display-name');
-            
+
             // Populate edit modal
             document.getElementById('editTemplateName').value = templateName;
             document.getElementById('editContractName').value = displayName;
-            
+
             // Clear description (will be populated from server if needed)
             document.getElementById('editContractDescription').value = '';
         }

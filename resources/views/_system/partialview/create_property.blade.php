@@ -6,7 +6,10 @@
     </div>
 @endif
 
-
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
 
 <style>
     /* Enhanced Mint Green Theme Styling */
@@ -355,6 +358,109 @@
         color: #6c757d !important;
     }
 
+    /* Map Styling */
+    .map-container {
+        border: 2px solid #19f5c5;
+        border-radius: 12px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+        box-shadow: 0 4px 12px rgba(25, 245, 197, 0.2);
+    }
+
+    .property-map {
+        height: 300px;
+        width: 100%;
+        border-radius: 10px;
+        background: #f0f8ff;
+        position: relative;
+    }
+
+    .map-info {
+        padding: 8px 12px;
+        background: linear-gradient(135deg, #e6fffe 0%, #ccfff8 100%);
+        border-top: 1px solid #19f5c5;
+        text-align: center;
+    }
+
+    .map-info small {
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .map-info i {
+        color: #19f5c5;
+        margin-right: 5px;
+    }
+
+    /* Leaflet Map Custom Styling */
+    .leaflet-container {
+        font-family: inherit;
+        border-radius: 10px;
+    }
+
+    .leaflet-popup-content-wrapper {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
+        border: 2px solid #19f5c5;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(25, 245, 197, 0.3);
+    }
+
+    .leaflet-popup-content {
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .leaflet-popup-tip {
+        background: #19f5c5;
+    }
+
+    /* Custom marker styling */
+    .custom-marker {
+        background: linear-gradient(135deg, #19f5c5 0%, #3498db 100%);
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Address display styling */
+    #addressInfo {
+        transition: all 0.3s ease;
+        border-left: 4px solid #19f5c5 !important;
+    }
+
+    #addressInfo.show {
+        animation: slideInRight 0.3s ease;
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Transaction type display */
+    #transactionTypeDisplay {
+        border-left: 4px solid #3498db;
+        background: linear-gradient(135deg, #e6f3ff 0%, #cce7ff 100%);
+        animation: fadeInDown 0.3s ease;
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
     /* Responsive Enhancements */
     @media (max-width: 768px) {
         .nav-tabs .nav-link {
@@ -509,6 +615,18 @@
 
                             <!-- Tab 2: Thông tin cơ bản -->
                             <div class="tab-pane fade" id="basic" role="tabpanel" aria-labelledby="basic-tab">
+                                <!-- Hiển thị loại giao dịch đã chọn -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="alert alert-info" id="transactionTypeDisplay" style="display: none;">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Loại giao dịch: <span id="transactionTypeText" class="fw-bold text-primary"></span>
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="row">
                                     <div class="col-md-8">
                                         <div class="form-group row mb-3">
@@ -535,17 +653,17 @@
                                             </div>
                                         </div>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group row mb-3">
-                                                    <label class="col-sm-6 col-form-label">Phường/Xã <span class="text-danger">*</span></label>
-                                                    <div class="col-sm-6">
-                                                        <select name="Ward" id="ward" class="form-control" required>
-                                                            <option value="">Chọn phường/xã</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
+                                        <!-- Sắp xếp lại: Tỉnh -> Quận/Huyện -> Phường/Xã -->
+                                        <div class="form-group row mb-3">
+                                            <label class="col-sm-3 col-form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
+                                            <div class="col-sm-9">
+                                                <select name="Province" id="province" class="form-control" required>
+                                                    <option value="">Chọn tỉnh/thành phố</option>
+                                                </select>
                                             </div>
+                                        </div>
+
+                                        <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group row mb-3">
                                                     <label class="col-sm-6 col-form-label">Quận/Huyện <span class="text-danger">*</span></label>
@@ -556,14 +674,15 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div class="form-group row mb-3">
-                                            <label class="col-sm-3 col-form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
-                                            <div class="col-sm-9">
-                                                <select name="Province" id="province" class="form-control" required>
-                                                    <option value="">Chọn tỉnh/thành phố</option>
-                                                </select>
+                                            <div class="col-md-6">
+                                                <div class="form-group row mb-3">
+                                                    <label class="col-sm-6 col-form-label">Phường/Xã <span class="text-danger">*</span></label>
+                                                    <div class="col-sm-6">
+                                                        <select name="Ward" id="ward" class="form-control" required>
+                                                            <option value="">Chọn phường/xã</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -574,6 +693,21 @@
                                             </div>
                                         </div>
 
+                                        <!-- Bản đồ hiển thị vị trí -->
+                                        <div class="form-group row mb-3">
+                                            <label class="col-sm-3 col-form-label">Vị trí trên bản đồ</label>
+                                            <div class="col-sm-9">
+                                                <div id="map-container" class="map-container">
+                                                    <div id="property-map" class="property-map"></div>
+                                                    <div class="map-info">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-info-circle"></i>
+                                                            Bản đồ sẽ tự động cập nhật khi bạn chọn địa chỉ
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
                                     </div>
                                     <div class="col-md-4">
@@ -583,6 +717,12 @@
                                             <p class="mb-1">• Giá cả phải chính xác</p>
                                             <p class="mb-1">• Địa chỉ phải đầy đủ và chính xác tránh ghi sai</p>
                                             <p class="mb-0">• Mô tả chi tiết sẽ thu hút khách hàng</p>
+                                        </div>
+
+                                        <!-- Thông tin địa chỉ đã chọn -->
+                                        <div class="alert alert-success" id="addressInfo" style="display: none;">
+                                            <h6><i class="fas fa-map-marker-alt"></i> Địa chỉ đã chọn</h6>
+                                            <div id="fullAddressDisplay"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -1526,91 +1666,837 @@ function handleOwnerCreationReturn() {
 
 </script>
 
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
 <script>
-// Load Vietnam Province API data for address selection
+// Transaction type display functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const typeProRadios = document.querySelectorAll('input[name="TypePro"]');
+    const transactionTypeDisplay = document.getElementById('transactionTypeDisplay');
+    const transactionTypeText = document.getElementById('transactionTypeText');
+
+    function updateTransactionTypeDisplay() {
+        const selectedType = document.querySelector('input[name="TypePro"]:checked');
+        if (selectedType) {
+            const typeText = selectedType.value === 'Sale' ? 'Bán' : 'Cho thuê';
+            transactionTypeText.textContent = typeText;
+            transactionTypeDisplay.style.display = 'block';
+        } else {
+            transactionTypeDisplay.style.display = 'none';
+        }
+    }
+
+    // Add event listeners to TypePro radio buttons
+    typeProRadios.forEach(radio => {
+        radio.addEventListener('change', updateTransactionTypeDisplay);
+    });
+
+    // Initial check on page load
+    updateTransactionTypeDisplay();
+});
+
+// Leaflet Map functionality
+let propertyMap = null;
+let propertyMarker = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map
+    initializeMap();
+    
+    // Add address change listeners
+    addAddressChangeListeners();
+});
+
+function initializeMap() {
+    // Initialize Leaflet map centered on Vietnam
+    propertyMap = L.map('property-map').setView([16.0583, 108.2772], 6);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(propertyMap);
+    
+    // Add custom marker styles
+    const customIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<i class="fas fa-map-marker-alt" style="color: white; font-size: 20px; margin-top: 2px;"></i>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30]
+    });
+    
+    // Store the custom icon for later use
+    window.customMapIcon = customIcon;
+}
+
+function addAddressChangeListeners() {
+    const addressInput = document.querySelector('input[name="Address"]');
+    const provinceSelect = document.getElementById('province');
+    const districtSelect = document.getElementById('district');
+    const wardSelect = document.getElementById('ward');
+    const addressInfo = document.getElementById('addressInfo');
+    const fullAddressDisplay = document.getElementById('fullAddressDisplay');
+
+    // Debounce function to prevent too many API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function updateMapAndDisplay() {
+        const address = addressInput ? addressInput.value.trim() : '';
+        const province = provinceSelect ? provinceSelect.value : '';
+        const district = districtSelect ? districtSelect.value : '';
+        const ward = wardSelect ? wardSelect.value : '';
+
+        // Build full address
+        const addressParts = [address, ward, district, province].filter(Boolean);
+        const fullAddress = addressParts.join(', ');
+
+        if (fullAddress) {
+            // Update address display
+            fullAddressDisplay.innerHTML = `
+                <div class="text-dark">
+                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                    <strong>${fullAddress}</strong>
+                </div>
+            `;
+            addressInfo.style.display = 'block';
+            addressInfo.classList.add('show');
+
+            // Update map with debounce to prevent too many calls
+            debouncedUpdateMap(fullAddress);
+        } else {
+            addressInfo.style.display = 'none';
+            addressInfo.classList.remove('show');
+            
+            // Reset map to Vietnam view
+            if (propertyMap) {
+                propertyMap.setView([16.0583, 108.2772], 6);
+                if (propertyMarker) {
+                    propertyMap.removeLayer(propertyMarker);
+                    propertyMarker = null;
+                }
+                const mapInfo = document.querySelector('.map-info small');
+                if (mapInfo) {
+                    mapInfo.innerHTML = `
+                        <i class="fas fa-info-circle"></i>
+                        Bản đồ sẽ tự động cập nhật khi bạn chọn địa chỉ
+                    `;
+                }
+            }
+        }
+    }
+
+    // Create debounced version of updateMapLocation
+    const debouncedUpdateMap = debounce(updateMapLocation, 1000);
+
+    // Add event listeners
+    if (addressInput) addressInput.addEventListener('input', updateMapAndDisplay);
+    if (provinceSelect) provinceSelect.addEventListener('change', updateMapAndDisplay);
+    if (districtSelect) districtSelect.addEventListener('change', updateMapAndDisplay);
+    if (wardSelect) wardSelect.addEventListener('change', updateMapAndDisplay);
+}
+
+async function updateMapLocation(address) {
+    try {
+        // Update map info to show loading
+        const mapInfo = document.querySelector('.map-info small');
+        if (mapInfo) {
+            mapInfo.innerHTML = `
+                <i class="fas fa-spinner fa-spin text-info"></i>
+                Đang định vị địa chỉ trên bản đồ...
+            `;
+        }
+
+        // Multiple geocoding services with failover
+        const geocodingAPIs = [
+            {
+                name: 'Nominatim',
+                url: `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Vietnam')}&limit=1`,
+                parser: (data) => data && data.length > 0 ? { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) } : null
+            },
+            {
+                name: 'Photon',
+                url: `https://photon.komoot.io/api/?q=${encodeURIComponent(address + ', Vietnam')}&limit=1`,
+                parser: (data) => data && data.features && data.features.length > 0 ? { 
+                    lat: data.features[0].geometry.coordinates[1], 
+                    lon: data.features[0].geometry.coordinates[0] 
+                } : null
+            },
+            {
+                name: 'MapBox (free tier)',
+                url: `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address + ', Vietnam')}.json?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw&limit=1`,
+                parser: (data) => data && data.features && data.features.length > 0 ? { 
+                    lat: data.features[0].center[1], 
+                    lon: data.features[0].center[0] 
+                } : null
+            }
+        ];
+
+        let lat, lon, found = false, apiUsed = '';
+
+        // Try each geocoding API
+        for (let i = 0; i < geocodingAPIs.length; i++) {
+            const api = geocodingAPIs[i];
+            try {
+                console.log(`Trying geocoding API: ${api.name}`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+                
+                const response = await fetch(api.url, {
+                    signal: controller.signal,
+                    headers: {
+                        'User-Agent': 'PropertyApp/1.0',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const coords = api.parser(data);
+                    
+                    if (coords && coords.lat && coords.lon) {
+                        lat = coords.lat;
+                        lon = coords.lon;
+                        found = true;
+                        apiUsed = api.name;
+                        console.log(`Successfully geocoded with ${api.name}:`, lat, lon);
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.warn(`${api.name} geocoding failed:`, error.message);
+                continue;
+            }
+        }
+
+        // Fallback to approximate coordinates based on province/city
+        if (!found) {
+            console.log('All geocoding APIs failed, using approximate coordinates');
+            const province = document.getElementById('province')?.value || '';
+            const coordinates = getApproximateCoordinates(province, address);
+            if (coordinates) {
+                lat = coordinates.lat;
+                lon = coordinates.lon;
+                found = true;
+                apiUsed = 'Approximate';
+            }
+        }
+
+        if (found && lat && lon) {
+            // Remove existing marker
+            if (propertyMarker) {
+                propertyMap.removeLayer(propertyMarker);
+            }
+
+            // Choose marker style based on accuracy
+            const isExact = apiUsed !== 'Approximate';
+            const markerIcon = isExact ? window.customMapIcon : L.divIcon({
+                className: 'custom-marker',
+                html: '<i class="fas fa-map-marker-alt" style="color: orange; font-size: 20px; margin-top: 2px;"></i>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30]
+            });
+
+            // Add new marker
+            propertyMarker = L.marker([lat, lon], {
+                icon: markerIcon
+            }).addTo(propertyMap);
+
+            // Add popup with address info
+            propertyMarker.bindPopup(`
+                <div class="text-center">
+                    <strong>${isExact ? 'Vị trí chính xác' : 'Vị trí ước tính'}</strong><br>
+                    <small>${address}</small><br>
+                    ${!isExact ? '<em class="text-warning">Vị trí có thể không chính xác</em><br>' : ''}
+                    <small class="text-muted">Nguồn: ${apiUsed}</small>
+                </div>
+            `);
+
+            // Center map on the location with appropriate zoom
+            const zoomLevel = isExact ? 16 : 12;
+            propertyMap.setView([lat, lon], zoomLevel);
+
+            // Update map info
+            if (mapInfo) {
+                mapInfo.innerHTML = `
+                    <i class="fas fa-${isExact ? 'check-circle text-success' : 'map-marked-alt text-warning'}"></i>
+                    ${isExact ? 'Đã định vị chính xác địa chỉ' : 'Hiển thị vị trí ước tính'} (${apiUsed})
+                `;
+            }
+        } else {
+            // Could not find location at all
+            console.warn('Could not geocode address:', address);
+            if (mapInfo) {
+                mapInfo.innerHTML = `
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    Không thể định vị địa chỉ. Vui lòng kiểm tra lại thông tin.
+                `;
+            }
+            
+            // Reset to Vietnam center view
+            if (propertyMarker) {
+                propertyMap.removeLayer(propertyMarker);
+                propertyMarker = null;
+            }
+            propertyMap.setView([16.0583, 108.2772], 6);
+        }
+    } catch (error) {
+        console.error('Error geocoding address:', error);
+        const mapInfo = document.querySelector('.map-info small');
+        if (mapInfo) {
+            mapInfo.innerHTML = `
+                <i class="fas fa-map-marked-alt text-info"></i>
+                Hiển thị vị trí ước tính cho khu vực này
+            `;
+        }
+        
+        // Show approximate location as fallback
+        showApproximateLocation(address);
+    }
+}
+
+// Function to get approximate coordinates for major Vietnamese cities/provinces
+function getApproximateCoordinates(province, fullAddress) {
+    const coordinates = {
+        'Thành phố Hồ Chí Minh': { lat: 10.8231, lon: 106.6297 },
+        'Thành phố Hà Nội': { lat: 21.0285, lon: 105.8542 },
+        'Thành phố Hải Phòng': { lat: 20.8449, lon: 106.6881 },
+        'Thành phố Đà Nẵng': { lat: 16.0471, lon: 108.2068 },
+        'Thành phố Cần Thơ': { lat: 10.0452, lon: 105.7469 },
+        'Tỉnh An Giang': { lat: 10.3883, lon: 105.4358 },
+        'Tỉnh Bà Rịa - Vũng Tàu': { lat: 10.5417, lon: 107.2431 },
+        'Tỉnh Bắc Giang': { lat: 21.2819, lon: 106.1946 },
+        'Tỉnh Bắc Kạn': { lat: 22.1477, lon: 105.8348 },
+        'Tỉnh Bạc Liêu': { lat: 9.2940, lon: 105.7215 },
+        'Tỉnh Bắc Ninh': { lat: 21.1861, lon: 106.0763 },
+        'Tỉnh Bến Tre': { lat: 10.2433, lon: 106.3756 },
+        'Tỉnh Bình Định': { lat: 14.1665, lon: 109.0450 },
+        'Tỉnh Bình Dương': { lat: 11.3254, lon: 106.4772 },
+        'Tỉnh Bình Phước': { lat: 11.7512, lon: 106.7234 },
+        'Tỉnh Bình Thuận': { lat: 11.0904, lon: 108.0721 },
+        'Tỉnh Cà Mau': { lat: 9.1768, lon: 105.1524 },
+        'Tỉnh Cao Bằng': { lat: 22.6356, lon: 106.2573 },
+        'Tỉnh Đắk Lắk': { lat: 12.7100, lon: 108.2378 },
+        'Tỉnh Đắk Nông': { lat: 12.2646, lon: 107.6098 },
+        'Tỉnh Điện Biên': { lat: 21.8042, lon: 103.2287 },
+        'Tỉnh Đồng Nai': { lat: 11.0686, lon: 107.1676 },
+        'Tỉnh Đồng Tháp': { lat: 10.4493, lon: 105.6881 },
+        'Tỉnh Gia Lai': { lat: 13.8078, lon: 108.1099 },
+        'Tỉnh Hà Giang': { lat: 22.8025, lon: 104.9784 },
+        'Tỉnh Hà Nam': { lat: 20.5835, lon: 105.9230 },
+        'Tỉnh Hà Tĩnh': { lat: 18.2943, lon: 105.8906 },
+        'Tỉnh Hải Dương': { lat: 20.9373, lon: 106.3148 },
+        'Tỉnh Hậu Giang': { lat: 9.7579, lon: 105.6412 },
+        'Tỉnh Hòa Bình': { lat: 20.6861, lon: 105.3131 },
+        'Tỉnh Hưng Yên': { lat: 20.8525, lon: 106.0511 },
+        'Tỉnh Khánh Hòa': { lat: 12.2585, lon: 109.0526 },
+        'Tỉnh Kiên Giang': { lat: 10.0125, lon: 105.0808 },
+        'Tỉnh Kon Tum': { lat: 14.3497, lon: 108.0005 },
+        'Tỉnh Lai Châu': { lat: 22.3964, lon: 103.4704 },
+        'Tỉnh Lâm Đồng': { lat: 11.5753, lon: 108.1429 },
+        'Tỉnh Lạng Sơn': { lat: 21.8537, lon: 106.7614 },
+        'Tỉnh Lào Cai': { lat: 22.4856, lon: 103.9707 },
+        'Tỉnh Long An': { lat: 10.6959, lon: 106.2431 },
+        'Tỉnh Nam Định': { lat: 20.4388, lon: 106.1621 },
+        'Tỉnh Nghệ An': { lat: 19.2342, lon: 104.9200 },
+        'Tỉnh Ninh Bình': { lat: 20.2506, lon: 105.9744 },
+        'Tỉnh Ninh Thuận': { lat: 11.6739, lon: 108.8629 },
+        'Tỉnh Phú Thọ': { lat: 21.2680, lon: 105.2045 },
+        'Tỉnh Phú Yên': { lat: 13.1611, lon: 109.3529 },
+        'Tỉnh Quảng Bình': { lat: 17.6102, lon: 106.3487 },
+        'Tỉnh Quảng Nam': { lat: 15.5394, lon: 108.0191 },
+        'Tỉnh Quảng Ngãi': { lat: 15.1214, lon: 108.8044 },
+        'Tỉnh Quảng Ninh': { lat: 21.0062, lon: 107.2925 },
+        'Tỉnh Quảng Trị': { lat: 16.7943, lon: 107.1851 },
+        'Tỉnh Sóc Trăng': { lat: 9.6003, lon: 105.9800 },
+        'Tỉnh Sơn La': { lat: 21.1022, lon: 103.7289 },
+        'Tỉnh Tây Ninh': { lat: 11.3350, lon: 106.1273 },
+        'Tỉnh Thái Bình': { lat: 20.4464, lon: 106.3364 },
+        'Tỉnh Thái Nguyên': { lat: 21.5928, lon: 105.8253 },
+        'Tỉnh Thanh Hóa': { lat: 19.8066, lon: 105.7851 },
+        'Tỉnh Thừa Thiên Huế': { lat: 16.4674, lon: 107.5905 },
+        'Tỉnh Tiền Giang': { lat: 10.4493, lon: 106.3420 },
+        'Tỉnh Trà Vinh': { lat: 9.9477, lon: 106.3254 },
+        'Tỉnh Tuyên Quang': { lat: 21.8256, lon: 105.2280 },
+        'Tỉnh Vĩnh Long': { lat: 10.2397, lon: 105.9571 },
+        'Tỉnh Vĩnh Phúc': { lat: 21.3609, lon: 105.6049 },
+        'Tỉnh Yên Bái': { lat: 21.6837, lon: 104.4551 }
+    };
+
+    return coordinates[province] || null;
+}
+
+// Function to show approximate location when exact geocoding fails
+function showApproximateLocation(address) {
+    const province = document.getElementById('province')?.value || '';
+    const coordinates = getApproximateCoordinates(province, address);
+    
+    if (coordinates) {
+        // Remove existing marker
+        if (propertyMarker) {
+            propertyMap.removeLayer(propertyMarker);
+        }
+
+        // Add approximate marker with different style
+        const approximateIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<i class="fas fa-map-marker-alt" style="color: orange; font-size: 20px; margin-top: 2px;"></i>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
+        });
+
+        propertyMarker = L.marker([coordinates.lat, coordinates.lon], {
+            icon: approximateIcon
+        }).addTo(propertyMap);
+
+        // Add popup with approximate location info
+        propertyMarker.bindPopup(`
+            <div class="text-center">
+                <strong>Vị trí ước tính</strong><br>
+                <small>${address}</small><br>
+                <em class="text-warning">Vị trí có thể không chính xác</em>
+            </div>
+        `);
+
+        // Center map on the approximate location
+        propertyMap.setView([coordinates.lat, coordinates.lon], 12);
+    } else {
+        // Default to Vietnam center if no province match
+        propertyMap.setView([16.0583, 108.2772], 6);
+    }
+}
+
+// Enhanced address selection with map update
 document.addEventListener('DOMContentLoaded', function() {
     const provinceSelect = document.getElementById('province');
     const districtSelect = document.getElementById('district');
     const wardSelect = document.getElementById('ward');
 
     if (provinceSelect && districtSelect && wardSelect) {
-        // Fetch provinces
+        // Enhanced load provinces function with multiple API fallbacks
         async function loadProvinces() {
-            try {
-                const response = await fetch('https://provinces.open-api.vn/api/?depth=1');
-                const provinces = await response.json();
+            const apiEndpoints = [
+                'https://provinces.open-api.vn/api/?depth=1',
+                'https://raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN/master/data.json',
+                'https://api.mysupership.vn/v1/partner/areas/province'
+            ];
 
-                provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
-                provinces.forEach(province => {
-                    const option = document.createElement('option');
-                    option.value = province.name;
-                    option.textContent = province.name;
-                    option.setAttribute('data-code', province.code);
-                    provinceSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading provinces:', error);
-                provinceSelect.innerHTML = '<option value="">Lỗi tải dữ liệu tỉnh</option>';
+            let lastError = null;
+
+            // Try each API endpoint
+            for (let i = 0; i < apiEndpoints.length; i++) {
+                try {
+                    console.log(`Attempting to load provinces from API ${i + 1}:`, apiEndpoints[i]);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+                    
+                    const response = await fetch(apiEndpoints[i], {
+                        signal: controller.signal,
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'User-Agent': 'PropertyApp/1.0'
+                        },
+                        mode: 'cors' // Enable CORS
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    let provinces = [];
+
+                    // Handle different API response formats
+                    if (i === 0) {
+                        // provinces.open-api.vn format
+                        provinces = data;
+                    } else if (i === 1) {
+                        // GitHub data format
+                        provinces = data.map(item => ({
+                            name: item.Name,
+                            code: item.Id
+                        }));
+                    } else if (i === 2) {
+                        // MySuperShip format
+                        provinces = data.results ? data.results.map(item => ({
+                            name: item.name,
+                            code: item.code
+                        })) : [];
+                    }
+
+                    if (provinces && provinces.length > 0) {
+                        console.log(`Successfully loaded ${provinces.length} provinces from API ${i + 1}`);
+                        
+                        provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+                        provinces.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province.name || province.Name;
+                            option.textContent = province.name || province.Name;
+                            option.setAttribute('data-code', province.code || province.Id || province.Code);
+                            provinceSelect.appendChild(option);
+                        });
+                        
+                        // Success! Exit the loop
+                        return;
+                    } else {
+                        throw new Error('No provinces data found in response');
+                    }
+
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`API ${i + 1} failed:`, error.message);
+                    
+                    // If this is a network error, show user-friendly message
+                    if (error.name === 'AbortError') {
+                        console.warn(`API ${i + 1} timed out after 5 seconds`);
+                    } else if (error.message.includes('fetch')) {
+                        console.warn(`API ${i + 1} network error:`, error.message);
+                    }
+                    
+                    // Continue to next API
+                    continue;
+                }
             }
+
+            // All APIs failed, use offline fallback
+            console.error('All APIs failed, using offline data. Last error:', lastError?.message);
+            showApiErrorNotification();
+            loadProvincesOffline();
         }
 
-        // Fetch districts based on province
+        // Show notification when APIs fail
+        function showApiErrorNotification() {
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+            notification.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 400px;';
+            notification.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Thông báo:</strong> Không thể kết nối đến server địa chỉ. Đang sử dụng dữ liệu offline.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+
+            // Auto remove after 8 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 8000);
+        }
+
+        // Offline fallback for provinces
+        function loadProvincesOffline() {
+            const provinces = [
+                { name: 'Thành phố Hồ Chí Minh', code: '79' },
+                { name: 'Thành phố Hà Nội', code: '01' },
+                { name: 'Thành phố Hải Phòng', code: '31' },
+                { name: 'Thành phố Đà Nẵng', code: '48' },
+                { name: 'Thành phố Cần Thơ', code: '92' },
+                { name: 'Tỉnh An Giang', code: '89' },
+                { name: 'Tỉnh Bà Rịa - Vũng Tàu', code: '77' },
+                { name: 'Tỉnh Bắc Giang', code: '54' },
+                { name: 'Tỉnh Bắc Kạn', code: '06' },
+                { name: 'Tỉnh Bạc Liêu', code: '95' },
+                { name: 'Tỉnh Bắc Ninh', code: '27' },
+                { name: 'Tỉnh Bến Tre', code: '83' },
+                { name: 'Tỉnh Bình Định', code: '52' },
+                { name: 'Tỉnh Bình Dương', code: '74' },
+                { name: 'Tỉnh Bình Phước', code: '70' },
+                { name: 'Tỉnh Bình Thuận', code: '60' },
+                { name: 'Tỉnh Cà Mau', code: '96' },
+                { name: 'Tỉnh Cao Bằng', code: '04' },
+                { name: 'Tỉnh Đắk Lắk', code: '66' },
+                { name: 'Tỉnh Đắk Nông', code: '67' },
+                { name: 'Tỉnh Điện Biên', code: '11' },
+                { name: 'Tỉnh Đồng Nai', code: '75' },
+                { name: 'Tỉnh Đồng Tháp', code: '87' },
+                { name: 'Tỉnh Gia Lai', code: '64' },
+                { name: 'Tỉnh Hà Giang', code: '02' },
+                { name: 'Tỉnh Hà Nam', code: '18' },
+                { name: 'Tỉnh Hà Tĩnh', code: '42' },
+                { name: 'Tỉnh Hải Dương', code: '30' },
+                { name: 'Tỉnh Hậu Giang', code: '93' },
+                { name: 'Tỉnh Hòa Bình', code: '17' },
+                { name: 'Tỉnh Hưng Yên', code: '33' },
+                { name: 'Tỉnh Khánh Hòa', code: '58' },
+                { name: 'Tỉnh Kiên Giang', code: '91' },
+                { name: 'Tỉnh Kon Tum', code: '62' },
+                { name: 'Tỉnh Lai Châu', code: '12' },
+                { name: 'Tỉnh Lâm Đồng', code: '68' },
+                { name: 'Tỉnh Lạng Sơn', code: '09' },
+                { name: 'Tỉnh Lào Cai', code: '10' },
+                { name: 'Tỉnh Long An', code: '80' },
+                { name: 'Tỉnh Nam Định', code: '36' },
+                { name: 'Tỉnh Nghệ An', code: '40' },
+                { name: 'Tỉnh Ninh Bình', code: '37' },
+                { name: 'Tỉnh Ninh Thuận', code: '59' },
+                { name: 'Tỉnh Phú Thọ', code: '25' },
+                { name: 'Tỉnh Phú Yên', code: '54' },
+                { name: 'Tỉnh Quảng Bình', code: '44' },
+                { name: 'Tỉnh Quảng Nam', code: '49' },
+                { name: 'Tỉnh Quảng Ngãi', code: '51' },
+                { name: 'Tỉnh Quảng Ninh', code: '22' },
+                { name: 'Tỉnh Quảng Trị', code: '45' },
+                { name: 'Tỉnh Sóc Trăng', code: '94' },
+                { name: 'Tỉnh Sơn La', code: '14' },
+                { name: 'Tỉnh Tây Ninh', code: '72' },
+                { name: 'Tỉnh Thái Bình', code: '34' },
+                { name: 'Tỉnh Thái Nguyên', code: '19' },
+                { name: 'Tỉnh Thanh Hóa', code: '38' },
+                { name: 'Tỉnh Thừa Thiên Huế', code: '46' },
+                { name: 'Tỉnh Tiền Giang', code: '82' },
+                { name: 'Tỉnh Trà Vinh', code: '84' },
+                { name: 'Tỉnh Tuyên Quang', code: '08' },
+                { name: 'Tỉnh Vĩnh Long', code: '86' },
+                { name: 'Tỉnh Vĩnh Phúc', code: '26' },
+                { name: 'Tỉnh Yên Bái', code: '15' }
+            ];
+
+            provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+            provinces.forEach(province => {
+                const option = document.createElement('option');
+                option.value = province.name;
+                option.textContent = province.name;
+                option.setAttribute('data-code', province.code);
+                provinceSelect.appendChild(option);
+            });
+        }
+
+        // Enhanced load districts function with multiple API fallbacks
         async function loadDistricts(provinceName) {
-            try {
-                const selectedOption = Array.from(provinceSelect.options).find(
-                    option => option.value === provinceName
-                );
-                const provinceCode = selectedOption ? selectedOption.getAttribute('data-code') : null;
+            const selectedOption = Array.from(provinceSelect.options).find(
+                option => option.value === provinceName
+            );
+            const provinceCode = selectedOption ? selectedOption.getAttribute('data-code') : null;
 
-                if (!provinceCode) return;
-
-                const response = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
-                const data = await response.json();
-
+            if (!provinceCode) {
                 districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
                 wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
-
-                data.districts.forEach(district => {
-                    const option = document.createElement('option');
-                    option.value = district.name;
-                    option.textContent = district.name;
-                    option.setAttribute('data-code', district.code);
-                    districtSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading districts:', error);
-                districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu quận/huyện</option>';
+                return;
             }
+
+            // Reset selects
+            districtSelect.innerHTML = '<option value="">Đang tải...</option>';
+            wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+
+            const apiEndpoints = [
+                `https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`,
+                `https://raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN/master/data.json`
+            ];
+
+            let lastError = null;
+
+            // Try each API endpoint
+            for (let i = 0; i < apiEndpoints.length; i++) {
+                try {
+                    console.log(`Loading districts from API ${i + 1}:`, apiEndpoints[i]);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    
+                    const response = await fetch(apiEndpoints[i], {
+                        signal: controller.signal,
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'PropertyApp/1.0'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    let districts = [];
+
+                    if (i === 0) {
+                        // provinces.open-api.vn format
+                        districts = data.districts || [];
+                    } else if (i === 1) {
+                        // GitHub data format - find province and get districts
+                        const provinceData = data.find(p => p.Id === provinceCode || p.Name === provinceName);
+                        districts = provinceData ? provinceData.Districts || [] : [];
+                        // Convert format
+                        districts = districts.map(d => ({
+                            name: d.Name,
+                            code: d.Id
+                        }));
+                    }
+
+                    if (districts && districts.length > 0) {
+                        console.log(`Successfully loaded ${districts.length} districts from API ${i + 1}`);
+                        
+                        districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+                        districts.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.name || district.Name;
+                            option.textContent = district.name || district.Name;
+                            option.setAttribute('data-code', district.code || district.Id);
+                            districtSelect.appendChild(option);
+                        });
+                        
+                        // Success! Exit the loop
+                        return;
+                        
+                    } else {
+                        throw new Error('No districts data found');
+                    }
+
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`API ${i + 1} failed for districts:`, error.message);
+                    continue;
+                }
+            }
+
+            // All APIs failed, show fallback message
+            console.error('All APIs failed for districts. Last error:', lastError?.message);
+            districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu - vui lòng thử lại</option>';
+            
+            // Show approximate location for the province on map
+            if (provinceName) {
+                const coordinates = getApproximateCoordinates(provinceName, '');
+                if (coordinates && propertyMap) {
+                    propertyMap.setView([coordinates.lat, coordinates.lon], 10);
+                    
+                    // Show notification
+                    const mapInfo = document.querySelector('.map-info small');
+                    if (mapInfo) {
+                        mapInfo.innerHTML = `
+                            <i class="fas fa-map-marked-alt text-warning"></i>
+                            Hiển thị vị trí tỉnh ${provinceName}
+                        `;
+                    }
         }
 
-        // Fetch wards based on district
+        // Enhanced load wards function with multiple API fallbacks
         async function loadWards(districtName) {
-            try {
-                const selectedOption = Array.from(districtSelect.options).find(
-                    option => option.value === districtName
-                );
-                const districtCode = selectedOption ? selectedOption.getAttribute('data-code') : null;
+            const selectedOption = Array.from(districtSelect.options).find(
+                option => option.value === districtName
+            );
+            const districtCode = selectedOption ? selectedOption.getAttribute('data-code') : null;
 
-                if (!districtCode) return;
-
-                const response = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
-                const data = await response.json();
-
+            if (!districtCode) {
                 wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+                return;
+            }
 
-                data.wards.forEach(ward => {
-                    const option = document.createElement('option');
-                    option.value = ward.name;
-                    option.textContent = ward.name;
-                    wardSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading wards:', error);
+            // Reset ward select
+            wardSelect.innerHTML = '<option value="">Đang tải...</option>';
+
+            const apiEndpoints = [
+                `https://provinces.open-api.vn/api/d/${districtCode}?depth=2`,
+                `https://raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN/master/data.json`
+            ];
+
+            let lastError = null;
+
+            // Try each API endpoint
+            for (let i = 0; i < apiEndpoints.length; i++) {
+                try {
+                    console.log(`Loading wards from API ${i + 1}:`, apiEndpoints[i]);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    
+                    const response = await fetch(apiEndpoints[i], {
+                        signal: controller.signal,
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'PropertyApp/1.0'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    let wards = [];
+
+                    if (i === 0) {
+                        // provinces.open-api.vn format
+                        wards = data.wards || [];
+                    } else if (i === 1) {
+                        // GitHub data format - find district and get wards
+                        for (const province of data) {
+                            if (province.Districts) {
+                                const districtData = province.Districts.find(d => 
+                                    d.Id === districtCode || d.Name === districtName
+                                );
+                                if (districtData && districtData.Wards) {
+                                    wards = districtData.Wards.map(w => ({
+                                        name: w.Name,
+                                        code: w.Id
+                                    }));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (wards && wards.length > 0) {
+                        console.log(`Successfully loaded ${wards.length} wards from API ${i + 1}`);
+                        
+                        wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+                        wards.forEach(ward => {
+                            const option = document.createElement('option');
+                            option.value = ward.name || ward.Name;
+                            option.textContent = ward.name || ward.Name;
+                            wardSelect.appendChild(option);
+                        });
+                        
+                        // Success! Exit the loop
+                        return;
+                        
+                    } else {
+                        throw new Error('No wards data found');
+                    }
+
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`API ${i + 1} failed for wards:`, error.message);
+                    continue;
+                }
+            }
+
+            // All APIs failed, show fallback message
+            console.error('All APIs failed for wards. Last error:', lastError?.message);
+            wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu - vui lòng thử lại</option>';
+        }
                 wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu phường/xã</option>';
             }
         }
 
-        // Event listeners
+        // Event listeners with map update
         provinceSelect.addEventListener('change', function() {
             const provinceName = this.value;
             districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
