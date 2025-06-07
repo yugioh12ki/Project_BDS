@@ -15,10 +15,12 @@
         'resources/js/autocomplete.js',
         'resources/js/appointment-agent.js',
         'resources/js/property-district.js',
-        'resources/js/property-modal.js',
         'resources/sass/scss_agent/transactions.scss',
+        'resources/sass/scss_agent/create-transaction-modal.scss',
         'resources/js/notifications-agent.js',
+        'resources/js/create-transaction-modal.js',
         ])
+
     <title>@yield('title', 'Người Môi Giới')</title>
 </head>
 <header>
@@ -38,5 +40,6 @@
     
     <!-- Footer -->
     @include('_layout._layagent.footer')
+
 </body>
 </html> 

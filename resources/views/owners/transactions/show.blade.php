@@ -128,11 +128,11 @@
                     <div class="d-flex align-items-center mb-3">
                         <div class="avatar me-3">
                             <img src="{{ asset('images/avatars/' . ($transaction->trans_owner->Avatar ?? 'default-avatar.jpg')) }}" 
-                                 alt="{{ $transaction->trans_owner->FullName }}" 
+                                 alt="{{ $transaction->trans_owner->Name }}" 
                                  class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
                         </div>
                         <div>
-                            <h6 class="mb-0">{{ $transaction->trans_owner->FullName }}</h6>
+                            <h6 class="mb-0">{{ $transaction->trans_owner->Name }}</h6>
                             <small class="text-muted">{{ $transaction->trans_owner->Email }}</small>
                         </div>
                     </div>
@@ -157,11 +157,11 @@
                     <div class="d-flex align-items-center mb-3">
                         <div class="avatar me-3">
                             <img src="{{ asset('images/avatars/' . ($transaction->trans_cus->Avatar ?? 'default-avatar.jpg')) }}" 
-                                 alt="{{ $transaction->trans_cus->FullName }}" 
+                                 alt="{{ $transaction->trans_cus->Name }}" 
                                  class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
                         </div>
                         <div>
-                            <h6 class="mb-0">{{ $transaction->trans_cus->FullName }}</h6>
+                            <h6 class="mb-0">{{ $transaction->trans_cus->Name }}</h6>
                             <small class="text-muted">{{ $transaction->trans_cus->Email }}</small>
                         </div>
                     </div>
@@ -186,11 +186,11 @@
                     <div class="d-flex align-items-center mb-3">
                         <div class="avatar me-3">
                             <img src="{{ asset('images/avatars/' . ($transaction->trans_agent->Avatar ?? 'default-avatar.jpg')) }}" 
-                                 alt="{{ $transaction->trans_agent->FullName }}" 
+                                 alt="{{ $transaction->trans_agent->Name }}" 
                                  class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
                         </div>
                         <div>
-                            <h6 class="mb-0">{{ $transaction->trans_agent->FullName }}</h6>
+                            <h6 class="mb-0">{{ $transaction->trans_agent->Name }}</h6>
                             <small class="text-muted">{{ $transaction->trans_agent->Email }}</small>
                         </div>
                     </div>

@@ -33,7 +33,7 @@
                 <h3>Thông tin khách hàng</h3>
                 @if($transaction->trans_cus)
                 <p>
-                    <strong>{{ $transaction->trans_cus->FullName }}</strong><br>
+                    <strong>{{ $transaction->trans_cus->Name }}</strong><br>
                     SĐT: {{ $transaction->trans_cus->PhoneNumber }}<br>
                     Email: {{ $transaction->trans_cus->Email }}
                 </p>
@@ -45,7 +45,7 @@
                 <h3>Thông tin chủ sở hữu</h3>
                 @if($transaction->trans_owner)
                 <p>
-                    <strong>{{ $transaction->trans_owner->FullName }}</strong><br>
+                    <strong>{{ $transaction->trans_owner->Name }}</strong><br>
                     SĐT: {{ $transaction->trans_owner->PhoneNumber }}<br>
                     Email: {{ $transaction->trans_owner->Email }}
                 </p>

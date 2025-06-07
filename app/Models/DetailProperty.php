@@ -14,7 +14,7 @@ class DetailProperty extends Model
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
 
     protected $fillable = [
-        'IdDetail', 'Floor', 'Area', 'Bedroom', 'Bath_WC', 'Road', 'legal', 'Interior', 'WaterPrice', 'PowerPrice', 'Utilities', 'Levelhouse', 'Balcony'
+        'IdDetail', 'PropertyID', 'Levelhouse', 'Floor', 'HouseLength', 'HouseWidth', 'TotalLength', 'TotalWidth', 'Area', 'Bedroom', 'Balcony', 'Bath_WC', 'Road', 'legal', 'view', 'near', 'Interior', 'WaterPrice', 'PowerPrice', 'Utilities'
     ];
 
     public function property()

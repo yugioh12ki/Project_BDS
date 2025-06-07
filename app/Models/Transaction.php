@@ -11,12 +11,12 @@ class Transaction extends Model
 
     protected $table = 'transactions'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
 
-    protected $primaryKey = 'TransactionID'; // Chỉ định khóa chính là 'id'
+    protected $primaryKey = 'TransactionID'; // Chỉ định khóa chính là 'TransactionID'
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
 
-    public $incrementing = false; // Nếu khóa chính không phải là số nguyên tự động tăng
+    public $incrementing = false; // TransactionID là string, không auto-increment
 
-    protected $keyType = 'string'; // Nếu khóa chính là chuỗi
+    protected $keyType = 'string'; // TransactionID là string
 
     protected $fillable = [
         'TransactionID',
@@ -40,9 +40,12 @@ class Transaction extends Model
         return $this->hasMany(Document::class, 'TransactionID', 'TransactionID');
     }
 
-    public function transactionLog()
+    /**
+     * Get the commissions associated with the transaction.
+     */
+    public function commissions()
     {
-        return $this->hasMany(transactionlog::class, 'TransactionID', 'TransactionID');
+        return $this->hasMany(Commission::class, 'TransactionID', 'TransactionID');
     }
 
     /**

@@ -18,7 +18,7 @@
         ])
     <title>@yield('title', 'Trang Chủ Sở Hữu')</title>
     
-    
+    @yield('styles')
 
 </head>
 <header>
@@ -41,6 +41,7 @@
         @yield('transaction')
         @yield('show')
         @yield('dashboard')
+        @yield('content')
     </div>
     
     <!-- Footer -->

@@ -12,6 +12,8 @@ use App\Models\DetailProperty;
 use App\Models\Transaction;
 use App\Models\Image;
 use App\Models\Video;
+use App\Models\Commission;
+use App\Models\RevenueReported;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Hash;
@@ -189,38 +191,53 @@ class OwnerController extends Controller
         $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
         // Base query for transactions
-        $query = Transaction::with(['property', 'trans_cus', 'trans_agent'])
-            ->where('OwnerID', $ownerId);
+        $query = DB::table('transactions')
+            ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+            ->join('user as agent', 'transactions.AgentID', '=', 'agent.UserID')
+            ->join('user as customer', 'transactions.CusID', '=', 'customer.UserID')
+            ->leftJoin('commission', 'transactions.TransactionID', '=', 'commission.TransactionID')
+            ->select(
+                'transactions.*',
+                'properties.Title as PropertyTitle',
+                'properties.Address as PropertyAddress',
+                'agent.Name as AgentName',
+                'customer.Name as CustomerName',
+                'commission.Amount as CommissionAmount',
+                'commission.Percentage as CommissionPercentage',
+                'commission.StatusCommission'
+            )
+            ->where('transactions.OwnerID', $ownerId);
 
         // Apply date filtering if provided
         if ($fromDate && $toDate) {
-            $query->whereBetween('TransactionDate', [$fromDate, $toDate]);
+            $query->whereBetween('transactions.TransactionDate', [$fromDate, $toDate]);
         }
 
         // Get filtered transactions
-        $transactions = $query->orderBy('TransactionDate', 'desc')->get();
+        $transactions = $query->orderBy('transactions.TransactionDate', 'desc')->get();
 
         // Calculate statistics
-        $totalValue = $transactions->sum('Amount');
+        $totalValue = $transactions->sum('TotalPrice');
         $transactionCount = $transactions->count();
-        $paidAmount = $transactions->where('Status', 'Hoàn thành')->sum('Amount');
+        $paidAmount = $transactions->where('TranStatus', 'Paid')->sum('TotalPrice');
 
         // Calculate success rate
         $successRate = $transactionCount > 0
-            ? round(($transactions->where('Status', 'Hoàn thành')->count() / $transactionCount) * 100)
+            ? round(($transactions->where('TranStatus', 'Paid')->count() / $transactionCount) * 100)
             : 0;
 
         // Previous period (for comparison)
         $previousFrom = Carbon::parse($fromDate)->subMonth()->format('Y-m-d');
         $previousTo = Carbon::parse($toDate)->subMonth()->format('Y-m-d');
 
-        $previousTransactions = Transaction::where('OwnerID', $ownerId)
+        $previousTransactions = DB::table('transactions')
+            ->where('OwnerID', $ownerId)
             ->whereBetween('TransactionDate', [$previousFrom, $previousTo])
             ->get();
 
-        $previousTotalValue = $previousTransactions->sum('Amount');
+        $previousTotalValue = $previousTransactions->sum('TotalPrice');
         $previousCount = $previousTransactions->count();
-        $previousPaidAmount = $previousTransactions->where('Status', 'Hoàn thành')->sum('Amount');
+        $previousPaidAmount = $previousTransactions->where('TranStatus', 'Paid')->sum('TotalPrice');
 
         // Calculate growth percentages
         $valueGrowth = $previousTotalValue > 0
@@ -233,6 +250,35 @@ class OwnerController extends Controller
             ? round((($paidAmount - $previousPaidAmount) / $previousPaidAmount) * 100)
             : 0;
 
+        // Get commission data
+        $commissionStats = DB::table('commission')
+            ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+            ->select(
+                DB::raw('SUM(commission.Amount) as total_commission'),
+                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Success" THEN commission.Amount ELSE 0 END) as paid_commission'),
+                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Pending" THEN commission.Amount ELSE 0 END) as pending_commission')
+            )
+            ->where('transactions.OwnerID', $ownerId)
+            ->whereBetween('transactions.TransactionDate', [$fromDate, $toDate])
+            ->first();
+            
+        // If this is an AJAX request, return JSON
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'transactions' => $transactions,
+                'totalValue' => $totalValue,
+                'transactionCount' => $transactionCount,
+                'paidAmount' => $paidAmount,
+                'successRate' => $successRate,
+                'valueGrowth' => $valueGrowth,
+                'countGrowth' => $countGrowth,
+                'paidGrowth' => $paidGrowth,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+                'commissionStats' => $commissionStats
+            ]);
+        }
+
         return view('owners.transactions.transactions', compact(
             'transactions',
             'totalValue',
@@ -243,7 +289,8 @@ class OwnerController extends Controller
             'countGrowth',
             'paidGrowth',
             'fromDate',
-            'toDate'
+            'toDate',
+            'commissionStats'
         ));
     }
 
@@ -256,7 +303,7 @@ class OwnerController extends Controller
             ->findOrFail($id);
 
         // Check if user has permission to view this transaction
-        if (Auth::user()->role == 'owner' && Auth::user()->UserID != $transaction->OwnerID) {
+        if (Auth::user()->Role == 'Owner' && Auth::user()->UserID != $transaction->OwnerID) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -272,7 +319,7 @@ class OwnerController extends Controller
             ->findOrFail($id);
 
         // Check if user has permission to view this transaction
-        if (Auth::user()->role == 'owner' && Auth::user()->UserID != $transaction->OwnerID) {
+        if (Auth::user()->Role == 'Owner' && Auth::user()->UserID != $transaction->OwnerID) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -295,10 +342,10 @@ class OwnerController extends Controller
         $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
         // Base query depending on user role
-        if ($user->role == 'owner') {
+        if ($user->Role == 'Owner') {
             $query = Transaction::with('property')
                 ->where('OwnerID', $user->UserID);
-        } elseif ($user->role == 'admin' || $user->role == 'agent') {
+        } elseif ($user->Role == 'Admin' || $user->Role == 'Agent') {
             $query = Transaction::with('property');
         } else {
             abort(403, 'Unauthorized action.');
@@ -332,7 +379,7 @@ class OwnerController extends Controller
                     $transaction->property ? $transaction->property->Title : 'N/A',
                     $transaction->TransactionType,
                     number_format($transaction->Amount, 0),
-                    $transaction->trans_cus ? $transaction->trans_cus->FullName : 'N/A',
+                    $transaction->trans_cus ? $transaction->trans_cus->Name : 'N/A',
                     $transaction->Status
                 ]);
             }
@@ -360,9 +407,9 @@ class OwnerController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'FullName' => 'required|string|max:255',
+            'Name' => 'required|string|max:255',
             'PhoneNumber' => 'required|string|max:20',
-            'Email' => 'required|email|max:255|unique:users,Email,'.$user->UserID.',UserID',
+            'Email' => 'required|email|max:255|unique:user,Email,'.$user->UserID.',UserID',
             'Address' => 'nullable|string|max:255',
             'Avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -375,7 +422,7 @@ class OwnerController extends Controller
             $user->Avatar = $filename;
         }
 
-        $user->FullName = $validated['FullName'];
+        $user->Name = $validated['Name'];
         $user->PhoneNumber = $validated['PhoneNumber'];
         $user->Email = $validated['Email'];
         $user->Address = $validated['Address'];
@@ -418,7 +465,7 @@ class OwnerController extends Controller
     public function storePropertyListing(Request $request)
     {
         $validated = $request->validate([
-            'property_id' => 'required|exists:property,PropertyID',
+            'property_id' => 'required|exists:properties,PropertyID',
             // Thêm các validation rules khác tùy thuộc vào yêu cầu
         ]);
 
@@ -850,4 +897,360 @@ class OwnerController extends Controller
         }
     }
 
+    /**
+     * Hiển thị lịch sử giao dịch
+     */
+    public function transactionHistory(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Validate user role
+        if ($user->Role != 'Owner') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        $ownerId = $user->UserID;
+        
+        // Process date filter
+        $fromDate = $request->input('from_date', Carbon::now()->startOfYear()->format('Y-m-d'));
+        $toDate = $request->input('to_date', Carbon::now()->format('Y-m-d'));
+        
+        // Base query for transactions using the correct table name (transactions)
+        $transactions = DB::table('transactions')
+            ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+            ->join('user as owner', 'transactions.OwnerID', '=', 'owner.UserID')
+            ->join('user as agent', 'transactions.AgentID', '=', 'agent.UserID')
+            ->join('user as customer', 'transactions.CusID', '=', 'customer.UserID')
+            ->leftJoin('commission', 'transactions.TransactionID', '=', 'commission.TransactionID')
+            ->select(
+                'transactions.*',
+                'properties.Title as PropertyTitle',
+                'properties.Address as PropertyAddress',
+                'properties.TypePro',
+                'agent.Name as AgentName',
+                'customer.Name as CustomerName',
+                'commission.Amount as CommissionAmount',
+                'commission.Percentage as CommissionPercentage',
+                'commission.StatusCommission'
+            )
+            ->where('transactions.OwnerID', $ownerId)
+            ->whereBetween('transactions.TransactionDate', [$fromDate, $toDate])
+            ->orderBy('transactions.TransactionDate', 'desc')
+            ->get();
+
+        // Monthly statistics
+        $monthlyStats = DB::table('transactions')
+            ->select(
+                DB::raw('YEAR(TransactionDate) as year'),
+                DB::raw('MONTH(TransactionDate) as month'),
+                DB::raw('COUNT(*) as total_transactions'),
+                DB::raw('SUM(TotalPrice) as total_value'),
+                DB::raw('SUM(CASE WHEN TranStatus = "Paid" THEN TotalPrice ELSE 0 END) as paid_amount'),
+                DB::raw('SUM(CASE WHEN TransactionType = "Sale" THEN TotalPrice ELSE 0 END) as sale_value'),
+                DB::raw('SUM(CASE WHEN TransactionType = "Rent" THEN TotalPrice ELSE 0 END) as rental_value')
+            )
+            ->where('OwnerID', $ownerId)
+            ->whereBetween('TransactionDate', [$fromDate, $toDate])
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        // Commission summary
+        $commissionSummary = DB::table('commission')
+            ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+            ->join('user', 'commission.AgentID', '=', 'user.UserID')
+            ->select(
+                'commission.AgentID',
+                'user.Name as AgentName',
+                DB::raw('SUM(commission.Amount) as TotalCommission'),
+                DB::raw('SUM(CASE WHEN commission.TypeCom = "Rent" THEN commission.Amount ELSE 0 END) as RentCommission'),
+                DB::raw('SUM(CASE WHEN commission.TypeCom = "Sale" THEN commission.Amount ELSE 0 END) as SaleCommission'),
+                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Success" THEN commission.Amount ELSE 0 END) as PaidCommission'),
+                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Pending" THEN commission.Amount ELSE 0 END) as PendingCommission')
+            )
+            ->where('transactions.OwnerID', $ownerId)
+            ->whereBetween('transactions.TransactionDate', [$fromDate, $toDate])
+            ->groupBy('commission.AgentID', 'user.Name')
+            ->get();
+
+        return view('owners.transactions.history', compact(
+            'transactions',
+            'monthlyStats',
+            'commissionSummary',
+            'fromDate',
+            'toDate'
+        ));
+    }
+
+    /**
+     * Quản lý doanh thu
+     */
+    public function revenueManagement(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Validate user role
+        if ($user->Role != 'Owner') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        $ownerId = $user->UserID;
+        $year = $request->input('year', date('Y'));
+        $month = $request->input('month', date('n'));
+
+        // Get monthly revenue data for the selected year
+        $monthlyRevenue = DB::table('transactions')
+            ->select(
+                DB::raw('MONTH(TransactionDate) as month'),
+                DB::raw('SUM(TotalPrice) as total_revenue'),
+                DB::raw('SUM(CASE WHEN TransactionType = "Sale" THEN TotalPrice ELSE 0 END) as sale_revenue'),
+                DB::raw('SUM(CASE WHEN TransactionType = "Rent" THEN TotalPrice ELSE 0 END) as rental_revenue'),
+                DB::raw('COUNT(*) as transaction_count')
+            )
+            ->where('OwnerID', $ownerId)
+            ->whereYear('TransactionDate', $year)
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Get commission paid to agents for the selected year
+        $monthlyCommission = DB::table('commission')
+            ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+            ->select(
+                DB::raw('MONTH(transactions.TransactionDate) as month'),
+                DB::raw('SUM(commission.Amount) as total_commission'),
+                DB::raw('SUM(CASE WHEN commission.TypeCom = "Sale" THEN commission.Amount ELSE 0 END) as sale_commission'),
+                DB::raw('SUM(CASE WHEN commission.TypeCom = "Rent" THEN commission.Amount ELSE 0 END) as rent_commission')
+            )
+            ->where('transactions.OwnerID', $ownerId)
+            ->whereYear('transactions.TransactionDate', $year)
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Detail for specific month if selected
+        $monthDetail = null;
+        if ($month) {
+            $monthDetail = DB::table('transactions')
+                ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+                ->join('user as agent', 'transactions.AgentID', '=', 'agent.UserID')
+                ->join('user as customer', 'transactions.CusID', '=', 'customer.UserID')
+                ->leftJoin('commission', 'transactions.TransactionID', '=', 'commission.TransactionID')
+                ->select(
+                    'transactions.TransactionID',
+                    'transactions.TransactionDate',
+                    'transactions.TotalPrice',
+                    'transactions.TransactionType',
+                    'transactions.TranStatus',
+                    'properties.Title as PropertyTitle',
+                    'agent.Name as AgentName',
+                    'customer.Name as CustomerName',
+                    'commission.Amount as CommissionAmount',
+                    'commission.StatusCommission'
+                )
+                ->where('transactions.OwnerID', $ownerId)
+                ->whereYear('transactions.TransactionDate', $year)
+                ->whereMonth('transactions.TransactionDate', $month)
+                ->orderBy('transactions.TransactionDate', 'desc')
+                ->get();
+        }
+
+        // Total annual statistics
+        $annualStats = DB::table('transactions')
+            ->select(
+                DB::raw('SUM(TotalPrice) as annual_revenue'),
+                DB::raw('SUM(CASE WHEN TransactionType = "Sale" THEN TotalPrice ELSE 0 END) as annual_sale_revenue'),
+                DB::raw('SUM(CASE WHEN TransactionType = "Rent" THEN TotalPrice ELSE 0 END) as annual_rental_revenue'),
+                DB::raw('COUNT(*) as annual_transaction_count')
+            )
+            ->where('OwnerID', $ownerId)
+            ->whereYear('TransactionDate', $year)
+            ->first();
+
+        // Total annual commission
+        $annualCommission = DB::table('commission')
+            ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+            ->select(
+                DB::raw('SUM(commission.Amount) as annual_commission'),
+                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Success" THEN commission.Amount ELSE 0 END) as paid_commission'),
+                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Pending" THEN commission.Amount ELSE 0 END) as pending_commission')
+            )
+            ->where('transactions.OwnerID', $ownerId)
+            ->whereYear('transactions.TransactionDate', $year)
+            ->first();
+
+        // Years with transactions for dropdown
+        $availableYears = DB::table('transactions')
+            ->select(DB::raw('DISTINCT YEAR(TransactionDate) as year'))
+            ->where('OwnerID', $ownerId)
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->toArray();
+
+        return view('owners.transactions.revenue', compact(
+            'monthlyRevenue',
+            'monthlyCommission',
+            'monthDetail',
+            'annualStats',
+            'annualCommission',
+            'availableYears',
+            'year',
+            'month'
+        ));
+    }
+
+    /**
+     * Quản lý hoa hồng cho môi giới
+     */
+    public function commissionManagement(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Validate user role
+        if ($user->Role != 'Owner') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        $ownerId = $user->UserID;
+        $status = $request->input('status', 'all');
+        
+        // Lấy tất cả các giao dịch và thông tin hoa hồng liên quan
+        $query = DB::table('commission')
+            ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+            ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+            ->join('user', 'commission.AgentID', '=', 'user.UserID')
+            ->select(
+                'commission.*',
+                'transactions.TransactionDate',
+                'transactions.TotalPrice',
+                'transactions.TransactionType',
+                'transactions.TranStatus',
+                'properties.Title as PropertyTitle',
+                'user.Name as AgentName'
+            )
+            ->where('transactions.OwnerID', $ownerId);
+        
+        // Lọc theo trạng thái hoa hồng nếu có
+        if ($status && $status != 'all') {
+            $query->where('commission.StatusCommission', $status);
+        }
+        
+        $commissions = $query->orderBy('transactions.TransactionDate', 'desc')->get();
+        
+        // Thống kê tổng quan
+        $commissionStats = [
+            'total' => $commissions->sum('Amount'),
+            'paid' => $commissions->where('StatusCommission', 'Success')->sum('Amount'),
+            'pending' => $commissions->where('StatusCommission', 'Pending')->sum('Amount'),
+            'cancelled' => $commissions->where('StatusCommission', 'Cancelled')->sum('Amount'),
+            'count' => $commissions->count()
+        ];
+        
+        // Thống kê theo loại giao dịch
+        $typeStats = [
+            'rent' => [
+                'total' => $commissions->where('TypeCom', 'Rent')->sum('Amount'),
+                'count' => $commissions->where('TypeCom', 'Rent')->count()
+            ],
+            'sale' => [
+                'total' => $commissions->where('TypeCom', 'Sale')->sum('Amount'),
+                'count' => $commissions->where('TypeCom', 'Sale')->count()
+            ]
+        ];
+        
+        // Thống kê theo agent
+        $agentStats = [];
+        foreach ($commissions as $commission) {
+            $agentId = $commission->AgentID;
+            if (!isset($agentStats[$agentId])) {
+                $agentStats[$agentId] = [
+                    'name' => $commission->AgentName,
+                    'total' => 0,
+                    'paid' => 0,
+                    'pending' => 0,
+                    'count' => 0
+                ];
+            }
+            
+            $agentStats[$agentId]['total'] += $commission->Amount;
+            if ($commission->StatusCommission == 'Success') {
+                $agentStats[$agentId]['paid'] += $commission->Amount;
+            } else if ($commission->StatusCommission == 'Pending') {
+                $agentStats[$agentId]['pending'] += $commission->Amount;
+            }
+            $agentStats[$agentId]['count']++;
+        }
+        
+        return view('owners.transactions.commissions', compact(
+            'commissions',
+            'commissionStats',
+            'typeStats',
+            'agentStats',
+            'status'
+        ));
+    }
+
+    /**
+     * Hiển thị trang tổng quan về giao dịch và hoa hồng
+     */
+    public function transactionsOverview()
+    {
+        $user = Auth::user();
+        
+        // Validate user role
+        if ($user->Role != 'Owner') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        return view('owners.transactions.overview');
+    }
+    
+    /**
+     * Cập nhật trạng thái hoa hồng
+     */
+    public function updateCommissionStatus(Request $request, $id)
+    {
+        try {
+            $commission = Commission::findOrFail($id);
+            $transaction = Transaction::find($commission->TransactionID);
+            
+            // Kiểm tra nếu người dùng hiện tại là chủ sở hữu của giao dịch này
+            if ($transaction && $transaction->OwnerID != Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền cập nhật hoa hồng này'
+                ], 403);
+            }
+            
+            $request->validate([
+                'status' => 'required|in:Success,Pending,Cancelled'
+            ]);
+            
+            $commission->StatusCommission = $request->status;
+            
+            // Nếu đã thanh toán, cập nhật ngày thanh toán
+            if ($request->status == 'Success') {
+                $commission->PaidDate = Carbon::now()->format('Y-m-d');
+            } elseif ($request->status == 'Pending') {
+                $commission->PaidDate = null;
+            }
+            
+            $commission->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật trạng thái hoa hồng thành công',
+                'new_status' => $request->status,
+                'paid_date' => $commission->PaidDate ? Carbon::parse($commission->PaidDate)->format('d/m/Y') : null
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating commission status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật trạng thái hoa hồng'
+            ], 500);
+        }
+    }
 }

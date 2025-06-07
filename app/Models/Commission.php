@@ -13,7 +13,24 @@ class Commission extends Model
     protected $primaryKey = 'CommissionID'; // Chỉ định khóa chính là 'id'
     public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
 
-    public $incrementing = false; // Nếu khóa chính không phải là số nguyên tự động tăng
+    protected $fillable = [
+        'CommissionID',
+        'TransactionID',
+        'AgentID',
+        'Amount',
+        'Percentage',
+        'TypeCom',
+        'StatusCommission',
+        'PaidDate'
+    ];
 
-    protected $keyType = 'string'; // Nếu khóa chính là chuỗi
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
 }

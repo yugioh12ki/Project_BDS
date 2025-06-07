@@ -119,7 +119,7 @@ class AgentController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . Auth::id(),
+            'email' => 'required|email|unique:user,email,' . Auth::id(),
             'phone' => 'nullable|string|max:20',
         ]);
         
@@ -240,15 +240,26 @@ class AgentController extends Controller
             ->get(); // Use get() instead of paginate() for now
 
         // Get properties managed by this agent for the modal dropdown
-        $properties = Property::where('AgentID', $agent->UserID)
+        $properties = Property::with(['danhMuc'])
+            ->where('AgentID', $agent->UserID)
             ->where('Status', 'active')  // Only active properties
-            ->select('PropertyID', 'Title', 'Address', 'Price', 'PropertyType', 'TypePro')
-            ->get();
+            ->whereNotNull('PropertyID') // Ensure PropertyID is not null
+            ->whereNotNull('Title')      // Ensure Title is not null
+            ->get()
+            ->filter(function($property) {
+                return $property !== null && isset($property->PropertyID);
+            });
 
+        // Debug: Log properties count and details
+        Log::info('Properties count for agent ' . $agent->UserID . ': ' . $properties->count());
+        Log::info('Properties details: ', $properties->toArray());
+        
         // Get customers (users with role Customer) for the modal dropdown
         $customers = User::where('Role', 'Customer')
             ->select('UserID', 'Name', 'Phone', 'Email')
             ->get();
+
+        Log::info('Customers count: ' . $customers->count());
 
         // Ensure we always have empty collections, not null
         $transactions = $transactions ?? collect();
@@ -292,9 +303,9 @@ class AgentController extends Controller
                 'customer_id' => 'required|exists:user,UserID',
                 'transaction_date' => 'required|date',
                 'payment_method' => 'required|in:cash,bank',
-                'rental_months' => 'required_if:property.TypePro,Rent|integer|min:1',
-                'payment_type' => 'required_if:property.TypePro,Rent|in:monthly,quarterly,yearly,advance',
-                'monthly_price' => 'required_if:property.TypePro,Rent|numeric|min:0',
+                'rental_months' => 'required_if:transaction_type,Rent|integer|min:1',
+                'payment_type' => 'required_if:transaction_type,Rent|in:monthly,quarterly,yearly,advance',
+                'monthly_price' => 'required_if:transaction_type,Rent|numeric|min:0',
                 'total_price' => 'required|numeric|min:0',
                 'contract_documents.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
                 'notes' => 'nullable|string|max:1000'
@@ -314,12 +325,30 @@ class AgentController extends Controller
                 ], 422);
             }
 
+            // Validate customer exists and has correct role
+            $customer = User::where('UserID', $request->customer_id)
+                ->where('Role', 'Customer')
+                ->first();
+                
+            if (!$customer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Khách hàng không tồn tại.'
+                ], 404);
+            }
+
+            // Begin database transaction
+            DB::beginTransaction();
+
             // Create transaction with 4-step workflow data
             $transaction = new Transaction();
             $transaction->PropertyID = $request->property_id;
+            $transaction->AgentID = $agent->UserID;
+            $transaction->OwnerID = $property->OwnerID;
             $transaction->CusID = $request->customer_id;
             $transaction->TotalPrice = $request->total_price;
             $transaction->TransactionDate = $request->transaction_date;
+            $transaction->TransactionType = $property->TypePro; // Use property type
             
             // Set status based on payment method
             if ($request->payment_method === 'cash') {
@@ -344,54 +373,50 @@ class AgentController extends Controller
                 }
 
                 foreach ($request->file('contract_documents') as $file) {
-                    // Generate unique filename
-                    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $filePath = $documentPath . '/' . $fileName;
                     
-                    // Move file to public/storage/document/{transactionID}/
-                    $file->move($fullPath, $filename);
+                    // Move file to public directory
+                    $file->move($fullPath, $fileName);
                     
-                    // Determine document type based on file extension
-                    $extension = strtolower($file->getClientOriginalExtension());
-                    $documentType = 'Document'; // Default
-                    
-                    if (in_array($extension, ['pdf', 'doc', 'docx'])) {
-                        $documentType = 'Contract';
-                    } elseif (in_array($extension, ['jpg', 'jpeg', 'png'])) {
-                        $documentType = 'Image';
-                    }
-                    
-                    // Create document record with correct path
+                    // Save document record in database
                     $document = new Document();
                     $document->TransactionID = $transactionId;
+                    $document->FilePath = $filePath;
+                    $document->DocumentType = $file->getClientMimeType();
                     $document->UploadedDate = now();
-                    $document->DocumentType = $documentType;
-                    $document->FilePath = $documentPath . '/' . $filename;
                     $document->save();
-                    
-                    // Verify file was saved successfully
-                    if (!file_exists($fullPath . '/' . $filename)) {
-                        throw new \Exception("Failed to save document: " . $filename);
-                    }
                 }
             }
 
-            // Create detail_transaction record for Rent with RentMonth
-            if ($property->TypePro === 'Rent') {
+            // Create detail transaction record for rental properties
+            if ($property->TypePro === 'Rent' && $request->filled('rental_months')) {
                 DB::table('detail_transaction')->insert([
                     'TransactionID' => $transactionId,
-                    'Num_Pay' => 1, // First payment
-                    'RentMonth' => $request->rental_months, // For contract management
+                    'Num_Pay' => 1,
+                    'RentalMonths' => $request->rental_months,
+                    'MonthlyPrice' => $request->monthly_price,
                     'PaymentType' => $request->payment_type,
-                    'DTran_Status' => $request->payment_method === 'cash' ? 'Hoàn thành' : 'Chờ xử lý',
-                    'Price' => $request->monthly_price,
-                    'DTran_Date' => now(),
+                    'PaymentMethod' => $request->payment_method
                 ]);
             }
 
+            // Calculate and create commission record
+            $commissionRate = $property->TypePro === 'Rent' ? 0.05 : 0.03; // 5% for rent, 3% for sale
+            $commissionAmount = $request->total_price * $commissionRate;
+
+            DB::table('commission')->insert([
+                'TransactionID' => $transactionId,
+                'AgentID' => $agent->UserID,
+                'Amount' => $commissionAmount,
+                'Percentage' => $commissionRate * 100,
+                'TypeCom' => $property->TypePro,
+                'StatusCommission' => 'Pending',
+                'CommissionDate' => now()
+            ]);
+
             // Add notes if provided
             if ($request->filled('notes')) {
-                // You might want to add a notes field to the transaction or create a separate notes table
-                // For now, we'll store it in a transaction log or similar
                 DB::table('transactionlog')->insert([
                     'TransactionID' => $transactionId,
                     'Action' => 'Transaction Created',
@@ -401,8 +426,20 @@ class AgentController extends Controller
                 ]);
             }
 
+            // Commit the transaction
+            DB::commit();
+
             // Refresh transaction to get any trigger-updated values
             $transaction->refresh();
+
+            // Send email notifications (optional)
+            try {
+                // You can implement email notifications here
+                // Mail::to($customer->Email)->send(new TransactionCreated($transaction));
+                // Mail::to($property->owner->Email)->send(new TransactionCreated($transaction));
+            } catch (\Exception $e) {
+                Log::warning('Failed to send transaction notification emails: ' . $e->getMessage());
+            }
 
             // Prepare response message based on payment method
             $message = 'Giao dịch đã được tạo thành công!';
@@ -422,16 +459,22 @@ class AgentController extends Controller
                     'property_title' => $property->Title,
                     'status' => $transaction->TranStatus,
                     'payment_method' => $request->payment_method,
-                    'documents_uploaded' => $request->hasFile('contract_documents') ? count($request->file('contract_documents')) : 0
+                    'documents_uploaded' => $request->hasFile('contract_documents') ? count($request->file('contract_documents')) : 0,
+                    'commission_amount' => number_format($commissionAmount, 0, ',', '.') . ' VND'
                 ]
             ]);
 
         } catch (\Exception $e) {
+            // Rollback the transaction in case of error
+            DB::rollback();
+            
             Log::error('Error creating transaction: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi tạo giao dịch. Vui lòng thử lại.'
+                'message' => 'Có lỗi xảy ra khi tạo giao dịch. Vui lòng thử lại.',
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
@@ -1026,5 +1069,658 @@ class AgentController extends Controller
                 'updated_at' => $transaction->TransactionDate ? date('d/m/Y H:i', strtotime($transaction->TransactionDate)) : ''
             ]
         ]);
+    }
+
+    /**
+     * Update transaction details
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $agent = Auth::user();
+            
+            // Get transaction and validate agent ownership
+            $transaction = Transaction::with(['property'])
+                ->whereHas('property', function($query) use ($agent) {
+                    $query->where('AgentID', $agent->UserID);
+                })
+                ->where('TransactionID', $id)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy giao dịch hoặc bạn không có quyền truy cập.'
+                ], 404);
+            }
+
+            // Validate input
+            $validator = Validator::make($request->all(), [
+                'customer_id' => 'required|exists:user,UserID',
+                'total_price' => 'required|numeric|min:0',
+                'transaction_date' => 'required|date',
+                'payment_method' => 'required|in:cash,bank_transfer',
+                'description' => 'nullable|string|max:1000'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Check if customer exists and has role Customer
+            $customer = User::where('UserID', $request->customer_id)
+                ->where('Role', 'Customer')
+                ->first();
+
+            if (!$customer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Khách hàng không tồn tại hoặc không hợp lệ.'
+                ], 404);
+            }
+
+            // Begin database transaction
+            DB::beginTransaction();
+
+            // Store old values for logging
+            $oldValues = [
+                'customer_id' => $transaction->CusID,
+                'total_price' => $transaction->TotalPrice,
+                'transaction_date' => $transaction->TransactionDate,
+                'description' => $transaction->Description
+            ];
+
+            // Update transaction
+            $transaction->CusID = $request->customer_id;
+            $transaction->TotalPrice = $request->total_price;
+            $transaction->TransactionDate = $request->transaction_date;
+            $transaction->Description = $request->description;
+            
+            // Update status based on payment method if transaction is not yet paid
+            if ($transaction->TranStatus === 'Pending') {
+                if ($request->payment_method === 'cash') {
+                    $transaction->TranStatus = 'Paid';
+                } else {
+                    $transaction->TranStatus = 'Pending';
+                }
+            }
+
+            $transaction->save();
+
+            // Update commission amount if price changed
+            if ($oldValues['total_price'] != $request->total_price) {
+                $property = $transaction->property;
+                $commissionRate = $property->TypePro === 'Rent' ? 0.05 : 0.03; // 5% for rent, 3% for sale
+                $newCommissionAmount = $request->total_price * $commissionRate;
+
+                DB::table('commission')
+                    ->where('TransactionID', $id)
+                    ->update([
+                        'Amount' => $newCommissionAmount,
+                        'Percentage' => $commissionRate * 100
+                    ]);
+            }
+
+            // Log the changes
+            $changes = [];
+            foreach ($oldValues as $field => $oldValue) {
+                $newValue = $request->input($field);
+                if ($field === 'customer_id') {
+                    $newValue = $request->customer_id;
+                }
+                
+                if ($oldValue != $newValue) {
+                    $changes[] = ucfirst(str_replace('_', ' ', $field)) . " changed";
+                }
+            }
+
+            if (!empty($changes)) {
+                DB::table('transactionlog')->insert([
+                    'TransactionID' => $id,
+                    'Action' => 'Transaction Updated',
+                    'Description' => 'Updated: ' . implode(', ', $changes),
+                    'LogDate' => now(),
+                    'UserID' => $agent->UserID
+                ]);
+            }
+
+            // Commit the transaction
+            DB::commit();
+
+            // Reload transaction with relationships for response
+            $transaction->load(['property', 'trans_cus', 'trans_owner']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật giao dịch thành công!',
+                'transaction' => [
+                    'id' => $transaction->TransactionID,
+                    'property_title' => $transaction->property->Title ?? '',
+                    'customer_name' => $transaction->trans_cus->Name ?? '',
+                    'customer_phone' => $transaction->trans_cus->Phone ?? '',
+                    'owner_name' => $transaction->trans_owner->Name ?? '',
+                    'amount' => $transaction->TotalPrice,
+                    'formatted_amount' => number_format($transaction->TotalPrice, 0, ',', '.') . ' VND',
+                    'status' => $transaction->TranStatus,
+                    'type' => $transaction->TransactionType,
+                    'description' => $transaction->Description ?? '',
+                    'transaction_date' => $transaction->TransactionDate ? date('d/m/Y', strtotime($transaction->TransactionDate)) : '',
+                    'payment_method' => $request->payment_method,
+                    'updated_at' => now()->format('d/m/Y H:i')
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            // Rollback the transaction in case of error
+            DB::rollback();
+            
+            Log::error('Error updating transaction: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật giao dịch: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update transaction status
+     */
+    public function updateTransactionStatus(Request $request, $id)
+    {
+        try {
+            $agent = Auth::user();
+            
+            $transaction = Transaction::with(['property'])
+                ->whereHas('property', function($query) use ($agent) {
+                    $query->where('AgentID', $agent->UserID);
+                })
+                ->where('TransactionID', $id)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy giao dịch hoặc bạn không có quyền truy cập.'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'status' => 'required|in:Paid,Pending,Cancelled,Completed'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $oldStatus = $transaction->TranStatus;
+            $newStatus = $request->status;
+
+            $transaction->TranStatus = $newStatus;
+            $transaction->save();
+
+            // Log the status change
+            DB::table('transactionlog')->insert([
+                'TransactionID' => $id,
+                'Action' => 'Status Changed',
+                'Description' => "Status changed from {$oldStatus} to {$newStatus}",
+                'LogDate' => now(),
+                'UserID' => $agent->UserID
+            ]);
+
+            // Update commission status if transaction is completed/paid
+            if ($newStatus === 'Paid' || $newStatus === 'Completed') {
+                DB::table('commission')
+                    ->where('TransactionID', $id)
+                    ->update(['StatusCommission' => 'Success']);
+            } elseif ($newStatus === 'Cancelled') {
+                DB::table('commission')
+                    ->where('TransactionID', $id)
+                    ->update(['StatusCommission' => 'Cancelled']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật trạng thái giao dịch thành công',
+                'transaction' => [
+                    'id' => $transaction->TransactionID,
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating transaction status: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật trạng thái giao dịch'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get transaction documents
+     */
+    public function getTransactionDocuments($id)
+    {
+        try {
+            $agent = Auth::user();
+            
+            $transaction = Transaction::with(['property', 'document'])
+                ->whereHas('property', function($query) use ($agent) {
+                    $query->where('AgentID', $agent->UserID);
+                })
+                ->where('TransactionID', $id)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy giao dịch'
+                ], 404);
+            }
+
+            $documents = $transaction->document->map(function($doc) {
+                return [
+                    'id' => $doc->DocumentID,
+                    'name' => basename($doc->FilePath),
+                    'path' => asset($doc->FilePath),
+                    'type' => $doc->DocumentType,
+                    'uploaded_date' => $doc->UploadedDate,
+                    'size' => file_exists(public_path($doc->FilePath)) ? filesize(public_path($doc->FilePath)) : 0
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'documents' => $documents
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting transaction documents: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải tài liệu'
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload additional documents to existing transaction
+     */
+    public function uploadTransactionDocuments(Request $request, $id)
+    {
+        try {
+            $agent = Auth::user();
+            
+            $transaction = Transaction::with(['property'])
+                ->whereHas('property', function($query) use ($agent) {
+                    $query->where('AgentID', $agent->UserID);
+                })
+                ->where('TransactionID', $id)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy giao dịch'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'documents.*' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $uploadedFiles = [];
+
+            if ($request->hasFile('documents')) {
+                $documentPath = 'storage/document/' . $id;
+                $fullPath = public_path($documentPath);
+                
+                if (!file_exists($fullPath)) {
+                    mkdir($fullPath, 0755, true);
+                }
+
+                foreach ($request->file('documents') as $file) {
+                    $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $filePath = $documentPath . '/' . $fileName;
+                    
+                    $file->move($fullPath, $fileName);
+                    
+                    $document = new Document();
+                    $document->TransactionID = $id;
+                    $document->FilePath = $filePath;
+                    $document->DocumentType = $file->getClientMimeType();
+                    $document->UploadedDate = now();
+                    $document->save();
+
+                    $uploadedFiles[] = [
+                        'id' => $document->DocumentID,
+                        'name' => $fileName,
+                        'path' => asset($filePath),
+                        'type' => $document->DocumentType
+                    ];
+                }
+            }
+
+            // Log the document upload
+            DB::table('transactionlog')->insert([
+                'TransactionID' => $id,
+                'Action' => 'Documents Uploaded',
+                'Description' => count($uploadedFiles) . ' documents uploaded',
+                'LogDate' => now(),
+                'UserID' => $agent->UserID
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tải tài liệu thành công',
+                'documents' => $uploadedFiles
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error uploading transaction documents: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải tài liệu'
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete transaction document
+     */
+    public function deleteTransactionDocument($transactionId, $documentId)
+    {
+        try {
+            $agent = Auth::user();
+            
+            $transaction = Transaction::with(['property'])
+                ->whereHas('property', function($query) use ($agent) {
+                    $query->where('AgentID', $agent->UserID);
+                })
+                ->where('TransactionID', $transactionId)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy giao dịch'
+                ], 404);
+            }
+
+            $document = Document::where('DocumentID', $documentId)
+                ->where('TransactionID', $transactionId)
+                ->first();
+
+            if (!$document) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy tài liệu'
+                ], 404);
+            }
+
+            // Delete physical file
+            $filePath = public_path($document->FilePath);
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            // Delete database record
+            $document->delete();
+
+            // Log the deletion
+            DB::table('transactionlog')->insert([
+                'TransactionID' => $transactionId,
+                'Action' => 'Document Deleted',
+                'Description' => 'Document ' . basename($document->FilePath) . ' deleted',
+                'LogDate' => now(),
+                'UserID' => $agent->UserID
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Xóa tài liệu thành công'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting transaction document: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa tài liệu'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get transaction analytics for agent dashboard
+     */
+    public function getTransactionAnalytics(Request $request)
+    {
+        try {
+            $agent = Auth::user();
+            
+            // Date range (default to current month)
+            $fromDate = $request->input('from_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+            $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+            $baseQuery = Transaction::with(['property'])
+                ->whereHas('property', function($query) use ($agent) {
+                    $query->where('AgentID', $agent->UserID);
+                })
+                ->whereBetween('TransactionDate', [$fromDate, $toDate]);
+
+            // Basic statistics
+            $totalTransactions = $baseQuery->count();
+            $totalValue = $baseQuery->sum('TotalPrice');
+            $completedTransactions = (clone $baseQuery)->whereIn('TranStatus', ['Paid', 'Completed'])->count();
+            $pendingTransactions = (clone $baseQuery)->where('TranStatus', 'Pending')->count();
+
+            // Transaction by type
+            $saleTransactions = (clone $baseQuery)->where('TransactionType', 'Sale')->count();
+            $rentTransactions = (clone $baseQuery)->where('TransactionType', 'Rent')->count();
+
+            // Commission statistics
+            $commissionData = DB::table('commission')
+                ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+                ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+                ->where('properties.AgentID', $agent->UserID)
+                ->whereBetween('transactions.TransactionDate', [$fromDate, $toDate])
+                ->selectRaw('
+                    SUM(commission.Amount) as total_commission,
+                    SUM(CASE WHEN commission.StatusCommission = "Success" THEN commission.Amount ELSE 0 END) as paid_commission,
+                    SUM(CASE WHEN commission.StatusCommission = "Pending" THEN commission.Amount ELSE 0 END) as pending_commission
+                ')
+                ->first();
+
+            // Monthly trend (last 6 months)
+            $monthlyTrend = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $date = Carbon::now()->subMonths($i);
+                $monthStart = $date->startOfMonth()->format('Y-m-d');
+                $monthEnd = $date->endOfMonth()->format('Y-m-d');
+                
+                $monthData = Transaction::with(['property'])
+                    ->whereHas('property', function($query) use ($agent) {
+                        $query->where('AgentID', $agent->UserID);
+                    })
+                    ->whereBetween('TransactionDate', [$monthStart, $monthEnd])
+                    ->selectRaw('
+                        COUNT(*) as count,
+                        SUM(TotalPrice) as total_value,
+                        SUM(CASE WHEN TranStatus IN ("Paid", "Completed") THEN TotalPrice ELSE 0 END) as completed_value
+                    ')
+                    ->first();
+
+                $monthlyTrend[] = [
+                    'month' => $date->format('M Y'),
+                    'count' => $monthData->count ?? 0,
+                    'total_value' => $monthData->total_value ?? 0,
+                    'completed_value' => $monthData->completed_value ?? 0
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'analytics' => [
+                    'period' => [
+                        'from' => $fromDate,
+                        'to' => $toDate
+                    ],
+                    'summary' => [
+                        'total_transactions' => $totalTransactions,
+                        'total_value' => $totalValue,
+                        'completed_transactions' => $completedTransactions,
+                        'pending_transactions' => $pendingTransactions,
+                        'completion_rate' => $totalTransactions > 0 ? round(($completedTransactions / $totalTransactions) * 100, 1) : 0,
+                        'sale_transactions' => $saleTransactions,
+                        'rent_transactions' => $rentTransactions
+                    ],
+                    'commission' => [
+                        'total' => $commissionData->total_commission ?? 0,
+                        'paid' => $commissionData->paid_commission ?? 0,
+                        'pending' => $commissionData->pending_commission ?? 0
+                    ],
+                    'monthly_trend' => $monthlyTrend
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting transaction analytics: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải thống kê'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available properties for agent's transaction creation modal
+     */
+    public function getAvailableProperties()
+    {
+        try {
+            $agent = Auth::user();
+            
+            if (!$agent || $agent->Role !== 'Agent') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Agent not authenticated'
+                ], 401);
+            }
+
+            // Get properties assigned to current agent with active status and Sale/Rent types
+            $properties = Property::with(['danhMuc', 'chiTiet', 'images'])
+                ->where('AgentID', $agent->UserID)
+                ->whereIn('Status', ['active', 'Active'])
+                ->whereIn('TypePro', ['Sale', 'Rent'])
+                ->orderBy('Title', 'asc')
+                ->get();
+
+            // Format response data
+            $formattedProperties = $properties->map(function($property) {
+                // Get main image
+                $mainImage = null;
+                $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
+                $firstImage = $property->images->first();
+                
+                if ($thumbnailImage) {
+                    $mainImage = $thumbnailImage->ImageURL ?: 
+                        ($thumbnailImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($thumbnailImage->ImagePath) : null);
+                } elseif ($firstImage) {
+                    $mainImage = $firstImage->ImageURL ?: 
+                        ($firstImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($firstImage->ImagePath) : null);
+                }
+
+                return [
+                    'PropertyID' => $property->PropertyID,
+                    'PropertyName' => $property->Title,
+                    'Address' => $property->Address . ', ' . $property->Ward . ', ' . $property->District,
+                    'Price' => $property->Price,
+                    'RentalPrice' => $property->TypePro === 'Rent' ? $property->Price : null,
+                    'PropertyType' => $property->danhMuc ? $property->danhMuc->ten_pro : 'Loại BĐS #' . $property->PropertyType,
+                    'Status' => $property->Status,
+                    'TypePro' => $property->TypePro,
+                    'MainImage' => $mainImage,
+                    'Area' => $property->chiTiet ? 
+                        ($property->chiTiet->HouseLength && $property->chiTiet->HouseWidth 
+                            ? $property->chiTiet->HouseLength * $property->chiTiet->HouseWidth 
+                            : null) : null,
+                    'Bedroom' => $property->chiTiet ? $property->chiTiet->Bedroom : null,
+                    'Bathroom' => $property->chiTiet ? $property->chiTiet->Bath_WC : null,
+                ];
+            });
+
+            return response()->json($formattedProperties);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting available properties: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải danh sách bất động sản'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available customers for agent's transaction creation modal
+     */
+    public function getAvailableCustomers()
+    {
+        try {
+            $agent = Auth::user();
+            
+            if (!$agent || $agent->Role !== 'Agent') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Agent not authenticated'
+                ], 401);
+            }
+
+            // Get all customers with active status
+            $customers = User::where('Role', 'Customer')
+                ->where('StatusUser', 'active')
+                ->orderBy('Name', 'asc')
+                ->get();
+
+            // Format response data
+            $formattedCustomers = $customers->map(function($customer) {
+                return [
+                    'UserID' => $customer->UserID,
+                    'Name' => $customer->Name,
+                    'Email' => $customer->Email,
+                    'Phone' => $customer->Phone,
+                    'Address' => $customer->Address,
+                ];
+            });
+
+            return response()->json($formattedCustomers);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting available customers: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải danh sách khách hàng'
+            ], 500);
+        }
     }
 }

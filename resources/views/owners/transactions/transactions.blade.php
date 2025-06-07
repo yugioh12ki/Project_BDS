@@ -4,12 +4,23 @@
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1 class="h3">Lịch sử Giao dịch</h1>
+            <h1 class="h3">Quản lý Giao dịch</h1>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{{ route('export.transactions') }}" class="btn btn-outline-primary">
-                <i class="bi bi-download"></i> Xuất báo cáo
-            </a>
+            <div class="btn-group">
+                <a href="{{ route('owner.transactions.history') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-clock-history"></i> Lịch sử giao dịch
+                </a>
+                <a href="{{ route('owner.transactions.revenue') }}" class="btn btn-outline-success">
+                    <i class="bi bi-graph-up"></i> Doanh thu
+                </a>
+                <a href="{{ route('owner.transactions.commissions') }}" class="btn btn-outline-info">
+                    <i class="bi bi-cash-coin"></i> Hoa hồng
+                </a>
+                <a href="{{ route('export.transactions') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-download"></i> Xuất báo cáo
+                </a>
+            </div>
         </div>
     </div>
 
@@ -48,7 +59,7 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="text-muted">Hoa hồng đã trả</h6>
-                    <h2 class="mb-2">{{ number_format($paidAmount / 1000000, 0) }} triệu VND</h2>
+                    <h2 class="mb-2">{{ isset($commissionStats) ? number_format($commissionStats->paid_commission / 1000000, 0) : 0 }} triệu VND</h2>
                     <small class="text-{{ $paidGrowth >= 0 ? 'success' : 'danger' }}">
                         <i class="bi bi-arrow-{{ $paidGrowth >= 0 ? 'up' : 'down' }}"></i>
                         {{ abs($paidGrowth) }}% so với tháng trước
@@ -71,6 +82,36 @@
             </div>
         </div>
     </div>
+
+    <!-- Commission Stats -->
+    @if(isset($commissionStats))
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Thống kê hoa hồng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center border-end">
+                            <h6 class="text-muted">Tổng hoa hồng</h6>
+                            <h3>{{ number_format($commissionStats->total_commission) }} VNĐ</h3>
+                        </div>
+                        <div class="col-md-4 text-center border-end">
+                            <h6 class="text-muted">Đã thanh toán</h6>
+                            <h3 class="text-success">{{ number_format($commissionStats->paid_commission) }} VNĐ</h3>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h6 class="text-muted">Chờ thanh toán</h6>
+                            <h3 class="text-warning">{{ number_format($commissionStats->pending_commission) }} VNĐ</h3>
+                            <a href="{{ route('owner.transactions.commissions') }}" class="btn btn-sm btn-outline-primary mt-2">Quản lý hoa hồng</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Filter Section -->
     <div class="row mb-4">
@@ -154,41 +195,34 @@
                             <td>{{ $transaction->TransactionID }}</td>
                             <td>{{ \Carbon\Carbon::parse($transaction->TransactionDate)->format('d/m/Y') }}</td>
                             <td>
-                                @if($transaction->property)
-                                    <div class="d-flex align-items-center">
-                                        <div class="property-img me-2">
-                                            <img src="{{ asset('images/properties/' . ($transaction->property->featured_image ?? 'default.jpg')) }}" 
-                                                 alt="{{ $transaction->property->Title }}" 
-                                                 class="img-thumbnail" style="width: 40px; height: 40px; object-fit: cover;">
-                                        </div>
-                                        <div>{{ $transaction->property->Title }}</div>
-                                    </div>
-                                @else
-                                    <span class="text-muted">Không có</span>
-                                @endif
+                                <div class="d-flex align-items-center">
+                                    <div>{{ $transaction->PropertyTitle ?? 'Không có' }}</div>
+                                </div>
                             </td>
                             <td>
-                                <span class="badge bg-{{ $transaction->TransactionType == 'Bán' ? 'primary' : 'success' }}">
-                                    {{ $transaction->TransactionType }}
+                                <span class="badge bg-{{ $transaction->TransactionType == 'Sale' ? 'primary' : 'success' }}">
+                                    {{ $transaction->TransactionType == 'Sale' ? 'Bán' : 'Cho thuê' }}
                                 </span>
                             </td>
-                            <td>{{ number_format($transaction->Amount / 1000000000, 1) }} tỷ VND</td>
+                            <td>{{ number_format($transaction->TotalPrice) }} VND</td>
                             <td>
-                                @if(isset($transaction->trans_cus))
-                                    {{ $transaction->trans_cus->FullName }}
-                                @else
-                                    <span class="text-muted">Không có</span>
-                                @endif
+                                {{ $transaction->CustomerName ?? 'Không có' }}
                             </td>
                             <td>
                                 @php
                                     $statusClass = [
-                                        'Hoàn thành' => 'success',
-                                        'Đang xử lý' => 'warning',
-                                        'Đã hủy' => 'danger',
-                                    ][$transaction->Status] ?? 'secondary';
+                                        'Paid' => 'success',
+                                        'Pending' => 'warning',
+                                        'Cancelled' => 'danger',
+                                    ][$transaction->TranStatus] ?? 'secondary';
+                                    
+                                    $statusText = [
+                                        'Paid' => 'Đã thanh toán',
+                                        'Pending' => 'Chờ thanh toán',
+                                        'Cancelled' => 'Đã hủy',
+                                    ][$transaction->TranStatus] ?? $transaction->TranStatus;
                                 @endphp
-                                <span class="badge bg-{{ $statusClass }}">{{ $transaction->Status }}</span>
+                                <span class="badge bg-{{ $statusClass }}">{{ $statusText }}</span>
                             </td>
                             <td>
                                 <div class="dropdown">
@@ -196,8 +230,12 @@
                                         <i class="bi bi-three-dots"></i>
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('transaction.view', $transaction->TransactionID) }}">Xem chi tiết</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('transaction.print', $transaction->TransactionID) }}">In hóa đơn</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('owner.transactions.show', $transaction->TransactionID) }}">Xem chi tiết</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('owner.transactions.print', $transaction->TransactionID) }}">In hóa đơn</a></li>
+                                        @if(isset($transaction->CommissionID))
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ route('owner.transactions.commissions') }}">Quản lý hoa hồng</a></li>
+                                        @endif
                                     </ul>
                                 </div>
                             </td>
