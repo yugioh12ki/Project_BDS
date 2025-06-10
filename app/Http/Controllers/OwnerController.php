@@ -29,28 +29,69 @@ class OwnerController extends Controller
     public function dashboard()
     {
         $owner = Auth::user();
-        
-        // Count of properties managed by this agent
-        $propertyCount = Property::where('OwnerID', $owner->UserID)->count();        // Get recent appointments
-        $recentAppointments = Appointment::where('OwnerID', $owner->UserID)
-            ->with(['property', 'cusUser', 'agentUser'])
-            ->orderBy('AppointmentDateStart', 'desc')
-            ->limit(10)
+
+        // Statistics for the dashboard
+        $stats = [
+            'active_properties' => Property::where('OwnerID', $owner->UserID)
+                ->where('Status', 'active')
+                ->count(),
+
+            'pending_properties' => Property::where('OwnerID', $owner->UserID)
+                ->where('Status', 'pending')
+                ->count(),
+
+            'completed_transactions' => Transaction::where('OwnerID', $owner->UserID)
+                ->where('TranStatus', 'Paid')
+                ->count(),
+
+            'pending_appointments' => Appointment::where('OwnerID', $owner->UserID)
+                ->whereIn('Status', ['Khởi tạo', 'Đang Thực hiện'])
+                ->count(),
+
+            'total_revenue' => Transaction::where('OwnerID', $owner->UserID)
+                ->where('TranStatus', 'Paid')
+                ->sum('TotalPrice')
+        ];
+
+        // Get recent active properties with images and details
+        $recentProperties = Property::where('OwnerID', $owner->UserID)
+            ->with(['images' => function($query) {
+                $query->orderBy('ImageID', 'asc')->limit(1); // Get first image as thumbnail
+            }, 'danhMuc', 'chiTiet'])
+            ->whereIn('Status', ['active', 'pending'])
+            ->orderBy('PostedDate', 'desc')
+            ->limit(6)
             ->get();
 
-        $recentProperties = Property::where('OwnerID', $owner->UserID)
-            ->with('agent')
-            ->orderBy('PostedDate', 'desc')
-            ->limit(10)
+        // Get upcoming appointments with property and customer info
+        $upcomingAppointments = Appointment::where('OwnerID', $owner->UserID)
+            ->with(['property', 'cusUser', 'agentUser'])
+            ->whereIn('Status', ['Khởi tạo', 'Đang Thực hiện'])
+            ->where('AppointmentDateStart', '>=', now())
+            ->orderBy('AppointmentDateStart', 'asc')
+            ->limit(3)
             ->get();
-        
-        return view('owners.dashboard', compact('owner', 'propertyCount', 'recentAppointments', 'recentProperties'));
+
+        // Recent transactions
+        $recentTransactions = Transaction::where('OwnerID', $owner->UserID)
+            ->with(['property', 'trans_cus', 'trans_agent'])
+            ->orderBy('TransactionDate', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('owners.dashboard', compact(
+            'owner',
+            'stats',
+            'recentProperties',
+            'upcomingAppointments',
+            'recentTransactions'
+        ));
     }
 
     public function listProperty()
     {
         $ownerId = Auth::user()->UserID;
-        
+
         $properties = Property::with(['danhMuc', 'chiTiet', 'images'])
             ->where('OwnerID', $ownerId)
             ->get();
@@ -67,8 +108,8 @@ class OwnerController extends Controller
         Log::info('Pending properties count: ' . $ownerProperties->count());
 
         return view('owners.property.index', compact(
-            'properties',       
-            'ownerProperties', 
+            'properties',
+            'ownerProperties',
             'categories',
             'owners'
         ));
@@ -81,7 +122,7 @@ class OwnerController extends Controller
             ->where('OwnerID', $owner->UserID)
             ->orderBy('AppointmentDateStart', 'desc')
             ->get();
-  
+
         $properties = Property::where('OwnerID', $owner->UserID)
             ->select('PropertyID', 'Title', 'Address', 'Ward', 'District')
             ->get();
@@ -154,7 +195,7 @@ class OwnerController extends Controller
     {
         $owner = Auth::user();
         $searchText = $request->query('term');
-        
+
         $property = Property::with('agent')
             ->where('OwnerID', $owner->UserID)
             ->where('Title', 'LIKE', "%{$searchText}%")
@@ -174,7 +215,7 @@ class OwnerController extends Controller
     public function getRelatedCustomers($propertyId)
     {
         $owner = Auth::user();
-        
+
         return User::whereHas('appoint_customer', function($query) use ($propertyId) {
                 $query->where('PropertyID', $propertyId);
             })
@@ -189,108 +230,114 @@ class OwnerController extends Controller
         // Process date filter
         $fromDate = $request->input('from_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $search = $request->input('search');
 
-        // Base query for transactions
+        // Base query for transactions with all related data
         $query = DB::table('transactions')
-            ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
-            ->join('user as agent', 'transactions.AgentID', '=', 'agent.UserID')
-            ->join('user as customer', 'transactions.CusID', '=', 'customer.UserID')
             ->leftJoin('commission', 'transactions.TransactionID', '=', 'commission.TransactionID')
+            ->leftJoin('user as customer', 'transactions.CusID', '=', 'customer.UserID')
+            ->leftJoin('user as agent', 'transactions.AgentID', '=', 'agent.UserID')
+            ->leftJoin('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+            ->leftJoin('detail_transaction', 'transactions.TransactionID', '=', 'detail_transaction.TransactionID')
             ->select(
                 'transactions.*',
-                'properties.Title as PropertyTitle',
-                'properties.Address as PropertyAddress',
-                'agent.Name as AgentName',
-                'customer.Name as CustomerName',
-                'commission.Amount as CommissionAmount',
-                'commission.Percentage as CommissionPercentage',
-                'commission.StatusCommission'
+                'commission.CommissionID',
+                'commission.Amount as commission_amount',
+                'commission.Percentage as commission_percentage',
+                'commission.StatusCommission',
+                'commission.PaidDate',
+                'customer.Name as customer_name',
+                'customer.Phone as customer_phone',
+                'agent.Name as agent_name',
+                'agent.Phone as agent_phone',
+                'properties.Title as property_title',
+                'properties.Address as property_address',
+                'detail_transaction.RentMonth as rent_months',
+                DB::raw('CASE
+                    WHEN commission.StatusCommission IS NULL THEN "no-commission"
+                    WHEN commission.StatusCommission = "Success" THEN "Success"
+                    WHEN commission.StatusCommission = "Pending" THEN "Pending"
+                    ELSE "no-commission"
+                END as commission_status')
             )
             ->where('transactions.OwnerID', $ownerId);
 
-        // Apply date filtering if provided
+        // Apply search filter
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('transactions.TransactionID', 'LIKE', "%{$search}%")
+                  ->orWhere('customer.Name', 'LIKE', "%{$search}%")
+                  ->orWhere('agent.Name', 'LIKE', "%{$search}%")
+                  ->orWhere('properties.Title', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Apply date filtering
         if ($fromDate && $toDate) {
             $query->whereBetween('transactions.TransactionDate', [$fromDate, $toDate]);
         }
 
-        // Get filtered transactions
-        $transactions = $query->orderBy('transactions.TransactionDate', 'desc')->get();
+        // Get paginated transactions
+        $transactions = $query->orderBy('transactions.TransactionDate', 'desc')->paginate(15);
 
-        // Calculate statistics
-        $totalValue = $transactions->sum('TotalPrice');
-        $transactionCount = $transactions->count();
-        $paidAmount = $transactions->where('TranStatus', 'Paid')->sum('TotalPrice');
-
-        // Calculate success rate
-        $successRate = $transactionCount > 0
-            ? round(($transactions->where('TranStatus', 'Paid')->count() / $transactionCount) * 100)
-            : 0;
-
-        // Previous period (for comparison)
-        $previousFrom = Carbon::parse($fromDate)->subMonth()->format('Y-m-d');
-        $previousTo = Carbon::parse($toDate)->subMonth()->format('Y-m-d');
-
-        $previousTransactions = DB::table('transactions')
-            ->where('OwnerID', $ownerId)
-            ->whereBetween('TransactionDate', [$previousFrom, $previousTo])
-            ->get();
-
-        $previousTotalValue = $previousTransactions->sum('TotalPrice');
-        $previousCount = $previousTransactions->count();
-        $previousPaidAmount = $previousTransactions->where('TranStatus', 'Paid')->sum('TotalPrice');
-
-        // Calculate growth percentages
-        $valueGrowth = $previousTotalValue > 0
-            ? round((($totalValue - $previousTotalValue) / $previousTotalValue) * 100)
-            : 0;
-        $countGrowth = $previousCount > 0
-            ? $transactionCount - $previousCount
-            : 0;
-        $paidGrowth = $previousPaidAmount > 0
-            ? round((($paidAmount - $previousPaidAmount) / $previousPaidAmount) * 100)
-            : 0;
-
-        // Get commission data
-        $commissionStats = DB::table('commission')
-            ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
-            ->select(
-                DB::raw('SUM(commission.Amount) as total_commission'),
-                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Success" THEN commission.Amount ELSE 0 END) as paid_commission'),
-                DB::raw('SUM(CASE WHEN commission.StatusCommission = "Pending" THEN commission.Amount ELSE 0 END) as pending_commission')
-            )
-            ->where('transactions.OwnerID', $ownerId)
-            ->whereBetween('transactions.TransactionDate', [$fromDate, $toDate])
-            ->first();
-            
-        // If this is an AJAX request, return JSON
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'transactions' => $transactions,
-                'totalValue' => $totalValue,
-                'transactionCount' => $transactionCount,
-                'paidAmount' => $paidAmount,
-                'successRate' => $successRate,
-                'valueGrowth' => $valueGrowth,
-                'countGrowth' => $countGrowth,
-                'paidGrowth' => $paidGrowth,
-                'fromDate' => $fromDate,
-                'toDate' => $toDate,
-                'commissionStats' => $commissionStats
-            ]);
+        // Add commission relationship for easier access in view
+        foreach ($transactions as $transaction) {
+            if ($transaction->CommissionID) {
+                $transaction->commission = (object)[
+                    'CommissionID' => $transaction->CommissionID,
+                    'Amount' => $transaction->commission_amount,
+                    'Percentage' => $transaction->commission_percentage,
+                    'StatusCommission' => $transaction->StatusCommission,
+                    'PaidDate' => $transaction->PaidDate,
+                    'TypeCom' => $transaction->TransactionType,
+                    'TransactionID' => $transaction->TransactionID,
+                    'agent_name' => $transaction->agent_name,
+                    'agent_phone' => $transaction->agent_phone
+                ];
+            } else {
+                $transaction->commission = null;
+            }
         }
 
-        return view('owners.transactions.transactions', compact(
+        // Calculate statistics
+        $allTransactions = DB::table('transactions')
+            ->where('OwnerID', $ownerId)
+            ->whereBetween('TransactionDate', [$fromDate, $toDate])
+            ->get();
+
+        $totalTransactionValue = $allTransactions->sum('TotalPrice');
+        $transactionCount = $allTransactions->count();
+        $successRate = $transactionCount > 0 ?
+            ($allTransactions->where('TranStatus', 'Paid')->count() / $transactionCount) * 100 : 0;
+
+        // Commission statistics
+        $commissionStats = DB::table('commission')
+            ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+            ->where('transactions.OwnerID', $ownerId)
+            ->whereBetween('transactions.TransactionDate', [$fromDate, $toDate])
+            ->selectRaw('
+                SUM(CASE WHEN commission.StatusCommission = "Success" THEN commission.Amount ELSE 0 END) as paid_commissions,
+                SUM(CASE WHEN commission.StatusCommission = "Pending" THEN commission.Amount ELSE 0 END) as pending_commissions,
+                COUNT(CASE WHEN commission.StatusCommission = "Success" THEN 1 END) as paid_count,
+                COUNT(CASE WHEN commission.StatusCommission = "Pending" THEN 1 END) as pending_count
+            ')
+            ->first();
+
+        $paidCommissions = $commissionStats->paid_commissions ?? 0;
+        $pendingCommissions = $commissionStats->pending_commissions ?? 0;
+        $paidCommissionCount = $commissionStats->paid_count ?? 0;
+        $pendingCommissionCount = $commissionStats->pending_count ?? 0;
+
+        return view('owners.transactions.index', compact(
             'transactions',
-            'totalValue',
-            'transactionCount',
-            'paidAmount',
-            'successRate',
-            'valueGrowth',
-            'countGrowth',
-            'paidGrowth',
             'fromDate',
             'toDate',
-            'commissionStats'
+            'totalTransactionValue',
+            'paidCommissions',
+            'pendingCommissions',
+            'paidCommissionCount',
+            'pendingCommissionCount',
+            'successRate'
         ));
     }
 
@@ -333,64 +380,6 @@ class OwnerController extends Controller
     }
 
     /**
-     * Xuất danh sách giao dịch ra file CSV.
-     */
-    public function exportTransactions(Request $request)
-    {
-        $user = Auth::user();
-        $fromDate = $request->input('from_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
-
-        // Base query depending on user role
-        if ($user->Role == 'Owner') {
-            $query = Transaction::with('property')
-                ->where('OwnerID', $user->UserID);
-        } elseif ($user->Role == 'Admin' || $user->Role == 'Agent') {
-            $query = Transaction::with('property');
-        } else {
-            abort(403, 'Unauthorized action.');
-        }
-
-        // Apply date filtering
-        $query->whereBetween('TransactionDate', [$fromDate, $toDate]);
-
-        // Get filtered transactions
-        $transactions = $query->orderBy('TransactionDate', 'desc')->get();
-
-        // Create and return CSV/Excel file
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="transactions.csv"',
-        ];
-
-        $callback = function() use ($transactions) {
-            $file = fopen('php://output', 'w');
-
-            // Add headers
-            fputcsv($file, [
-                'ID', 'Date', 'Property', 'Type', 'Amount', 'Customer', 'Status'
-            ]);
-
-            // Add data rows
-            foreach ($transactions as $transaction) {
-                fputcsv($file, [
-                    $transaction->TransactionID,
-                    Carbon::parse($transaction->TransactionDate)->format('d/m/Y'),
-                    $transaction->property ? $transaction->property->Title : 'N/A',
-                    $transaction->TransactionType,
-                    number_format($transaction->Amount, 0),
-                    $transaction->trans_cus ? $transaction->trans_cus->Name : 'N/A',
-                    $transaction->Status
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    /**
      * Hiển thị trang thông tin cá nhân
      */
     public function showProfile()
@@ -423,7 +412,7 @@ class OwnerController extends Controller
         }
 
         $user->Name = $validated['Name'];
-        $user->PhoneNumber = $validated['PhoneNumber'];
+        $user->Phone = $validated['PhoneNumber'];
         $user->Email = $validated['Email'];
         $user->Address = $validated['Address'];
         $user->save();
@@ -452,11 +441,11 @@ class OwnerController extends Controller
         ]);
 
         // Kiểm tra mật khẩu hiện tại
-        if (!Hash::check($validated['current_password'], $user->password)) {
+        if (!Hash::check($validated['current_password'], $user->PasswordHash)) {
             return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng']);
         }
 
-        $user->password = Hash::make($validated['password']);
+        $user->PasswordHash = Hash::make($validated['password']);
         $user->save();
 
         return redirect()->route('owner.profile')->with('success', 'Đổi mật khẩu thành công!');
@@ -495,7 +484,7 @@ class OwnerController extends Controller
             $propertiesData = $ownerProperties->map(function($property) {
                 $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
                 $firstImage = $property->images->first();
-                
+
                 // Handle image URL
                 $imageUrl = null;
                 if ($thumbnailImage) {
@@ -617,7 +606,7 @@ class OwnerController extends Controller
 
         return $notifications;
     }
-    
+
 
     public function getAppointmentsByStatus(Request $request, $status)
     {
@@ -626,7 +615,7 @@ class OwnerController extends Controller
         // Map filter status to database status
         $statusMap = [
             'khoitao' => 'Khởi Tạo',
-            'dangthuchien' => 'Đang Thực Hiện', 
+            'dangthuchien' => 'Đang Thực Hiện',
             'hoanthanh' => 'Hoàn Thành',
             'huyhen' => 'Hủy Hẹn'
         ];
@@ -713,7 +702,7 @@ class OwnerController extends Controller
             'Hủy Hẹn' => [] // Cannot change from cancelled
         ];
 
-        return isset($validTransitions[$currentStatus]) && 
+        return isset($validTransitions[$currentStatus]) &&
                in_array($newStatus, $validTransitions[$currentStatus]);
     }
 
@@ -724,7 +713,7 @@ class OwnerController extends Controller
     {
         try {
             $appointment = Appointment::findOrFail($id);
-            
+
             // Check if this owner can confirm this appointment
             if ($appointment->OwnerID !== Auth::id()) {
                 return response()->json([
@@ -753,8 +742,8 @@ class OwnerController extends Controller
                 $ownerName = Auth::user()->Name;
                 $appointment->agentUser->notify(
                     new \App\Notifications\AppointmentStatusChanged(
-                        $appointment, 
-                        $oldStatus, 
+                        $appointment,
+                        $oldStatus,
                         $newStatus,
                         $ownerName
                     )
@@ -784,7 +773,7 @@ class OwnerController extends Controller
     {
         try {
             $appointment = Appointment::findOrFail($id);
-            
+
             // Check if this owner can cancel this appointment
             if ($appointment->OwnerID !== Auth::id()) {
                 return response()->json([
@@ -813,8 +802,8 @@ class OwnerController extends Controller
                 $ownerName = Auth::user()->Name;
                 $appointment->agentUser->notify(
                     new \App\Notifications\AppointmentStatusChanged(
-                        $appointment, 
-                        $oldStatus, 
+                        $appointment,
+                        $oldStatus,
                         $newStatus,
                         $ownerName
                     )
@@ -844,7 +833,7 @@ class OwnerController extends Controller
     {
         try {
             $appointment = Appointment::findOrFail($id);
-            
+
             // Check if this owner can finish this appointment
             if ($appointment->OwnerID !== Auth::id()) {
                 return response()->json([
@@ -873,8 +862,8 @@ class OwnerController extends Controller
                 $ownerName = Auth::user()->Name;
                 $appointment->agentUser->notify(
                     new \App\Notifications\AppointmentStatusChanged(
-                        $appointment, 
-                        $oldStatus, 
+                        $appointment,
+                        $oldStatus,
                         $newStatus,
                         $ownerName
                     )
@@ -898,23 +887,134 @@ class OwnerController extends Controller
     }
 
     /**
+     * Lấy chi tiết lịch hẹn
+     */
+    public function getAppointmentDetail($id)
+    {
+        try {
+            $appointment = Appointment::with([
+                'property' => function($query) {
+                    $query->select('PropertyID', 'Title', 'Address', 'Ward', 'District', 'Price', 'OwnerID');
+                },
+                'property.owner' => function($query) {
+                    $query->select('UserID', 'Name', 'Phone', 'IdentityCard', 'Address');
+                },
+                'cusUser' => function($query) {
+                    $query->select('UserID', 'Name', 'Phone', 'Address', 'Ward', 'District', 'Province');
+                },
+                'agentUser' => function($query) {
+                    $query->select('UserID', 'Name', 'Phone', 'Address', 'Ward', 'District', 'Province');
+                }
+            ])->findOrFail($id);
+
+            // Check if this owner can view this appointment
+            if ($appointment->OwnerID !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền xem chi tiết lịch hẹn này'
+                ], 403);
+            }
+
+            $formattedAppointment = [
+                'id' => $appointment->AppointmentID,
+                'title' => $appointment->TitleAppoint ?: 'Không có tiêu đề',
+                'description' => $appointment->DescAppoint ?: 'Không có mô tả',
+                'status' => $appointment->Status,
+                'status_badge' => $this->getStatusBadge($appointment->Status),
+                'date' => $appointment->AppointmentDateStart ? Carbon::parse($appointment->AppointmentDateStart)->format('d/m/Y') : 'N/A',
+                'start_time' => $appointment->AppointmentDateStart ? Carbon::parse($appointment->AppointmentDateStart)->format('H:i') : 'N/A',
+                'end_time' => $appointment->AppointmentDateEnd ? Carbon::parse($appointment->AppointmentDateEnd)->format('H:i') : 'N/A',
+
+                // Property information
+                'property' => [
+                    'id' => $appointment->property ? $appointment->property->PropertyID : null,
+                    'title' => $appointment->property ? $appointment->property->Title : 'N/A',
+                    'address' => $appointment->property ? $appointment->property->Address : 'N/A',
+                    'ward' => $appointment->property ? $appointment->property->Ward : 'N/A',
+                    'district' => $appointment->property ? $appointment->property->District : 'N/A',
+                    'price' => $appointment->property ? number_format($appointment->property->Price, 0, ',', '.') . ' VNĐ' : 'N/A',
+                    'full_address' => $appointment->property ?
+                        ($appointment->property->Address .
+                        ($appointment->property->Ward ? ', ' . $appointment->property->Ward : '') .
+                        ($appointment->property->District ? ', ' . $appointment->property->District : '')) : 'N/A'
+                ],
+
+                // Property owner information
+                'property_owner' => [
+                    'name' => $appointment->property && $appointment->property->owner ? $appointment->property->owner->Name : 'N/A',
+                    'phone' => $appointment->property && $appointment->property->owner ? $appointment->property->owner->Phone : 'N/A',
+                    'cmnd' => $appointment->property && $appointment->property->owner ? $appointment->property->owner->IdentityCard : 'N/A',
+                    'address' => $appointment->property && $appointment->property->owner ? $appointment->property->owner->Address : 'N/A'
+                ],
+
+                // Customer information
+                'customer' => [
+                    'name' => $appointment->cusUser ? $appointment->cusUser->Name : 'N/A',
+                    'phone' => $appointment->cusUser ? $appointment->cusUser->Phone : 'N/A',
+                    'address' => $appointment->cusUser ? $this->getFullAddress(
+                        $appointment->cusUser->Address,
+                        $appointment->cusUser->Ward,
+                        $appointment->cusUser->District,
+                        $appointment->cusUser->Province
+                    ) : 'N/A',
+                    'initials' => $appointment->cusUser ? strtoupper(substr($appointment->cusUser->Name, 0, 2)) : 'N/A'
+                ],
+
+                // Agent information
+                'agent' => [
+                    'name' => $appointment->agentUser ? $appointment->agentUser->Name : 'Chưa phân công',
+                    'phone' => $appointment->agentUser ? $appointment->agentUser->Phone : 'N/A',
+                    'address' => $appointment->agentUser ? $this->getFullAddress(
+                        $appointment->agentUser->Address,
+                        $appointment->agentUser->Ward,
+                        $appointment->agentUser->District,
+                        $appointment->agentUser->Province
+                    ) : 'N/A',
+                    'initials' => $appointment->agentUser ? strtoupper(substr($appointment->agentUser->Name, 0, 2)) : 'N/A'
+                ]
+            ];
+
+            return response()->json([
+                'success' => true,
+                'appointment' => $formattedAppointment
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting appointment detail: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải thông tin lịch hẹn'
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper method to create full address from components
+     */
+    private function getFullAddress($address, $ward, $district, $province)
+    {
+        $parts = array_filter([$address, $ward, $district, $province]);
+        return !empty($parts) ? implode(', ', $parts) : 'N/A';
+    }
+
+    /**
      * Hiển thị lịch sử giao dịch
      */
     public function transactionHistory(Request $request)
     {
         $user = Auth::user();
-        
+
         // Validate user role
         if ($user->Role != 'Owner') {
             abort(403, 'Unauthorized action.');
         }
-        
+
         $ownerId = $user->UserID;
-        
+
         // Process date filter
         $fromDate = $request->input('from_date', Carbon::now()->startOfYear()->format('Y-m-d'));
         $toDate = $request->input('to_date', Carbon::now()->format('Y-m-d'));
-        
+
         // Base query for transactions using the correct table name (transactions)
         $transactions = DB::table('transactions')
             ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
@@ -989,12 +1089,12 @@ class OwnerController extends Controller
     public function revenueManagement(Request $request)
     {
         $user = Auth::user();
-        
+
         // Validate user role
         if ($user->Role != 'Owner') {
             abort(403, 'Unauthorized action.');
         }
-        
+
         $ownerId = $user->UserID;
         $year = $request->input('year', date('Y'));
         $month = $request->input('month', date('n'));
@@ -1106,15 +1206,15 @@ class OwnerController extends Controller
     public function commissionManagement(Request $request)
     {
         $user = Auth::user();
-        
+
         // Validate user role
         if ($user->Role != 'Owner') {
             abort(403, 'Unauthorized action.');
         }
-        
+
         $ownerId = $user->UserID;
         $status = $request->input('status', 'all');
-        
+
         // Lấy tất cả các giao dịch và thông tin hoa hồng liên quan
         $query = DB::table('commission')
             ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
@@ -1130,14 +1230,14 @@ class OwnerController extends Controller
                 'user.Name as AgentName'
             )
             ->where('transactions.OwnerID', $ownerId);
-        
+
         // Lọc theo trạng thái hoa hồng nếu có
         if ($status && $status != 'all') {
             $query->where('commission.StatusCommission', $status);
         }
-        
+
         $commissions = $query->orderBy('transactions.TransactionDate', 'desc')->get();
-        
+
         // Thống kê tổng quan
         $commissionStats = [
             'total' => $commissions->sum('Amount'),
@@ -1146,7 +1246,7 @@ class OwnerController extends Controller
             'cancelled' => $commissions->where('StatusCommission', 'Cancelled')->sum('Amount'),
             'count' => $commissions->count()
         ];
-        
+
         // Thống kê theo loại giao dịch
         $typeStats = [
             'rent' => [
@@ -1158,7 +1258,7 @@ class OwnerController extends Controller
                 'count' => $commissions->where('TypeCom', 'Sale')->count()
             ]
         ];
-        
+
         // Thống kê theo agent
         $agentStats = [];
         foreach ($commissions as $commission) {
@@ -1172,7 +1272,7 @@ class OwnerController extends Controller
                     'count' => 0
                 ];
             }
-            
+
             $agentStats[$agentId]['total'] += $commission->Amount;
             if ($commission->StatusCommission == 'Success') {
                 $agentStats[$agentId]['paid'] += $commission->Amount;
@@ -1181,7 +1281,7 @@ class OwnerController extends Controller
             }
             $agentStats[$agentId]['count']++;
         }
-        
+
         return view('owners.transactions.commissions', compact(
             'commissions',
             'commissionStats',
@@ -1197,15 +1297,15 @@ class OwnerController extends Controller
     public function transactionsOverview()
     {
         $user = Auth::user();
-        
+
         // Validate user role
         if ($user->Role != 'Owner') {
             abort(403, 'Unauthorized action.');
         }
-        
+
         return view('owners.transactions.overview');
     }
-    
+
     /**
      * Cập nhật trạng thái hoa hồng
      */
@@ -1214,7 +1314,7 @@ class OwnerController extends Controller
         try {
             $commission = Commission::findOrFail($id);
             $transaction = Transaction::find($commission->TransactionID);
-            
+
             // Kiểm tra nếu người dùng hiện tại là chủ sở hữu của giao dịch này
             if ($transaction && $transaction->OwnerID != Auth::id()) {
                 return response()->json([
@@ -1222,34 +1322,490 @@ class OwnerController extends Controller
                     'message' => 'Bạn không có quyền cập nhật hoa hồng này'
                 ], 403);
             }
-            
+
             $request->validate([
                 'status' => 'required|in:Success,Pending,Cancelled'
             ]);
-            
+
             $commission->StatusCommission = $request->status;
-            
+
             // Nếu đã thanh toán, cập nhật ngày thanh toán
             if ($request->status == 'Success') {
                 $commission->PaidDate = Carbon::now()->format('Y-m-d');
             } elseif ($request->status == 'Pending') {
                 $commission->PaidDate = null;
             }
-            
+
             $commission->save();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật trạng thái hoa hồng thành công',
                 'new_status' => $request->status,
                 'paid_date' => $commission->PaidDate ? Carbon::parse($commission->PaidDate)->format('d/m/Y') : null
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error updating commission status: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi cập nhật trạng thái hoa hồng'
+            ], 500);
+        }
+    }
+
+    /**
+     * Tạo hoa hồng cho giao dịch
+     */
+    public function createCommission(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'transaction_id' => 'required|exists:transactions,TransactionID',
+                'transaction_type' => 'required|in:Sale,Rent',
+                'total_price' => 'required|numeric|min:0',
+                'rent_months' => 'nullable|integer|min:1',
+                'percentage' => 'required|numeric|min:1|max:200',
+                'amount' => 'required|numeric|min:0'
+            ]);
+
+            // Kiểm tra transaction thuộc về owner hiện tại
+            $transaction = DB::table('transactions')
+                ->where('TransactionID', $validated['transaction_id'])
+                ->where('OwnerID', Auth::user()->UserID)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Giao dịch không tồn tại hoặc bạn không có quyền'
+                ], 403);
+            }
+
+            // Kiểm tra xem đã có commission chưa
+            $existingCommission = DB::table('commission')
+                ->where('TransactionID', $validated['transaction_id'])
+                ->first();
+
+            if ($existingCommission) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Giao dịch này đã có hoa hồng'
+                ], 400);
+            }
+
+            // Validate percentage range based on transaction type
+            if ($validated['transaction_type'] === 'Sale') {
+                if ($validated['percentage'] < 1 || $validated['percentage'] > 3) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tỷ lệ hoa hồng cho bán phải từ 1% đến 3%'
+                    ], 400);
+                }
+            } else { // Rent
+                if ($validated['percentage'] < 50 || $validated['percentage'] > 200) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tỷ lệ hoa hồng cho thuê phải từ 50% đến 200% của 1 tháng'
+                    ], 400);
+                }
+            }
+
+            // Tạo commission mới
+            $commissionId = DB::table('commission')->insertGetId([
+                'TransactionID' => $validated['transaction_id'],
+                'AgentID' => $transaction->AgentID,
+                'Amount' => $validated['amount'],
+                'Percentage' => $validated['percentage'] / 100, // Convert to decimal
+                'TypeCom' => $validated['transaction_type'],
+                'StatusCommission' => 'Pending',
+                'PaidDate' => null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tạo hoa hồng thành công',
+                'commission_id' => $commissionId
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error creating commission: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tạo hoa hồng'
+            ], 500);
+        }
+    }
+
+    /**
+     * Thanh toán hoa hồng
+     */
+    public function payCommission(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'commission_id' => 'required|exists:commission,CommissionID',
+                'payment_method' => 'required|in:transfer,cash',
+                'note' => 'nullable|string|max:500'
+            ]);
+
+            // Kiểm tra commission thuộc về transaction của owner hiện tại
+            $commission = DB::table('commission')
+                ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+                ->where('commission.CommissionID', $validated['commission_id'])
+                ->where('transactions.OwnerID', Auth::user()->UserID)
+                ->first();
+
+            if (!$commission) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hoa hồng không tồn tại hoặc bạn không có quyền'
+                ], 403);
+            }
+
+            if ($commission->StatusCommission === 'Success') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hoa hồng này đã được thanh toán'
+                ], 400);
+            }
+
+            // Cập nhật trạng thái commission
+            DB::table('commission')
+                ->where('CommissionID', $validated['commission_id'])
+                ->update([
+                    'StatusCommission' => 'Success',
+                    'PaidDate' => Carbon::now()->format('Y-m-d')
+                ]);
+
+            // Log payment (có thể thêm bảng payment_logs nếu cần)
+            Log::info('Commission payment completed', [
+                'commission_id' => $validated['commission_id'],
+                'owner_id' => Auth::user()->UserID,
+                'payment_method' => $validated['payment_method'],
+                'note' => $validated['note'],
+                'amount' => $commission->Amount
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Thanh toán hoa hồng thành công'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error paying commission: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi thanh toán hoa hồng'
+            ], 500);
+        }
+    }
+
+    /**
+     * In hóa đơn hoa hồng
+     */
+    public function commissionInvoice($id)
+    {
+        try {
+            $commission = DB::table('commission')
+                ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+                ->join('user as agent', 'commission.AgentID', '=', 'agent.UserID')
+                ->join('user as owner', 'transactions.OwnerID', '=', 'owner.UserID')
+                ->join('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+                ->select(
+                    'commission.*',
+                    'transactions.*',
+                    'agent.Name as agent_name',
+                    'agent.Phone as agent_phone',
+                    'agent.Address as agent_address',
+                    'owner.Name as owner_name',
+                    'owner.Phone as owner_phone',
+                    'owner.Address as owner_address',
+                    'properties.Title as property_title',
+                    'properties.Address as property_address'
+                )
+                ->where('commission.CommissionID', $id)
+                ->where('transactions.OwnerID', Auth::user()->UserID)
+                ->first();
+
+            if (!$commission) {
+                abort(404, 'Hóa đơn hoa hồng không tồn tại');
+            }
+
+            return view('owners.transactions.commission-invoice', compact('commission'));
+
+        } catch (\Exception $e) {
+            Log::error('Error generating commission invoice: ' . $e->getMessage());
+            abort(500, 'Có lỗi xảy ra khi tạo hóa đơn');
+        }
+    }
+
+    /**
+     * Xuất báo cáo giao dịch
+     */
+    public function exportTransactions(Request $request)
+    {
+        $ownerId = Auth::user()->UserID;
+        $fromDate = $request->input('from_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $toDate = $request->input('to_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+        // Get transactions data
+        $transactions = DB::table('transactions')
+            ->leftJoin('commission', 'transactions.TransactionID', '=', 'commission.TransactionID')
+            ->leftJoin('user as customer', 'transactions.CusID', '=', 'customer.UserID')
+            ->leftJoin('user as agent', 'transactions.AgentID', '=', 'agent.UserID')
+            ->leftJoin('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+            ->select(
+                'transactions.*',
+                'commission.Amount as commission_amount',
+                'commission.StatusCommission',
+                'customer.Name as customer_name',
+                'agent.Name as agent_name',
+                'properties.Title as property_title'
+            )
+            ->where('transactions.OwnerID', $ownerId)
+            ->whereBetween('transactions.TransactionDate', [$fromDate, $toDate])
+            ->orderBy('transactions.TransactionDate', 'desc')
+            ->get();
+
+        $filename = 'transactions_' . $fromDate . '_to_' . $toDate . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($transactions) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Add headers
+            fputcsv($file, [
+                'Mã giao dịch',
+                'Ngày giao dịch',
+                'Bất động sản',
+                'Loại giao dịch',
+                'Giá trị (VND)',
+                'Khách hàng',
+                'Môi giới',
+                'Hoa hồng (VND)',
+                'Trạng thái hoa hồng',
+                'Trạng thái giao dịch'
+            ]);
+
+            // Add data rows
+            foreach ($transactions as $transaction) {
+                fputcsv($file, [
+                    $transaction->TransactionID,
+                    Carbon::parse($transaction->TransactionDate)->format('d/m/Y'),
+                    $transaction->property_title ?? 'N/A',
+                    $transaction->TransactionType === 'Sale' ? 'Bán' : 'Thuê',
+                    number_format($transaction->TotalPrice, 0, ',', '.'),
+                    $transaction->customer_name ?? 'N/A',
+                    $transaction->agent_name ?? 'N/A',
+                    $transaction->commission_amount ? number_format($transaction->commission_amount, 0, ',', '.') : '0',
+                    $transaction->StatusCommission === 'Success' ? 'Đã trả' :
+                        ($transaction->StatusCommission === 'Pending' ? 'Chờ trả' : 'Chưa chia'),
+                    $transaction->TranStatus === 'Paid' ? 'Đã thanh toán' :
+                        ($transaction->TranStatus === 'Pending' ? 'Chờ thanh toán' : 'Đã hủy')
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Get detailed transaction information for modal display
+     */
+    public function transactionDetail($transactionId)
+    {
+        try {
+            $ownerId = Auth::user()->UserID;
+
+            // Get transaction with all related data
+            $transaction = DB::table('transactions')
+                ->leftJoin('commission', 'transactions.TransactionID', '=', 'commission.TransactionID')
+                ->leftJoin('user as customer', 'transactions.CusID', '=', 'customer.UserID')
+                ->leftJoin('user as agent', 'transactions.AgentID', '=', 'agent.UserID')
+                ->leftJoin('user as owner', 'transactions.OwnerID', '=', 'owner.UserID')
+                ->leftJoin('properties', 'transactions.PropertyID', '=', 'properties.PropertyID')
+                ->leftJoin('danhmuc_pro', 'properties.PropertyType', '=', 'danhmuc_pro.Protype_ID')
+                ->select(
+                    'transactions.*',
+                    // Customer info
+                    'customer.UserID as customer_id',
+                    'customer.Name as customer_name',
+                    'customer.Email as customer_email',
+                    'customer.Phone as customer_phone',
+                    'customer.IdentityCard as customer_identity',
+                    'customer.Birth as customer_birth',
+                    'customer.Sex as customer_sex',
+                    'customer.Address as customer_address',
+                    'customer.Ward as customer_ward',
+                    'customer.District as customer_district',
+                    'customer.Province as customer_province',
+                    // Agent info
+                    'agent.UserID as agent_id',
+                    'agent.Name as agent_name',
+                    'agent.Email as agent_email',
+                    'agent.Phone as agent_phone',
+                    'agent.IdentityCard as agent_identity',
+                    'agent.Birth as agent_birth',
+                    'agent.Sex as agent_sex',
+                    'agent.Address as agent_address',
+                    'agent.Ward as agent_ward',
+                    'agent.District as agent_district',
+                    'agent.Province as agent_province',
+                    // Owner info
+                    'owner.UserID as owner_id',
+                    'owner.Name as owner_name',
+                    'owner.Email as owner_email',
+                    'owner.Phone as owner_phone',
+                    'owner.IdentityCard as owner_identity',
+                    'owner.Birth as owner_birth',
+                    'owner.Sex as owner_sex',
+                    'owner.Address as owner_address',
+                    'owner.Ward as owner_ward',
+                    'owner.District as owner_district',
+                    'owner.Province as owner_province',
+                    // Property info
+                    'properties.PropertyID',
+                    'properties.Title as property_title',
+                    'properties.Address as property_address',
+                    'properties.Ward as property_ward',
+                    'properties.District as property_district',
+                    'properties.Province as property_province',
+                    'properties.Price as property_price',
+                    'properties.PropertyType',
+                    'danhmuc_pro.ten_pro as property_type_name',
+                    // Commission info
+                    'commission.CommissionID',
+                    'commission.Amount as commission_amount',
+                    'commission.Percentage as commission_percentage',
+                    'commission.StatusCommission',
+                    'commission.PaidDate'
+                )
+                ->where('transactions.TransactionID', $transactionId)
+                ->where('transactions.OwnerID', $ownerId)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy giao dịch hoặc bạn không có quyền truy cập'
+                ], 404);
+            }
+
+            // Get payment details
+            $paymentDetails = DB::table('detail_transaction')
+                ->where('TransactionID', $transactionId)
+                ->orderBy('Num_Pay')
+                ->get();
+
+            // Get documents
+            $documents = DB::table('documents')
+                ->where('TransactionID', $transactionId)
+                ->orderBy('UploadedDate', 'desc')
+                ->get();
+
+            // Format the response data
+            $responseData = [
+                'TransactionID' => $transaction->TransactionID,
+                'PropertyID' => $transaction->PropertyID,
+                'TotalPrice' => $transaction->TotalPrice,
+                'TransactionDate' => $transaction->TransactionDate,
+                'TransactionType' => $transaction->TransactionType,
+                'TranStatus' => $transaction->TranStatus,
+
+                // Customer data
+                'customer' => [
+                    'UserID' => $transaction->customer_id,
+                    'Name' => $transaction->customer_name,
+                    'Email' => $transaction->customer_email,
+                    'Phone' => $transaction->customer_phone,
+                    'IdentityCard' => $transaction->customer_identity,
+                    'Birth' => $transaction->customer_birth,
+                    'Sex' => $transaction->customer_sex,
+                    'Address' => $transaction->customer_address,
+                    'Ward' => $transaction->customer_ward,
+                    'District' => $transaction->customer_district,
+                    'Province' => $transaction->customer_province
+                ],
+
+                // Agent data
+                'agent' => [
+                    'UserID' => $transaction->agent_id,
+                    'Name' => $transaction->agent_name,
+                    'Email' => $transaction->agent_email,
+                    'Phone' => $transaction->agent_phone,
+                    'IdentityCard' => $transaction->agent_identity,
+                    'Birth' => $transaction->agent_birth,
+                    'Sex' => $transaction->agent_sex,
+                    'Address' => $transaction->agent_address,
+                    'Ward' => $transaction->agent_ward,
+                    'District' => $transaction->agent_district,
+                    'Province' => $transaction->agent_province
+                ],
+
+                // Owner data
+                'owner' => [
+                    'UserID' => $transaction->owner_id,
+                    'Name' => $transaction->owner_name,
+                    'Email' => $transaction->owner_email,
+                    'Phone' => $transaction->owner_phone,
+                    'IdentityCard' => $transaction->owner_identity,
+                    'Birth' => $transaction->owner_birth,
+                    'Sex' => $transaction->owner_sex,
+                    'Address' => $transaction->owner_address,
+                    'Ward' => $transaction->owner_ward,
+                    'District' => $transaction->owner_district,
+                    'Province' => $transaction->owner_province
+                ],
+
+                // Property data
+                'property' => [
+                    'PropertyID' => $transaction->PropertyID,
+                    'Title' => $transaction->property_title,
+                    'Address' => $transaction->property_address,
+                    'Ward' => $transaction->property_ward,
+                    'District' => $transaction->property_district,
+                    'Province' => $transaction->property_province,
+                    'Price' => $transaction->property_price,
+                    'PropertyType' => $transaction->PropertyType,
+                    'PropertyTypeName' => $transaction->property_type_name
+                ],
+
+                // Payment details
+                'payment_details' => $paymentDetails,
+
+                // Documents
+                'documents' => $documents,
+
+                // Commission data
+                'commission' => $transaction->CommissionID ? [
+                    'CommissionID' => $transaction->CommissionID,
+                    'Amount' => $transaction->commission_amount,
+                    'Percentage' => $transaction->commission_percentage,
+                    'StatusCommission' => $transaction->StatusCommission,
+                    'PaidDate' => $transaction->PaidDate
+                ] : null
+            ];
+
+            return response()->json([
+                'success' => true,
+                'transaction' => $responseData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching transaction detail: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải thông tin giao dịch'
             ], 500);
         }
     }

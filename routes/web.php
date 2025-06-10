@@ -31,13 +31,13 @@ use Illuminate\Support\Facades\Auth;
 // Test route to check transactions page without authentication
 Route::get('/test-transactions', function () {
     $agent = App\Models\User::where('Role', 'Agent')->first();
-    
+
     if (!$agent) {
         return 'No agent found in database';
     }
-    
+
     Auth::login($agent);
-    
+
     $controller = new AgentController();
     return $controller->index();
 })->name('test.transactions');
@@ -140,10 +140,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/property/listings', [OwnerController::class, 'storePropertyListing'])->name('property.listings.store');
         Route::get('/appointments', [OwnerController::class, 'appointments'])->name('appointments.index');
         Route::get('/appointments/filter/{status}', [OwnerController::class, 'getAppointmentsByStatus'])->name('appointments.filter');
+        Route::get('/appointments/{id}/detail', [OwnerController::class, 'getAppointmentDetail'])->name('appointments.detail');
         Route::post('/appointments/{id}/confirm', [OwnerController::class, 'confirmAppointment'])->name('appointments.confirm');
         Route::post('/appointments/{id}/cancel', [OwnerController::class, 'cancelAppointment'])->name('appointments.cancel');
         Route::post('/appointments/{id}/finish', [OwnerController::class, 'finishAppointment'])->name('appointments.finish');
-        
+
         // Transaction routes
         Route::get('/transactions', [OwnerController::class, 'transactions'])->name('transactions.index');
         Route::get('/transactions/overview', [OwnerController::class, 'transactionsOverview'])->name('transactions.overview');
@@ -151,9 +152,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/transactions/revenue', [OwnerController::class, 'revenueManagement'])->name('transactions.revenue');
         Route::get('/transactions/commissions', [OwnerController::class, 'commissionManagement'])->name('transactions.commissions');
         Route::post('/transactions/commission/{id}', [OwnerController::class, 'updateCommissionStatus'])->name('transactions.commission.update');
+        Route::post('/transactions/create-commission', [OwnerController::class, 'createCommission'])->name('transactions.create-commission');
+        Route::post('/transactions/pay-commission', [OwnerController::class, 'payCommission'])->name('transactions.pay-commission');
+        Route::get('/transactions/commission-invoice/{id}', [OwnerController::class, 'commissionInvoice'])->name('transactions.commission-invoice');
+        Route::get('/transactions/export', [OwnerController::class, 'exportTransactions'])->name('transactions.export');
+        Route::get('/transactions/{id}/detail', [OwnerController::class, 'transactionDetail'])->name('transactions.detail');
         Route::get('/transactions/{id}', [OwnerController::class, 'showTransaction'])->name('transactions.show');
         Route::get('/transactions/{id}/print', [OwnerController::class, 'printInvoice'])->name('transactions.print');
-        
+
         // Notifications route
         Route::post('/appointments/update-status/{id}', [OwnerController::class, 'updateAppointmentStatus'])->name('appointment.updateStatus');
         Route::get('/notifications-agent', [OwnerController::class, 'getNotifications'])->name('notifications-agent');
@@ -183,10 +189,43 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/transactions/search', [AgentController::class, 'search'])->name('transactions.search');
         Route::get('/transactions/export', [AgentController::class, 'export'])->name('transactions.export');
         Route::get('/transactions/{id}', [AgentController::class, 'show'])->name('transactions.show');
+        Route::get('/transactions/{id}/details', [AgentController::class, 'getTransactionDetails'])->name('transactions.details');
+        Route::get('/transactions/{id}/edit-data', [AgentController::class, 'getTransactionForEdit'])->name('transactions.edit-data');
         Route::put('/transactions/{id}', [AgentController::class, 'update'])->name('transactions.update');
         Route::put('/transactions/{id}/status', [AgentController::class, 'updateTransactionStatus'])->name('transactions.update-status');
+
+        // New 4-step transaction modal API endpoints
+        Route::get('/properties', [AgentController::class, 'getProperties'])->name('properties.get');
+        Route::get('/properties/assigned', [AgentController::class, 'getAssignedProperties'])->name('properties.assigned');
+        Route::get('/contract-templates', [AgentController::class, 'getContractTemplates'])->name('contract.templates');
+        Route::get('/contract-templates/{id}/download', [AgentController::class, 'downloadContractTemplate'])->name('contract.templates.download');
+
+        // Template editing endpoints
+        Route::post('/template/create-copy', [AgentController::class, 'createTemplateCopy'])->name('template.create-copy');
+        Route::get('/template/edit/{file}', [AgentController::class, 'editTemplate'])->name('template.edit');
+        Route::get('/template/preview/{file}', [AgentController::class, 'previewTemplate'])->name('template.preview');
+        Route::post('/template/save', [AgentController::class, 'saveTemplate'])->name('template.save');
+
+        // Upload document for creating transaction
+        Route::post('/upload-transaction-document', [AgentController::class, 'uploadTransactionDocumentForCreation'])->name('upload.transaction.document');
+
+        // Debug endpoint to check current user
+        Route::get('/debug/user', function() {
+            $user = Auth::user();
+            return response()->json([
+                'authenticated' => Auth::check(),
+                'user_id' => $user ? $user->UserID : null,
+                'user_role' => $user ? $user->Role : null,
+                'user_name' => $user ? $user->FullName : null,
+                'user_email' => $user ? $user->Email : null
+            ]);
+        })->name('debug.user');
+
+        // Document management routes
         Route::get('/transactions/{id}/documents', [AgentController::class, 'getTransactionDocuments'])->name('transactions.documents');
-        Route::post('/transactions/{id}/documents', [AgentController::class, 'uploadTransactionDocuments'])->name('transactions.documents.upload');
+        Route::post('/transactions/{id}/documents', [AgentController::class, 'uploadTransactionDocument'])->name('transactions.documents.upload');
+        Route::get('/transactions/{transactionId}/documents/{documentId}/download', [AgentController::class, 'downloadTransactionDocument'])->name('transactions.documents.download');
+        Route::get('/transactions/{transactionId}/documents/download-all', [AgentController::class, 'downloadAllTransactionDocuments'])->name('transactions.documents.download-all');
         Route::delete('/transactions/{transactionId}/documents/{documentId}', [AgentController::class, 'deleteTransactionDocument'])->name('transactions.documents.delete');
         Route::get('/transactions/analytics/dashboard', [AgentController::class, 'getTransactionAnalytics'])->name('transactions.analytics');
         Route::get('/properties/{id}/customers', [AgentController::class, 'getRelatedCustomers'])->name('properties.customers');
@@ -195,22 +234,22 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/search-properties', [AgentController::class, 'searchProperties'])->name('search.properties');
         Route::get('/api/properties/available', [AgentController::class, 'getAvailableProperties'])->name('api.properties.available');
         Route::get('/api/customers', [AgentController::class, 'getAvailableCustomers'])->name('api.customers.available');
-        
+
         Route::get('/notifications-agent', [AgentController::class, 'getNotifications'])->name('notifications.agent');
 
         // Test route for modal
         Route::get('/test-modal', function() {
             return view('test-modal');
         })->name('test.modal');
-        
+
         // Test route for transaction creation
         Route::post('/test-transaction', function(Request $request) {
             $controller = new App\Http\Controllers\AgentController();
-            
+
             // Create test data
             $testData = [
                 'property_id' => 'PS00001',
-                'customer_id' => 'UID00004', 
+                'customer_id' => 'UID00004',
                 'transaction_type' => 'sell',
                 'price' => 5000000000,
                 'payment_method' => 'cash',
@@ -220,9 +259,9 @@ Route::middleware(['auth'])->group(function () {
                 'contract_end_date' => '2025-07-07',
                 'notes' => 'Test transaction from automated testing'
             ];
-            
+
             $request->merge($testData);
-            
+
             try {
                 $response = $controller->store($request);
                 return response()->json([
@@ -249,7 +288,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/transaction/{id}', [OwnerController::class, 'showTransaction'])->name('transaction.view');
     Route::get('/transaction/{id}/print', [OwnerController::class, 'printInvoice'])->name('transaction.print');
     Route::get('/export/transactions', [OwnerController::class, 'exportTransactions'])->name('export.transactions');
-    
+
     // Route dự phòng để đảm bảo không bị 404 khi truy cập /property/{id}
     // Kiểm tra quyền của người dùng và chuyển hướng phù hợp
     Route::get('/property/{id}', function($id) {
@@ -271,11 +310,11 @@ Route::get('/debug/properties', function() {
     if (!$agent) {
         return response()->json(['error' => 'Agent not found']);
     }
-    
+
     $properties = \App\Models\Property::with(['danhMuc', 'owner', 'chiTiet', 'images'])
         ->where('AgentID', $agent->UserID)
         ->get();
-    
+
     return response()->json([
         'agent' => $agent->toArray(),
         'total_properties' => $properties->count(),
@@ -298,11 +337,11 @@ Route::get('/debug/property/{id}', function($id) {
     $property = \App\Models\Property::with(['danhMuc', 'owner', 'chiTiet', 'images'])
         ->where('PropertyID', $id)
         ->first();
-    
+
     if (!$property) {
         return response()->json(['error' => 'Property not found'], 404);
     }
-    
+
     // Format response similar to AgentController::getProperty
     $response = [
         'success' => true,
@@ -322,7 +361,7 @@ Route::get('/debug/property/{id}', function($id) {
             'chiTiet' => $property->chiTiet
         ]
     ];
-    
+
     return response()->json($response);
 });
 
@@ -444,17 +483,17 @@ Route::get('/test/api/property/{id}', function($id) {
             ]
         ]
     ];
-    
+
     if (!isset($mockProperties[$id])) {
         return response()->json(['success' => false, 'message' => 'Property not found'], 404);
     }
-    
+
     return response()->json($mockProperties[$id]);
 });
 
 // Test route for modal without authentication
 Route::get('/test/modal', function() {
-    // Create fake properties data for testing  
+    // Create fake properties data for testing
     $properties = collect([
         (object)[
             'PropertyID' => 'PR00001',
@@ -501,11 +540,11 @@ Route::get('/test/modal', function() {
 // Test route for transaction creation
 Route::post('/test-transaction', function(Request $request) {
     $controller = new App\Http\Controllers\AgentController();
-    
+
     // Create test data
     $testData = [
         'property_id' => 'PS00001',
-        'customer_id' => 'UID00004', 
+        'customer_id' => 'UID00004',
         'transaction_type' => 'sell',
         'price' => 5000000000,
         'payment_method' => 'cash',
@@ -515,9 +554,9 @@ Route::post('/test-transaction', function(Request $request) {
         'contract_end_date' => '2025-07-07',
         'notes' => 'Test transaction from automated testing'
     ];
-    
+
     $request->merge($testData);
-    
+
     try {
         $response = $controller->store($request);
         return response()->json([
@@ -537,5 +576,15 @@ Route::post('/test-transaction', function(Request $request) {
 Route::get('/test-complete', function() {
     return view('test-complete');
 })->name('test.complete');
+
+// Template routes for agents
+Route::middleware(['auth'])->prefix('agent')->group(function () {
+    Route::get('/contract-templates', [AgentController::class, 'getContractTemplates'])->name('agent.contract.templates');
+    Route::post('/template/create-copy', [AgentController::class, 'createTemplateCopy'])->name('agent.template.create-copy');
+    Route::get('/template/edit/{file}', [AgentController::class, 'editTemplate'])->name('agent.template.edit');
+    Route::get('/template/download/{file}', [AgentController::class, 'downloadTemplate'])->name('agent.template.download');
+    Route::post('/template/save', [AgentController::class, 'saveTemplate'])->name('agent.template.save');
+    Route::get('/properties/assigned', [AgentController::class, 'getAssignedProperties'])->name('agent.properties.assigned');
+});
 
 

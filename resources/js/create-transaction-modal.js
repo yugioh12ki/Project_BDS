@@ -7,7 +7,7 @@ class TransactionModal {
         this.selectedProperty = null;
         this.uploadedFiles = [];
         this.customers = [];
-        
+
         // Track completion status for each step
         this.stepCompleted = {
             1: false, // Property selection
@@ -15,13 +15,13 @@ class TransactionModal {
             3: false, // Transaction info
             4: false  // Payment method
         };
-        
+
         this.init();
     }
 
     init() {
         console.log('TransactionModal initialized');
-        
+
         // Khởi tạo modal khi mở
         $('#createTransactionModal').on('shown.bs.modal', () => {
             console.log('Transaction modal opened, starting initialization...');
@@ -30,7 +30,7 @@ class TransactionModal {
             this.loadCustomers();
             this.updateNavigationButtons(); // Initialize button states
         });
-        
+
         // Xử lý nút tiếp tục
         $('#nextStepBtn').on('click', () => {
             if (this.currentStep === this.totalSteps) {
@@ -47,7 +47,7 @@ class TransactionModal {
             this.prevStep();
         });        // Khởi tạo các chức năng cho từng bước
         this.initAllSteps(); // Initialize all steps and their events
-        
+
         // Xử lý submit form
         $('#createTransactionForm').on('submit', (e) => {
             e.preventDefault();
@@ -57,12 +57,12 @@ class TransactionModal {
 
     resetModal() {
         console.log('Resetting transaction modal...');
-        
+
         // Reset về bước 1
         this.currentStep = 1;
         this.selectedProperty = null;
         this.uploadedFiles = [];
-        
+
         // Reset completion status
         this.stepCompleted = {
             1: false,
@@ -70,33 +70,33 @@ class TransactionModal {
             3: false,
             4: false
         };
-        
+
         // Reset UI
         this.updateStepIndicator();
         this.showStep(1);
-        
+
         // Reset form
         document.getElementById('createTransactionForm').reset();
-        
+
         // Clear selected property info and show property list
         $('#selectedPropertyInfo').hide();
         $('#propertyListContainer').show();
-        
+
         // Remove selection highlight from all property cards
         $('.property-card').removeClass('selected-property');
-        
+
         // Clear search input and filters
         $('#propertySearchInput').val('');
         $('input[name="step1_transaction_type"]').prop('checked', false);
         $('.property-card').show(); // Show all properties
-        
+
         // Reset hidden inputs
         $('#property_id').val('');
         $('#transaction_type').val('');
-        
+
         // Reset buttons - disable next button until property is selected
         $('#prevStepBtn').hide();        $('#nextStepBtn').show().text('Tiếp tục').prop('disabled', true);
-        
+
         console.log('Modal reset completed');
     }
 
@@ -117,7 +117,7 @@ class TransactionModal {
         $(document).on('click', '.property-card', (e) => {
             const propertyCard = $(e.currentTarget);
             const propertyId = propertyCard.data('property-id');
-            
+
             // Lấy dữ liệu từ attribute data
             const propertyData = {
                 id: propertyId,
@@ -132,7 +132,7 @@ class TransactionModal {
                 status: propertyCard.data('status'),
                 description: propertyCard.data('description')
             };
-            
+
             this.selectProperty(propertyData);
         });
 
@@ -217,13 +217,13 @@ class TransactionModal {
     async loadProperties() {
         try {
             console.log('Loading properties for transaction modal...');
-            
+
             // Properties are already rendered by Blade template
             const container = $('#propertyListContainer');
             const existingCards = container.find('.property-card');
-            
+
             console.log('Found property cards:', existingCards.length);
-            
+
             if (existingCards.length === 0) {
                 // No properties found, show empty state
                 container.html('<div class="text-center py-4"><i class="fas fa-home fa-2x text-muted mb-3"></i><p class="text-muted">Không có bất động sản nào để hiển thị</p></div>');
@@ -231,7 +231,7 @@ class TransactionModal {
                 // Properties loaded successfully
                 console.log('Properties loaded successfully from Blade template');
             }
-            
+
         } catch (error) {
             console.error('Error loading properties:', error);
             const container = $('#propertyListContainer');
@@ -242,40 +242,40 @@ class TransactionModal {
     // Hiển thị modal chi tiết bất động sản
     async showPropertyDetails(propertyId) {
         console.log('Showing property details for:', propertyId);
-        
+
         // Show modal
         $('#propertyDetailsModal').modal('show');
-        
+
         // Show loading state
         $('#propertyDetailsLoading').removeClass('d-none');
         $('#propertyDetailsContent').addClass('d-none');
         $('#propertyDetailsError').addClass('d-none');
-        
+
         try {
             // Fetch property details từ API test endpoint
             const response = await fetch('/test/property-details/' + propertyId);
             if (!response.ok) {
                 throw new Error('Không thể tải thông tin bất động sản');
             }
-            
+
             const data = await response.json();
             if (!data.success) {
                 throw new Error(data.message || 'Không thể tải thông tin bất động sản');
             }
-            
+
             // Hide loading, show content
             $('#propertyDetailsLoading').addClass('d-none');
             $('#propertyDetailsContent').removeClass('d-none');
-            
+
             // Render property details
             this.renderPropertyDetails(data.property);
-            
+
             // Store property ID for selection
             $('#selectPropertyFromDetails').data('property-id', propertyId);
-            
+
         } catch (error) {
             console.error('Error loading property details:', error);
-            
+
             // Hide loading, show error
             $('#propertyDetailsLoading').addClass('d-none');
             $('#propertyDetailsError').removeClass('d-none');
@@ -295,7 +295,7 @@ class TransactionModal {
         };
 
         let html = '<div class="property-details-content">';
-        
+
         // Header với thông tin cơ bản
         html += '<div class="row mb-4">';
         html += '<div class="col-12">';
@@ -311,7 +311,7 @@ class TransactionModal {
         }
         html += '</div>';
         html += '</div>';
-        
+
         html += '<div class="property-basic-info">';
         html += '<p class="text-muted mb-2">';
         html += '<i class="fas fa-map-marker-alt text-danger me-2"></i>';
@@ -377,7 +377,7 @@ class TransactionModal {
             html += '<i class="fas fa-info-circle me-2"></i>Chi tiết bất động sản';
             html += '</h6>';
             html += '<div class="row g-3">';
-            
+
             if (property.detailProperty.Bedroom) {
                 html += '<div class="col-md-3">';
                 html += '<div class="detail-item">';
@@ -386,7 +386,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             if (property.detailProperty.Bath_WC) {
                 html += '<div class="col-md-3">';
                 html += '<div class="detail-item">';
@@ -395,7 +395,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             if (property.detailProperty.Balcony) {
                 html += '<div class="col-md-3">';
                 html += '<div class="detail-item">';
@@ -404,7 +404,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             if (property.detailProperty.HouseLength && property.detailProperty.HouseWidth) {
                 html += '<div class="col-md-3">';
                 html += '<div class="detail-item">';
@@ -413,7 +413,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             if (property.detailProperty.view) {
                 html += '<div class="col-md-6">';
                 html += '<div class="detail-item">';
@@ -422,7 +422,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             if (property.detailProperty.near) {
                 html += '<div class="col-md-6">';
                 html += '<div class="detail-item">';
@@ -431,7 +431,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             if (property.detailProperty.WaterPrice) {
                 html += '<div class="col-md-6">';
                 html += '<div class="detail-item">';
@@ -440,7 +440,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             if (property.detailProperty.PowerPrice) {
                 html += '<div class="col-md-6">';
                 html += '<div class="detail-item">';
@@ -449,7 +449,7 @@ class TransactionModal {
                 html += '</div>';
                 html += '</div>';
             }
-            
+
             html += '</div>';
             html += '</div>';
             html += '</div>';
@@ -462,31 +462,31 @@ class TransactionModal {
         // Set the content
         $('#propertyDetailsContent').html(html);    }
 
-    // Method mới: Chọn property và hiển thị chi tiết  
+    // Method mới: Chọn property và hiển thị chi tiết
     async selectPropertyAndShowDetails(propertyId) {
         console.log('Selecting property and showing details:', propertyId);
-        
+
         try {
             // Tải chi tiết property từ API
             const response = await fetch('/test/property-details/' + propertyId);
             if (!response.ok) {
                 throw new Error('Không thể tải thông tin bất động sản');
             }
-            
+
             const data = await response.json();
             if (!data.success) {
                 throw new Error(data.message || 'Không thể tải thông tin bất động sản');
             }
-            
+
             // Lưu thông tin property đã chọn
             this.selectedProperty = {
                 id: propertyId,
                 ...data.property
             };
-            
+
             // Set hidden input
             $('#property_id').val(propertyId);
-            
+
             // Auto-detect and set transaction type
             if (data.property.TypePro) {
                 $('#transaction_type').val(data.property.TypePro);
@@ -495,39 +495,39 @@ class TransactionModal {
               // Ẩn danh sách và hiển thị chi tiết
             $('#propertyListContainer').hide();
             this.showSelectedPropertyDetails(data.property);
-            
+
             // Update navigation buttons based on validation
             this.updateNavigationButtons();
-            
+
             console.log('Property selected and details loaded successfully');
-            
+
         } catch (error) {
             console.error('Error selecting property:', error);
             alert('Không thể tải thông tin chi tiết bất động sản. Vui lòng thử lại.');
             throw error;
         }
     }
-    
+
     // Method để quay lại chọn property khác
     changeProperty() {
         console.log('Changing property selection...');
-        
+
         // Clear selection
         this.selectedProperty = null;
         $('.property-card').removeClass('selected-property');
-        
+
         // Reset form
         $('#property_id').val('');
         $('#transaction_type').val('');
         $('input[name="transaction_type"]').prop('checked', false);
-        
+
         // Show property list, hide details
         $('#propertyListContainer').show();
         $('#selectedPropertyInfo').hide();
-        
+
         // Disable next button
         $('#nextStepBtn').prop('disabled', true);
-        
+
         // Reset all select buttons
         $('.select-property-btn').each(function() {
             $(this).html('<i class="fas fa-check-circle me-1"></i>Chọn BDS này');
@@ -538,7 +538,7 @@ class TransactionModal {
     // Các method khác (selectProperty, searchProperties, etc.)
     selectProperty(propertyId) {
         console.log('Selecting property:', propertyId);
-        
+
         // Find property card
         const propertyCard = $('.property-card[data-property-id="' + propertyId + '"]');
         if (propertyCard.length === 0) {
@@ -548,10 +548,10 @@ class TransactionModal {
 
         // Remove previous selection
         $('.property-card').removeClass('selected-property');
-        
+
         // Add selection to current card
         propertyCard.addClass('selected-property');
-        
+
         // Store selected property data
         this.selectedProperty = {
             id: propertyId,
@@ -563,26 +563,26 @@ class TransactionModal {
 
         // Set hidden input
         $('#property_id').val(propertyId);
-        
+
         // Auto-detect and set transaction type
         const propertyType = propertyCard.data('type');
         if (propertyType) {
             $('#transaction_type').val(propertyType);
             $('input[name="transaction_type"][value="' + propertyType + '"]').prop('checked', true);
         }
-        
+
         // Show selected property info
         this.showSelectedProperty();
-        
+
         // Enable next button
         $('#nextStepBtn').prop('disabled', false);
-        
+
         console.log('Property selected successfully:', this.selectedProperty);
     }
 
     showSelectedProperty() {
         if (!this.selectedProperty) return;
-        
+
         const html = '<div class="selected-property-card border border-success rounded p-4 mb-4">' +
             '<div class="d-flex justify-content-between align-items-center mb-3">' +
             '<h5 class="text-success mb-0">' +
@@ -607,7 +607,7 @@ class TransactionModal {
             '</div>' +
             '</div>' +
             '</div>';
-        
+
         $('#selectedPropertyInfo').html(html).show();
         $('#propertyListContainer').hide();
     }
@@ -622,18 +622,18 @@ class TransactionModal {
 
     searchProperties(searchTerm) {
         const cards = $('.property-card');
-        
+
         if (!searchTerm) {
             cards.show();
             return;
         }
-        
+
         cards.each(function() {
             const card = $(this);
             const title = card.find('.property-title').text().toLowerCase();
             const address = card.find('.property-address').text().toLowerCase();
             const searchTermLower = searchTerm.toLowerCase();
-            
+
             if (title.includes(searchTermLower) || address.includes(searchTermLower)) {
                 card.show();
             } else {
@@ -643,7 +643,7 @@ class TransactionModal {
 
     filterPropertiesByType(type) {
         const cards = $('.property-card');
-        
+
         if (!type) {
             cards.show();
             return;
@@ -651,7 +651,7 @@ class TransactionModal {
           cards.each(function() {
             const card = $(this);
             const cardType = card.data('type');
-            
+
             if (cardType === type) {
                 card.show();
             } else {
@@ -666,7 +666,7 @@ class TransactionModal {
         if (!this.selectedProperty || !$('#property_id').val()) {
             return false;
         }
-        
+
         this.stepCompleted[1] = true;
         return true;
     }
@@ -683,22 +683,22 @@ class TransactionModal {
         const customerId = $('#customer_id').val();
         const transactionDate = $('#transaction_date').val();
         const totalPrice = $('#total_price').val();
-        
+
         if (!customerId || !transactionDate || !totalPrice) {
             return false;
         }
-        
+
         // Additional validation for rental properties
         if (this.selectedProperty && this.selectedProperty.TypePro === 'Rent') {
             const rentalMonths = $('#rental_months').val();
             const paymentType = $('#payment_type').val();
             const monthlyPrice = $('#monthly_price').val();
-            
+
             if (!rentalMonths || !paymentType || !monthlyPrice) {
                 return false;
             }
         }
-        
+
         this.stepCompleted[3] = true;
         return true;
     }
@@ -706,11 +706,11 @@ class TransactionModal {
     validateStep4() {
         // Check if payment method is selected
         const paymentMethod = $('input[name="payment_method"]:checked').val();
-        
+
         if (!paymentMethod) {
             return false;
         }
-        
+
         this.stepCompleted[4] = true;
         return true;
     }
@@ -730,17 +730,17 @@ class TransactionModal {
     updateNavigationButtons() {
         const isCurrentStepValid = this.validateCurrentStep();
         const isLastStep = this.currentStep === this.totalSteps;
-        
+
         // Update Previous button
         $('#prevStepBtn').toggle(this.currentStep > 1);
-        
+
         // Update Next/Submit button
         if (isLastStep) {
             $('#nextStepBtn').text('Hoàn tất giao dịch').prop('disabled', !isCurrentStepValid);
         } else {
             $('#nextStepBtn').text('Tiếp tục').prop('disabled', !isCurrentStepValid);
         }
-        
+
         console.log(`Step ${this.currentStep}: Valid=${isCurrentStepValid}, LastStep=${isLastStep}`);
     }
 
@@ -750,11 +750,11 @@ class TransactionModal {
         for (let i = 1; i <= this.totalSteps; i++) {
             $(`#step${i}`).hide();
         }
-        
+
         // Show current step
         $(`#step${stepNumber}`).show();
         this.currentStep = stepNumber;
-        
+
         console.log(`Showing step ${stepNumber}`);
     }
 
@@ -763,9 +763,9 @@ class TransactionModal {
         $('.step').each((index, step) => {
             const stepNum = index + 1;
             const $step = $(step);
-            
+
             $step.removeClass('active completed');
-            
+
             if (stepNum < this.currentStep) {
                 $step.addClass('completed');
             } else if (stepNum === this.currentStep) {
@@ -783,18 +783,18 @@ class TransactionModal {
     showToast(type, message, duration = 5000) {
         const toastClass = type === 'success' ? 'alert-success' : 'alert-danger';
         const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-        
+
         const toast = $(`
-            <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
+            <div class="alert ${toastClass} alert-dismissible fade show position-fixed"
                  style="top: 20px; right: 20px; z-index: 10000; min-width: 300px;">
                 <i class="fas ${iconClass} me-2"></i>
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `);
-        
+
         $('body').append(toast);
-        
+
         setTimeout(() => {
             toast.alert('close');
         }, duration);
@@ -808,7 +808,7 @@ class TransactionModal {
             this.showStep(this.currentStep);
             this.updateStepIndicator();
             this.updateNavigationButtons();
-            
+
             console.log(`Moved to step ${this.currentStep}`);
         } else if (!this.validateCurrentStep()) {
             this.showStepValidationError();
@@ -821,7 +821,7 @@ class TransactionModal {
             this.showStep(this.currentStep);
             this.updateStepIndicator();
             this.updateNavigationButtons();
-            
+
             console.log(`Moved back to step ${this.currentStep}`);
         }
     }
@@ -829,9 +829,9 @@ class TransactionModal {
     // File handling methods
     handleFileSelection(event) {
         const files = event.target.files;
-        
+
         if (!files || files.length === 0) return;
-        
+
         Array.from(files).forEach(file => {
             // Validate file type
             const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
@@ -839,13 +839,13 @@ class TransactionModal {
                 this.showToast('error', `File ${file.name} không đúng định dạng cho phép (PDF, JPG, PNG)`);
                 return;
             }
-            
+
             // Validate file size (max 10MB)
             if (file.size > 10 * 1024 * 1024) {
                 this.showToast('error', `File ${file.name} quá lớn (tối đa 10MB)`);
                 return;
             }
-            
+
             // Add to uploaded files
             const fileData = {
                 id: Date.now() + Math.random(),
@@ -853,13 +853,13 @@ class TransactionModal {
                 size: file.size,
                 file: file
             };
-            
+
             this.uploadedFiles.push(fileData);
         });
-        
+
         this.updateFilesList();
         this.updateNavigationButtons();
-        
+
         console.log(`Added ${files.length} files, total: ${this.uploadedFiles.length}`);
     }
 
@@ -867,14 +867,14 @@ class TransactionModal {
         this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== fileId);
         this.updateFilesList();
         this.updateNavigationButtons();
-        
+
         console.log(`Removed file, remaining: ${this.uploadedFiles.length}`);
     }
 
     // Transaction type handling
     handleTransactionTypeChange(type = null) {
         const transactionType = type || $('input[name="step3_transaction_type"]:checked').val();
-        
+
         if (transactionType === 'Rent') {
             $('#rentalFields').show();
             $('#rental_months, #payment_type, #monthly_price').prop('required', true);
@@ -882,7 +882,7 @@ class TransactionModal {
             $('#rentalFields').hide();
             $('#rental_months, #payment_type, #monthly_price').prop('required', false);
         }
-        
+
         console.log(`Transaction type changed to: ${transactionType}`);
     }
 
@@ -891,7 +891,7 @@ class TransactionModal {
         try {
             const response = await fetch('/agent/api/customers');
             if (!response.ok) throw new Error('Không thể tải danh sách khách hàng');
-            
+
             const data = await response.json();
             if (data.success) {
                 this.customers = data.customers;
@@ -907,12 +907,12 @@ class TransactionModal {
     populateCustomerSelect() {
         const $select = $('#customer_id');
         $select.empty().append('<option value="">-- Chọn khách hàng --</option>');
-        
+
         this.customers.forEach(customer => {
             $select.append(`
-                <option value="${customer.UserID}" 
-                        data-name="${customer.Name}" 
-                        data-phone="${customer.Phone || ''}" 
+                <option value="${customer.UserID}"
+                        data-name="${customer.Name}"
+                        data-phone="${customer.Phone || ''}"
                         data-email="${customer.Email || ''}">
                     ${customer.Name} - ${customer.Phone || 'N/A'}
                 </option>
@@ -949,7 +949,7 @@ class TransactionModal {
         }
 
         const formData = new FormData();
-        
+
         // Basic transaction data
         formData.append('property_id', $('#property_id').val());
         formData.append('customer_id', $('#customer_id').val());
@@ -974,7 +974,7 @@ class TransactionModal {
 
         try {
             this.showToast('info', 'Đang tạo giao dịch...');
-            
+
             const response = await fetch('/agent/transactions', {
                 method: 'POST',
                 headers: {
@@ -1002,7 +1002,7 @@ class TransactionModal {
 
     // Validation methods
     validateAllSteps() {
-        return this.validateStep1() && this.validateStep2() && 
+        return this.validateStep1() && this.validateStep2() &&
                this.validateStep3() && this.validateStep4();
     }
 

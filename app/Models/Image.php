@@ -18,10 +18,7 @@ class Image extends Model
         'ImageID',
         'PropertyID',
         'ImagePath',
-        'ImageURL',
         'Caption',
-        'Description',
-        'IsThumbnail',
         'UploadedDate'
     ];
 

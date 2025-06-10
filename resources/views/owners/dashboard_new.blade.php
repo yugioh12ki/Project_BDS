@@ -6,7 +6,7 @@
     <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="welcome-card bg-gradient-warm text-white rounded-3 p-4">
+            <div class="welcome-card bg-gradient-primary text-white rounded-3 p-4">
                 <h2 class="mb-2">Chào mừng, {{ $owner->Name }}!</h2>
                 <p class="mb-0 opacity-75">Quản lý bất động sản và theo dõi hoạt động kinh doanh của bạn</p>
             </div>
@@ -134,16 +134,7 @@
                                                 </small>
                                                 @if($property->chiTiet)
                                                 <small class="d-block mb-1">
-                                                    <strong>Diện tích:</strong>
-                                                    @php
-                                                        $area = null;
-                                                        if ($property->chiTiet->TotalLength && $property->chiTiet->TotalWidth) {
-                                                            $area = $property->chiTiet->TotalLength * $property->chiTiet->TotalWidth;
-                                                        } elseif ($property->chiTiet->HouseLength && $property->chiTiet->HouseWidth) {
-                                                            $area = $property->chiTiet->HouseLength * $property->chiTiet->HouseWidth;
-                                                        }
-                                                    @endphp
-                                                    {{ $area ? number_format($area, 0, ',', '.') : 'N/A' }}m²
+                                                    <strong>Diện tích:</strong> {{ $property->chiTiet->Area ?? 'N/A' }}m²
                                                 </small>
                                                 @endif
                                                 <small class="d-block">
@@ -307,7 +298,7 @@
 
 <style>
 .welcome-card {
-    background: linear-gradient(135deg, #d4a574 0%, #c19a6b 50%, #b8926a 100%) !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 }
 
 .stat-card {

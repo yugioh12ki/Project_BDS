@@ -1,3 +1,42 @@
+// Global transaction action functions (defined outside DOMContentLoaded for immediate availability)
+function viewTransaction(transactionId) {
+    console.log('Viewing transaction:', transactionId);
+    // TODO: Implement modal or redirect to details page
+    alert(`Xem chi tiết giao dịch ${transactionId}`);
+}
+
+function editTransaction(transactionId) {
+    console.log('Editing transaction:', transactionId);
+    // TODO: Implement edit modal or redirect to edit page
+    alert(`Chỉnh sửa giao dịch ${transactionId}`);
+}
+
+function viewDocuments(transactionId) {
+    console.log('Managing documents for transaction:', transactionId);
+    // TODO: Implement document management modal
+    alert(`Quản lý tài liệu cho giao dịch ${transactionId}`);
+}
+
+// Global export function (placeholder until DOMContentLoaded)
+function exportToExcel() {
+    if (exportToExcelFunction) {
+        exportToExcelFunction();
+    } else {
+        console.warn('Export function not ready yet');
+        alert('Vui lòng đợi trang tải xong trước khi xuất Excel');
+    }
+}
+
+// Export to Excel function (will be called from DOMContentLoaded)
+let exportToExcelFunction;
+
+// Expose functions globally for onclick handlers
+window.viewTransaction = viewTransaction;
+window.editTransaction = editTransaction;
+window.viewDocuments = viewDocuments;
+window.exportToExcel = exportToExcel;
+
+// Document ready functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Get filter elements
     const searchInput = document.getElementById('searchTransaction');
@@ -7,18 +46,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateToFilter = document.getElementById('dateTo');
     const clearFiltersBtn = document.getElementById('clearFilters');
     const exportExcelBtn = document.getElementById('exportExcel');
-    const tableRows = document.querySelectorAll('.transactions-table tbody tr:not(.empty-row)');
+    const tableRows = document.querySelectorAll('.transaction-table tbody tr:not(.empty-row)');
     const loadingOverlay = document.getElementById('loadingOverlay');
-    const noResults = document.getElementById('noResults');
-    const transactionsTable = document.getElementById('transactionsTable');
-    
+    const noResults = document.querySelector('.empty-row');
+    const transactionsTable = document.getElementById('transactionTable');
+
     // Pagination elements
     const paginationContainer = document.getElementById('paginationContainer');
     const paginationInfo = document.getElementById('paginationInfo');
     const prevPageBtn = document.getElementById('prevPage');
     const nextPageBtn = document.getElementById('nextPage');
     const paginationNumbers = document.getElementById('paginationNumbers');
-    
+
     // Pagination settings
     let currentPage = 1;
     const itemsPerPage = 10;
@@ -33,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Filter function
     function filterTransactions() {
         showLoading();
-        
+
         setTimeout(() => {
             const searchTerm = searchInput.value.toLowerCase();
             const statusValue = statusFilter.value;
@@ -51,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const transactionDate = row.querySelector('.transaction-date').textContent;
 
                 // Search filter
-                const matchesSearch = transactionId.includes(searchTerm) || 
+                const matchesSearch = transactionId.includes(searchTerm) ||
                                     propertyCode.includes(searchTerm);
 
                 // Status filter
@@ -136,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const displayStart = startIndex + 1;
             const displayEnd = Math.min(endIndex, totalItems);
             paginationInfo.textContent = `Hiển thị ${displayStart}-${displayEnd} của ${totalItems} giao dịch`;
-            
+
             if (noResults) noResults.style.display = 'none';
             if (transactionsTable) transactionsTable.style.display = '';
             if (paginationContainer) paginationContainer.style.display = 'flex';
@@ -152,31 +191,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update pagination buttons
     function updatePaginationButtons() {
         const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
-        
+
         // Update prev/next buttons
         prevPageBtn.disabled = currentPage === 1;
         nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
 
         // Update page numbers
         paginationNumbers.innerHTML = '';
-        
+
         const startPage = Math.max(1, currentPage - 2);
         const endPage = Math.min(totalPages, startPage + 4);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             const pageBtn = document.createElement('button');
             pageBtn.className = 'pagination-number';
             pageBtn.textContent = i;
-            
+
             if (i === currentPage) {
                 pageBtn.classList.add('active');
             }
-            
+
             pageBtn.addEventListener('click', () => {
                 currentPage = i;
                 updateTable();
             });
-            
+
             paginationNumbers.appendChild(pageBtn);
         }
     }
@@ -184,18 +223,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize sortable headers
     function initSortableHeaders() {
         const sortableHeaders = document.querySelectorAll('.sortable');
-        
+
         sortableHeaders.forEach(header => {
             header.addEventListener('click', () => {
                 const sortType = header.dataset.sort;
-                
+
                 if (sortColumn === sortType) {
                     sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
                 } else {
                     sortColumn = sortType;
                     sortDirection = 'asc';
                 }
-                
+
                 sortTransactions(sortType, sortDirection);
                 updateSortIcons(header, sortDirection);
             });
@@ -206,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function sortTransactions(column, direction) {
         filteredRows.sort((a, b) => {
             let aValue, bValue;
-            
+
             switch (column) {
                 case 'id':
                     aValue = a.querySelector('.transaction-id').textContent;
@@ -235,14 +274,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 default:
                     return 0;
             }
-            
+
             if (direction === 'asc') {
                 return aValue > bValue ? 1 : -1;
             } else {
                 return aValue < bValue ? 1 : -1;
             }
         });
-        
+
         updateTable();
     }
 
@@ -252,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.sortable').forEach(header => {
             header.classList.remove('sort-asc', 'sort-desc');
         });
-        
+
         // Set active sort icon
         activeHeader.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
     }
@@ -264,30 +303,30 @@ document.addEventListener('DOMContentLoaded', function() {
         typeFilter.value = '';
         dateFromFilter.value = '';
         dateToFilter.value = '';
-        
+
         filteredRows = Array.from(tableRows);
         currentPage = 1;
         sortColumn = null;
         sortDirection = 'asc';
-        
+
         // Reset sort icons
         document.querySelectorAll('.sortable').forEach(header => {
             header.classList.remove('sort-asc', 'sort-desc');
         });
-        
+
         updateTable();
     }
 
     // Export to Excel function
     function exportToExcel() {
         showLoading();
-        
+
         setTimeout(() => {
             // Prepare data for export
             const exportData = [];
             const headers = ['ID Giao dịch', 'Mã BĐS', 'Loại', 'Giá trị', 'Ngày giao dịch', 'Trạng thái'];
             exportData.push(headers);
-            
+
             filteredRows.forEach(row => {
                 const rowData = [
                     row.querySelector('.transaction-id').textContent,
@@ -299,12 +338,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 ];
                 exportData.push(rowData);
             });
-            
+
             // Create CSV content
-            const csvContent = exportData.map(row => 
+            const csvContent = exportData.map(row =>
                 row.map(cell => `"${cell}"`).join(',')
             ).join('\n');
-            
+
             // Create and download file
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -315,10 +354,13 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             hideLoading();
         }, 500);
     }
+
+    // Expose exportToExcel globally
+    window.exportToExcel = exportToExcel;
 
     // Event listeners
     searchInput.addEventListener('input', filterTransactions);
@@ -326,15 +368,15 @@ document.addEventListener('DOMContentLoaded', function() {
     typeFilter.addEventListener('change', filterTransactions);
     dateFromFilter.addEventListener('change', filterTransactions);
     dateToFilter.addEventListener('change', filterTransactions);
-    
+
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', clearFilters);
     }
-    
+
     if (exportExcelBtn) {
         exportExcelBtn.addEventListener('click', exportToExcel);
     }
-    
+
     // Pagination event listeners
     if (prevPageBtn) {
         prevPageBtn.addEventListener('click', () => {
@@ -344,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     if (nextPageBtn) {
         nextPageBtn.addEventListener('click', () => {
             const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
@@ -360,38 +402,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.closest('.btn-view')) {
             e.preventDefault();
             const transactionId = e.target.closest('tr').querySelector('.transaction-id').textContent;
-            viewTransactionDetails(transactionId);
+            viewTransaction(transactionId);
         }
-        
+
         if (e.target.closest('.btn-edit')) {
             e.preventDefault();
             const transactionId = e.target.closest('tr').querySelector('.transaction-id').textContent;
             editTransaction(transactionId);
         }
-        
+
         if (e.target.closest('.btn-docs')) {
             e.preventDefault();
             const transactionId = e.target.closest('tr').querySelector('.transaction-id').textContent;
-            manageDocuments(transactionId);
+            viewDocuments(transactionId);
         }
     });
 
-    // Transaction action functions (placeholder for now)
-    function viewTransactionDetails(transactionId) {
-        console.log('Viewing transaction:', transactionId);
-        // TODO: Implement modal or redirect to details page
-        alert(`Xem chi tiết giao dịch ${transactionId}`);
-    }
-
-    function editTransaction(transactionId) {
-        console.log('Editing transaction:', transactionId);
-        // TODO: Implement edit modal or redirect to edit page
-        alert(`Chỉnh sửa giao dịch ${transactionId}`);
-    }
-
-    function manageDocuments(transactionId) {
-        console.log('Managing documents for transaction:', transactionId);
-        // TODO: Implement document management modal
-        alert(`Quản lý tài liệu cho giao dịch ${transactionId}`);
-    }
+    // Make export function available globally
+    exportToExcelFunction = exportToExcel;
+    window.exportToExcel = exportToExcel;
 });

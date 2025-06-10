@@ -1,6 +1,6 @@
 @extends('_layout._layowner.app')
 
-@section('transactions')
+@section('transaction')
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-8">
@@ -215,7 +215,7 @@
                                         'Pending' => 'warning',
                                         'Cancelled' => 'danger',
                                     ][$transaction->TranStatus] ?? 'secondary';
-                                    
+
                                     $statusText = [
                                         'Paid' => 'Đã thanh toán',
                                         'Pending' => 'Chờ thanh toán',
