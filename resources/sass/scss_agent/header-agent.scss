@@ -59,6 +59,9 @@
 }
 
 .header-right {
+    .dropdown {
+        position: relative !important;
+    }
     .dropdown-menu {
         min-width: 140px;
         right: 0;
@@ -70,6 +73,18 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.12);
         font-size: 1rem;
         padding: 0.5rem 0;
+        z-index: 1050 !important;
+        position: absolute !important;
+        border: 1px solid rgba(0,0,0,.15) !important;
+        display: none;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.2s ease;
+    }
+    .dropdown-menu.show {
+        display: block !important;
+        opacity: 1;
+        transform: translateY(0);
     }
     .dropdown-item {
         color: #222;
@@ -81,6 +96,9 @@
             background: #f0f0f0;
             color: #3498db; // Blue accent for agent
         }
+    }
+    .dropdown {
+        position: relative !important;
     }
 }
 
@@ -181,7 +199,7 @@
     position: absolute !important;
     top: -5px !important;
     right: -5px !important;
-    background-color: #E74C3C !important; 
+    background-color: #E74C3C !important;
     color: white !important;
     border-radius: 50% !important;
     padding: 1px 5px !important;
@@ -229,4 +247,4 @@
         margin-top: 120px;
         padding: 12px 4px 4px 4px;
     }
-} 
+}

@@ -21,13 +21,13 @@
                 <span>19001881</span>
             </a>
         </div>
-        
+
         <div class="notification-icon-wrapper" style="position:relative;">
             <a href="#" class="notification-icon" aria-label="Thông báo" style="color:#4A4A4A; font-size:1.2rem; display:flex; padding:5px;" id="notificationBell">
                 <i class="bi bi-bell"></i>
                 <span class="notification-count" style="display: none; position:absolute; top:-5px; right:-5px; background:#E74C3C; color:white; border-radius:50%; padding:1px 5px; font-size:0.7rem; font-weight:bold;" id="notificationCount">0</span>
             </a>
-            
+
             <!-- Notification Popup -->
             <div class="notification-dropdown" id="notificationDropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 350px; max-height: 400px; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; overflow: hidden;">
                 <div class="notification-header" style="padding: 15px; border-bottom: 1px solid #eee; background: #f8f9fa;">
@@ -46,20 +46,22 @@
         </div>
 
         @if(Auth::check() && Auth::user()->Role === 'Agent')
-            <button class="user-greeting dropdown-toggle" type="button" id="dropdownUserMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                Xin chào, {{ Auth::user()->Name }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUserMenu">
-                <li><a class="dropdown-item" href="{{ route('agent.profile') }}"><i class="bi bi-person-circle me-2"></i>Thông Tin Cá Nhân</a></li>
-                <li><a class="dropdown-item" href="#"><i class="bi bi-key"></i>Đổi Mật Khẩu</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button class="dropdown-item" type="submit"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button>
-                    </form>
-                </li>
-            </ul>
+            <div class="dropdown">
+                <button class="user-greeting dropdown-toggle" type="button" id="dropdownUserMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                    Xin chào, {{ Auth::user()->Name }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUserMenu">
+                    <li><a class="dropdown-item" href="{{ route('agent.profile') }}"><i class="bi bi-person-circle me-2"></i>Thông Tin Cá Nhân</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-key"></i>Đổi Mật Khẩu</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button class="dropdown-item" type="submit"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
         @endif
     </div>
-</header> 
+</header>
