@@ -32,11 +32,21 @@ class Commission extends Model
         'TransactionID',
         'AgentID',
         'Amount',
-
         'Percentage', // Phần trăm hoa hồng
         'TypeCom', // Loại hoa hồng (ví dụ: 'sale', 'rent')
         'PaidDate', // Ngày thanh toán hoa hồng
         'StatusCommission', // Trạng thái hoa hồng (ví dụ: 'pending', 'success', 'Cancelled')
     ];
 
+
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'TransactionID', 'TransactionID');
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
 }

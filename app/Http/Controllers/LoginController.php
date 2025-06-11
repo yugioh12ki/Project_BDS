@@ -87,9 +87,10 @@ class LoginController extends Controller
             // Điều hướng theo vai trò
             return match ($user->Role) {
                 'Admin' => redirect()->route('admin.dashboard')->with('success', 'Đăng nhập thành công!'),
-                'Owner', 'Agent' => redirect()->route('home')->with('success', 'Đăng nhập thành công!'),
+                'Owner' => redirect()->route('owner.dashboard')->with('success', 'Đăng nhập thành công!'),
+                'Agent' => redirect()->route('agent.dashboard')->with('success', 'Đăng nhập thành công!'),
                 'Customer' => redirect()->route('home')->with('success', 'Đăng nhập thành công!'),
-                default => redirect()->route('login')->with('error', 'Vai trò tài khoản không hợp lệ'),
+                default => redirect()->route('login')->withErrors(['role' => 'Vai trò không hợp lệ.']),
             };
         }
 

@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Blade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,5 +27,18 @@ class AppServiceProvider extends ServiceProvider
 
         // Create documents directory
         Storage::makeDirectory('documents');
+        // Thêm blade directive để hiển thị tên bất động sản
+        Blade::directive('propertyTitle', function ($expression) {
+            return "<?php
+                \$propertyTitle = 'Không xác định';
+                if ($expression) {
+                    \$property = \\App\\Models\\Property::find($expression);
+                    if (\$property && \$property->Title) {
+                        \$propertyTitle = \$property->Title;
+                    }
+                }
+                echo \$propertyTitle;
+            ?>";
+        });
     }
 }

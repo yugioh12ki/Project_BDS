@@ -12,8 +12,9 @@ class Document extends Model
     protected $table = 'documents';
     protected $primaryKey = 'DocumentID';
 
-    public $incrementing = true;
+    public $incrementing = true; // DocumentID is auto-increment
     public $timestamps = false;
+    public $keyType = 'int'; // DocumentID is integer
 
 
     public function transaction()

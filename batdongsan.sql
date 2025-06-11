@@ -4,6 +4,7 @@
 --
 -- Host: 127.0.0.1:3306
 -- Generation Time: Jun 07, 2025 at 04:52 AM
+-- Generation Time: Jun 06, 2025 at 04:43 PM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -102,7 +103,7 @@ END$$
 DROP PROCEDURE IF EXISTS `sp_add_appointment`$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_add_appointment` (IN `p_PropertyID` VARCHAR(255), IN `p_AgentID` VARCHAR(255), IN `p_UserID` VARCHAR(255), IN `p_Title` VARCHAR(255), IN `p_Start` DATETIME, IN `p_End` DATETIME)   BEGIN
   DECLARE v_conflict INT;
-  
+
   SELECT COUNT(*) INTO v_conflict
   FROM appointments
   WHERE AgentID = p_AgentID
@@ -137,7 +138,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `update_property_id` (IN `propId` VA
     SET type_str = LPAD(CAST(newType AS CHAR), 2, '0');
     SET base_prefix = CONCAT(prefix, type_str, '0');
 
-    SELECT 
+    SELECT
         IFNULL(MAX(CAST(SUBSTRING(PropertyID, LENGTH(base_prefix) + 1) AS UNSIGNED)), 0)
     INTO max_number
     FROM properties
@@ -146,7 +147,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `update_property_id` (IN `propId` VA
     SET new_number = max_number + 1;
 
     UPDATE properties
-    SET 
+    SET
         PropertyID = CONCAT(base_prefix, new_number),
         TypePro = newTypePro,
         PropertyType = newType
@@ -680,14 +681,14 @@ DROP TRIGGER IF EXISTS `check_agent_property_limit`;
 DELIMITER $$
 CREATE TRIGGER `check_agent_property_limit` BEFORE UPDATE ON `properties` FOR EACH ROW BEGIN
     DECLARE active_count INT;
-    
+
     -- Chỉ kiểm tra khi AgentID được thay đổi và bất động sản ở trạng thái active
     IF (OLD.AgentID <> NEW.AgentID OR OLD.AgentID IS NULL) AND NEW.Status = 'active' THEN
         -- Đếm số lượng bất động sản active mà agent đang quản lý
-        SELECT COUNT(*) INTO active_count 
-        FROM properties 
+        SELECT COUNT(*) INTO active_count
+        FROM properties
         WHERE AgentID = NEW.AgentID AND Status = 'active';
-        
+
         -- Nếu agent đã quản lý từ 10 bất động sản trở lên, ngăn không cho update
         IF active_count >= 10 THEN
             SIGNAL SQLSTATE '45000'
@@ -701,14 +702,14 @@ DROP TRIGGER IF EXISTS `check_agent_property_limit_insert`;
 DELIMITER $$
 CREATE TRIGGER `check_agent_property_limit_insert` BEFORE INSERT ON `properties` FOR EACH ROW BEGIN
     DECLARE active_count INT;
-    
+
     -- Chỉ kiểm tra khi có AgentID và bất động sản ở trạng thái active
     IF NEW.AgentID IS NOT NULL AND NEW.Status = 'active' THEN
         -- Đếm số lượng bất động sản active mà agent đang quản lý
-        SELECT COUNT(*) INTO active_count 
-        FROM properties 
+        SELECT COUNT(*) INTO active_count
+        FROM properties
         WHERE AgentID = NEW.AgentID AND Status = 'active';
-        
+
         -- Nếu agent đã quản lý từ 10 bất động sản trở lên, ngăn không cho insert
         IF active_count >= 10 THEN
             SIGNAL SQLSTATE '45000'
@@ -752,7 +753,7 @@ CREATE TRIGGER `trg_generate_property_id` BEFORE INSERT ON `properties` FOR EACH
     SET base_prefix = prefix;
 
     -- Tìm số lớn nhất hiện tại có cùng prefix
-    SELECT 
+    SELECT
         IFNULL(MAX(CAST(SUBSTRING(PropertyID, 3) AS UNSIGNED)), 0)
     INTO max_number
     FROM properties
@@ -793,7 +794,7 @@ CREATE TRIGGER `trg_update_property_id` BEFORE UPDATE ON `properties` FOR EACH R
         END IF;
 
         -- Lấy số thứ tự lớn nhất theo prefix
-        SELECT 
+        SELECT
             IFNULL(MAX(CAST(SUBSTRING(PropertyID, 3) AS UNSIGNED)), 0)
         INTO max_number
         FROM properties

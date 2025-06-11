@@ -1,0 +1,41 @@
+.sidebar-slide {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100%;
+    background: #ffffff;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    padding: 20px 10px;
+    overflow-y: auto;
+}
+
+.sidebar-slide.active {
+    transform: translateX(0);
+}
+
+.dropdown-item-custom {
+    display: block;
+    padding: 10px 20px;
+    color: #333;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.dropdown-item-custom:hover {
+    background-color: #f0f0f0;
+}
+
+.dropdown-submenu-custom .submenu-custom {
+    display: none;
+    padding-left: 1.5rem;
+}
+
+.dropdown-submenu-custom.active .submenu-custom {
+    display: block;
+}
+
+/* (Đã tách toàn bộ CSS header-owner sang file riêng) */

@@ -86,4 +86,8 @@ class feedback extends Model
         return $this->belongsTo(profile_agent::class, 'AgentID', 'UserID')->with('user');
     }
 
+    // public function user_Agent()
+    // {
+    //     return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    // }
 }

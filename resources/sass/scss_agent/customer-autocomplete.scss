@@ -1,0 +1,234 @@
+
+.customer-dropdown {
+    position: absolute;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #0d6efd;
+    border-radius: 4px;
+    max-height: 350px; /* Tăng chiều cao tối đa */
+    overflow-y: auto;
+    z-index: 9999 !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2); /* Thay đổi shadow color */
+    top: 100%;
+    left: 0;
+    margin-top: 2px;
+    transition: all 0.3s ease-in-out;
+    display: none;
+    animation: dropdownFadeIn 0.3s ease-in-out, pulseDropdown 1.5s ease infinite; /* Animation khi xuất hiện */
+}
+
+/* Thêm đường viền nổi bật hơn khi dropdown hiển thị */
+.customer-dropdown:hover,
+.customer-dropdown:focus-within {
+    border-width: 2px;
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.4);
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation for initial dropdown appearance */
+@keyframes pulseDropdown {
+    0% { box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2); }
+    50% { box-shadow: 0 4px 15px rgba(13, 110, 253, 0.35); }
+    100% { box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2); }
+}
+
+/* Ensure dropdown appears above other elements */
+.position-relative {
+    position: relative;
+    z-index: 1030;
+}
+
+.customer-option {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border-bottom: 1px solid #f0f0f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.customer-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 0;
+    background-color: #0d6efd;
+    transition: height 0.2s ease-in-out;
+}
+
+.customer-option:hover::before {
+    height: 100%;
+}
+
+.dropdown-header {
+    font-weight: 600;
+    color: #0d6efd;
+    border-left: 3px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.dropdown-footer {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    color: #6c757d;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* Data preservation highlight animation */
+@keyframes dataPreservationPulse {
+    0% { box-shadow: none; }
+    50% { box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.25); }
+    100% { box-shadow: none; }
+}
+
+.preserved-data-highlight {
+    animation: dataPreservationPulse 1s ease-in-out;
+}
+
+.success-selection-highlight {
+    animation: successSelectionPulse 1s ease-in-out;
+    transition: all 0.3s ease;
+}
+
+@keyframes successSelectionPulse {
+    0% { background-color: #ffffff; }
+    50% { background-color: #d1e7dd; }
+    100% { background-color: #ffffff; }
+}
+
+.customer-option:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.customer-option:last-child {
+    border-bottom: none;
+}
+
+.customer-name {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 2px;
+}
+
+.customer-details {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Custom styling for selected customer info */
+#selectedCustomerInfo i {
+    opacity: 0.8;
+}
+
+#customerDetails {
+    margin-top: 5px;
+    font-size: 0.85rem;
+}
+
+#customerDetails span {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+/* Responsive styling */
+@media (max-width: 576px) {
+    .customer-dropdown {
+        max-height: 200px;
+    }
+    
+    .customer-option {
+        padding: 8px 12px;
+    }
+    
+    .customer-name {
+        font-size: 0.9rem;
+    }
+    
+    .customer-details {
+        font-size: 0.8rem;
+    }
+}
+
+/* Highlight effect for preserved data */
+.preserved-data-highlight {
+    animation: preservedDataPulse 1s ease;
+}
+
+@keyframes preservedDataPulse {
+    0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(25, 135, 84, 0.4); background-color: rgba(25, 135, 84, 0.05); }
+    100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+}
+
+/* Highlight effect for successful selection */
+.success-selection-highlight {
+    animation: successSelectionPulse 1s ease;
+}
+
+@keyframes successSelectionPulse {
+    0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(13, 110, 253, 0.4); background-color: rgba(13, 110, 253, 0.05); }
+    100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+}
+
+/* Styling for the header in dropdown */
+.customer-dropdown .p-2.bg-light {
+    font-weight: 600;
+    border-left: 3px solid #0d6efd;
+}
+
+/* Add styling for dropdown header and footer */
+.dropdown-header {
+    font-weight: 600;
+    color: #0d6efd;
+    border-left: 3px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.dropdown-footer {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-align: center;
+    padding: 8px;
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+}
+
+/* Styling for input when dropdown is active */
+.dropdown-active-input {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    background-color: #f8fbff; /* Very light blue background */
+    transition: all 0.3s ease;
+}
+
+/* Subtle animation to draw attention to the field */
+@keyframes focusPulse {
+    0% { box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+    50% { box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.4); }
+    100% { box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+}
+
+.dropdown-active-input:focus {
+    animation: focusPulse 1.5s infinite;
+}

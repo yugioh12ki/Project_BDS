@@ -5,19 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $table = 'user'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
     protected $primaryKey = 'UserID'; // Chỉ định khóa chính là 'UserID'
 
-    public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
-
-    public $incrementing = false; // Nếu khóa chính không phải là số nguyên tự động tăng
-
-    protected $keyType = 'string'; // Nếu khóa chính là chuỗi
+    public $timestamps = false; // Bảng không có created_at và updated_at
+    public $incrementing = false; // UserID là string không auto-increment
+    protected $keyType = 'string'; // UserID là string
 
     protected static function boot()
     {
@@ -189,6 +188,16 @@ class User extends Authenticatable
     public function getAuthPassword()
     {
         return $this->PasswordHash;
+    }
+
+    public function getAuthIdentifier()
+    {
+        return $this->UserID;
+    }
+
+    public function getAuthIdentifierName()
+    {
+        return 'UserID';
     }
 
     public function setPasswordAttribute($password)

@@ -9,13 +9,12 @@ class Property extends Model
 {
     use HasFactory;
 
-    protected $table = 'properties'; // Chỉ định tên bảng là 'user' nếu không phải 'users'
-    protected $primaryKey = 'PropertyID'; // Chỉ định khóa chính là 'id'
+    protected $table = 'properties'; // Chỉ định tên bảng
+    protected $primaryKey = 'PropertyID'; // Chỉ định khóa chính
 
-    public $timestamps = false; // Nếu bảng không có các trường created_at và updated_at
-    public $incrementing = false; // Nếu khóa chính không phải là số nguyên tự động tăng
-
-    protected $keyType = 'string'; // Nếu khóa chính là chuỗi
+    public $timestamps = false; // Bảng không có created_at và updated_at
+    public $incrementing = false; // PropertyID là string, không auto-increment
+    protected $keyType = 'string'; // PropertyID là string
 
     public function danhMuc()
     {
@@ -41,17 +40,22 @@ class Property extends Model
     {
         return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }
-    public function moigioi()
-    {
-        return $this->belongsTo(User::class, 'AgentID', 'UserID');
-    }
+    // public function moigioi()
+    // public function owner()
+    // {
+    //     return $this->belongsTo(User::class, 'OwnerID', 'UserID');
+    // }
+    // public function agent()
+    // {
+    //     return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    // }
     public function quantri()
     {
         return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
     }
 
     // === NEW RELATIONSHIPS - KHÔNG ẢNH HƯỞNG CODE CŨ ===
-    
+
     // Relationships mới với tên rõ ràng (dành cho code mới)
     public function owner()
     {
@@ -100,6 +104,21 @@ class Property extends Model
     }
 
 
+
+    // public function videos()
+    // {
+    //     return $this->hasMany(Video::class, 'PropertyID', 'PropertyID');
+    // }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class, 'PropertyID', 'PropertyID');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'ApprovedBy', 'UserID');
+    }
     protected $fillable = [
          'OwnerID',
          'AgentID',
