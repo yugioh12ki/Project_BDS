@@ -393,11 +393,12 @@ class OwnerController extends Controller
      */
     public function updateProfile(Request $request)
     {
-        $user = Auth::user();
+        $userId = Auth::id();
+        $user = User::findOrFail($userId);
 
         $validated = $request->validate([
             'Name' => 'required|string|max:255',
-            'PhoneNumber' => 'required|string|max:20',
+            'Phone' => 'required|string|max:20',
             'Email' => 'required|email|max:255|unique:user,Email,'.$user->UserID.',UserID',
             'Address' => 'nullable|string|max:255',
             'Avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -405,6 +406,11 @@ class OwnerController extends Controller
 
         // Xử lý upload avatar nếu có
         if ($request->hasFile('Avatar')) {
+            // Xóa avatar cũ nếu có
+            if ($user->Avatar && file_exists(public_path('images/avatars/' . $user->Avatar))) {
+                unlink(public_path('images/avatars/' . $user->Avatar));
+            }
+
             $avatar = $request->file('Avatar');
             $filename = time() . '.' . $avatar->getClientOriginalExtension();
             $avatar->move(public_path('images/avatars'), $filename);
@@ -412,10 +418,15 @@ class OwnerController extends Controller
         }
 
         $user->Name = $validated['Name'];
-        $user->Phone = $validated['PhoneNumber'];
+        $user->Phone = $validated['Phone'];
         $user->Email = $validated['Email'];
-        $user->Address = $validated['Address'];
-        $user->save();
+        $user->Address = $validated['Address'] ?? $user->Address;
+
+        $saved = $user->save();
+
+        if (!$saved) {
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi cập nhật thông tin']);
+        }
 
         return redirect()->route('owner.profile')->with('success', 'Cập nhật thông tin thành công!');
     }
@@ -433,20 +444,27 @@ class OwnerController extends Controller
      */
     public function changePassword(Request $request)
     {
-        $user = Auth::user();
+        $userId = Auth::id();
+        $user = User::findOrFail($userId);
 
         $validated = $request->validate([
             'current_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // Kiểm tra mật khẩu hiện tại
-        if (!Hash::check($validated['current_password'], $user->PasswordHash)) {
+        // Kiểm tra mật khẩu hiện tại (sử dụng MD5)
+        if (md5($validated['current_password']) !== $user->PasswordHash) {
             return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng']);
         }
 
-        $user->PasswordHash = Hash::make($validated['password']);
-        $user->save();
+        // Lưu mật khẩu mới (sử dụng MD5)
+        $user->PasswordHash = md5($validated['password']);
+
+        $saved = $user->save();
+
+        if (!$saved) {
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi đổi mật khẩu']);
+        }
 
         return redirect()->route('owner.profile')->with('success', 'Đổi mật khẩu thành công!');
     }

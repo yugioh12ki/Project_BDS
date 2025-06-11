@@ -407,15 +407,21 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Tổng giá trị
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Doanh thu thực tế
                                     </div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ number_format($transactions->sum('TotalPrice'), 0, ',', '.') }}₫
+                                        @php
+                                            $totalRevenue = 0;
+                                            foreach($transactions as $transaction) {
+                                                $totalRevenue += $transaction->detailTransaction->where('DTran_Status', 'Hoàn Thành')->sum('Price');
+                                            }
+                                        @endphp
+                                        {{ number_format($totalRevenue, 0, ',', '.') }}₫
                                     </div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-dollar-sign fa-2x text-info"></i>
+                                    <i class="fas fa-money-bill-wave fa-2x text-success"></i>
                                 </div>
                             </div>
                         </div>
@@ -451,9 +457,6 @@
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
                             </div>
-                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
-                                <i class="fas fa-plus me-1"></i>Thêm giao dịch
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -500,17 +503,13 @@
                         <table class="table table-hover mb-0" id="transactionsTable">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="border-0">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="selectAll">
-                                        </div>
-                                    </th>
                                     <th class="border-0">ID Giao dịch</th>
                                     <th class="border-0">Bất động sản</th>
                                     <th class="border-0">Khách hàng</th>
                                     <th class="border-0">Môi giới</th>
                                     <th class="border-0">Loại</th>
                                     <th class="border-0">Giá trị</th>
+
                                     <th class="border-0">Ngày GD</th>
                                     <th class="border-0">Trạng thái</th>
                                     <th class="border-0 text-center">Thao tác</th>
@@ -519,11 +518,6 @@
                             <tbody>
                                 @forelse($transactions as $transaction)
                                 <tr class="transaction-row" data-transaction-id="{{ $transaction->TransactionID }}">
-                                    <td onclick="event.stopPropagation();">
-                                        <div class="form-check">
-                                            <input class="form-check-input transaction-checkbox" type="checkbox" value="{{ $transaction->TransactionID }}">
-                                        </div>
-                                    </td>
                                     <td>
                                         <div class="fw-bold text-primary">{{ $transaction->TransactionID }}</div>
                                     </td>
@@ -578,6 +572,21 @@
                                             {{ number_format($transaction->TotalPrice, 0, ',', '.') }}₫
                                         </div>
                                     </td>
+                                    {{-- <td>
+                                        @php
+                                            $totalRevenue = $transaction->detailTransaction->where('DTran_Status', 'Hoàn Thành')->sum('Price');
+                                            $remainingAmount = $transaction->TotalPrice - $totalRevenue;
+                                        @endphp
+                                        <div class="fw-bold {{ $totalRevenue > 0 ? 'text-success' : 'text-muted' }}">
+                                            {{ number_format($totalRevenue, 0, ',', '.') }}₫
+                                        </div>
+                                        @if($remainingAmount > 0)
+                                            <small class="text-warning">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                Còn {{ number_format($remainingAmount, 0, ',', '.') }}₫
+                                            </small>
+                                        @endif
+                                    </td> --}}
                                     <td>
                                         <div>{{ date('d/m/Y', strtotime($transaction->TransactionDate)) }}</div>
                                         <small class="text-muted">{{ date('H:i', strtotime($transaction->TransactionDate)) }}</small>
@@ -617,13 +626,6 @@
                                                     title="Xem chi tiết">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            @if($transaction->TranStatus !== 'Paid')
-                                            <button type="button" class="btn btn-outline-success btn-sm"
-                                                    title="Thanh toán"
-                                                    onclick="processPayment({{ $transaction->TransactionID }})">
-                                                <i class="fas fa-credit-card"></i>
-                                            </button>
-                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -801,12 +803,8 @@
                                             </div>
                                             <h5 class="empty-title">Chưa có giao dịch</h5>
                                             <p class="empty-text text-muted">
-                                                Hiện tại chưa có giao dịch nào được tạo.<br>
-                                                Nhấn "Thêm giao dịch" để bắt đầu.
+                                                Hiện tại chưa có giao dịch nào được tạo trong hệ thống.
                                             </p>
-                                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
-                                                <i class="fas fa-plus me-2"></i>Thêm giao dịch đầu tiên
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -4699,3 +4697,272 @@ function showNotification(message, type = 'info') {
     }
 }
 </style>
+
+<!-- Transaction Search and Filter JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get filter elements
+    const searchInput = document.getElementById('transactionSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const dateFromFilter = document.getElementById('dateFrom');
+    const dateToFilter = document.getElementById('dateTo');
+    const refreshButton = document.getElementById('refreshTransactions');
+    const transactionTable = document.getElementById('transactionsTable');
+
+    // Only proceed if we're on the transactions tab and elements exist
+    if (!searchInput || !transactionTable) {
+        console.log('Transaction search elements not found, skipping initialization');
+        return;
+    }
+
+    console.log('🔍 Initializing transaction search functionality');
+
+    // Get all transaction rows (not including header)
+    function getTransactionRows() {
+        return transactionTable.querySelectorAll('tbody .transaction-row');
+    }
+
+    // Convert Vietnamese date format (DD/MM/YYYY) to Date object
+    function parseVietnameseDate(dateStr) {
+        if (!dateStr) return null;
+        const parts = dateStr.trim().split('/');
+        if (parts.length === 3) {
+            return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        }
+        return null;
+    }
+
+    // Main filter function
+    function filterTransactions() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const statusValue = statusFilter ? statusFilter.value : '';
+        const typeValue = typeFilter ? typeFilter.value : '';
+        const dateFrom = dateFromFilter ? dateFromFilter.value : '';
+        const dateTo = dateToFilter ? dateToFilter.value : '';
+
+        const transactionRows = getTransactionRows();
+        let visibleCount = 0;
+
+        console.log('Filtering with:', { searchTerm, statusValue, typeValue, dateFrom, dateTo });
+
+        transactionRows.forEach(row => {
+            try {
+                // Get text content from each column
+                const cells = row.querySelectorAll('td');
+                if (cells.length < 9) return; // Make sure we have enough columns
+
+                const transactionId = cells[0].textContent.toLowerCase().trim();
+                const propertyInfo = cells[1].textContent.toLowerCase().trim();
+                const customerInfo = cells[2].textContent.toLowerCase().trim();
+                const agentInfo = cells[3].textContent.toLowerCase().trim();
+                const typeInfo = cells[4].textContent.toLowerCase().trim();
+                const dateInfo = cells[6].textContent.trim(); // Date is in column 7 (index 6)
+                const statusInfo = cells[7].textContent.toLowerCase().trim(); // Status is in column 8 (index 7)
+
+                // Text search (search in ID, property, customer, agent)
+                const matchesSearch = searchTerm === '' ||
+                    transactionId.includes(searchTerm) ||
+                    propertyInfo.includes(searchTerm) ||
+                    customerInfo.includes(searchTerm) ||
+                    agentInfo.includes(searchTerm);
+
+                // Status filter
+                let matchesStatus = true;
+                if (statusValue && statusFilter) {
+                    switch(statusValue) {
+                        case 'Pending':
+                            matchesStatus = statusInfo.includes('đang xử lý') || statusInfo.includes('pending');
+                            break;
+                        case 'Completed':
+                            matchesStatus = statusInfo.includes('hoàn thành') || statusInfo.includes('completed');
+                            break;
+                        case 'Paid':
+                            matchesStatus = statusInfo.includes('đã thanh toán') || statusInfo.includes('paid');
+                            break;
+                        case 'Cancelled':
+                            matchesStatus = statusInfo.includes('đã hủy') || statusInfo.includes('cancelled');
+                            break;
+                        default:
+                            matchesStatus = true;
+                    }
+                }
+
+                // Type filter
+                let matchesType = true;
+                if (typeValue && typeFilter) {
+                    switch(typeValue) {
+                        case 'Sale':
+                            matchesType = typeInfo.includes('bán') || typeInfo.includes('sale');
+                            break;
+                        case 'Rent':
+                            matchesType = typeInfo.includes('cho thuê') || typeInfo.includes('rent');
+                            break;
+                        default:
+                            matchesType = true;
+                    }
+                }
+
+                // Date range filter
+                let matchesDateRange = true;
+                if (dateFrom || dateTo) {
+                    const rowDate = parseVietnameseDate(dateInfo.split('\n')[0]); // Get first line (date part)
+
+                    if (rowDate) {
+                        if (dateFrom) {
+                            const fromDate = new Date(dateFrom);
+                            if (rowDate < fromDate) matchesDateRange = false;
+                        }
+                        if (dateTo) {
+                            const toDate = new Date(dateTo);
+                            if (rowDate > toDate) matchesDateRange = false;
+                        }
+                    }
+                }
+
+                // Show/hide row based on all filters
+                const shouldShow = matchesSearch && matchesStatus && matchesType && matchesDateRange;
+
+                if (shouldShow) {
+                    row.style.display = '';
+                    visibleCount++;
+
+                    // Also ensure the expandable details row is hidden
+                    const detailsRow = row.nextElementSibling;
+                    if (detailsRow && detailsRow.classList.contains('transaction-details-row')) {
+                        detailsRow.style.display = 'none';
+                    }
+                } else {
+                    row.style.display = 'none';
+
+                    // Also hide the expandable details row
+                    const detailsRow = row.nextElementSibling;
+                    if (detailsRow && detailsRow.classList.contains('transaction-details-row')) {
+                        detailsRow.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error filtering row:', error);
+            }
+        });
+
+        // Update visible count in footer
+        updateVisibleCount(visibleCount);
+
+        // Show/hide empty state
+        toggleEmptyState(visibleCount === 0);
+
+        console.log(`Filtered results: ${visibleCount} visible transactions`);
+    }
+
+    // Update the visible count in the footer
+    function updateVisibleCount(count) {
+        const countElement = document.querySelector('.card-footer .text-muted');
+        if (countElement) {
+            countElement.textContent = `Hiển thị ${count} giao dịch`;
+        }
+    }
+
+    // Show/hide empty state message
+    function toggleEmptyState(show) {
+        const emptyRow = document.querySelector('tbody tr td[colspan]');
+        if (emptyRow) {
+            const emptyRowElement = emptyRow.closest('tr');
+            emptyRowElement.style.display = show ? '' : 'none';
+        }
+    }
+
+    // Clear all filters
+    function clearFilters() {
+        if (searchInput) searchInput.value = '';
+        if (statusFilter) statusFilter.value = '';
+        if (typeFilter) typeFilter.value = '';
+        if (dateFromFilter) dateFromFilter.value = '';
+        if (dateToFilter) dateToFilter.value = '';
+
+        // Show all rows
+        const transactionRows = getTransactionRows();
+        transactionRows.forEach(row => {
+            row.style.display = '';
+
+            // Hide any expanded details
+            const detailsRow = row.nextElementSibling;
+            if (detailsRow && detailsRow.classList.contains('transaction-details-row')) {
+                detailsRow.style.display = 'none';
+            }
+        });
+
+        updateVisibleCount(transactionRows.length);
+        toggleEmptyState(false);
+
+        console.log('All filters cleared');
+    }
+
+    // Add event listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            console.log('Search input changed:', this.value);
+            filterTransactions();
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            console.log('Status filter changed:', this.value);
+            filterTransactions();
+        });
+    }
+
+    if (typeFilter) {
+        typeFilter.addEventListener('change', function() {
+            console.log('Type filter changed:', this.value);
+            filterTransactions();
+        });
+    }
+
+    if (dateFromFilter) {
+        dateFromFilter.addEventListener('change', function() {
+            console.log('Date from changed:', this.value);
+            filterTransactions();
+        });
+    }
+
+    if (dateToFilter) {
+        dateToFilter.addEventListener('change', function() {
+            console.log('Date to changed:', this.value);
+            filterTransactions();
+        });
+    }
+
+    // Refresh button functionality
+    if (refreshButton) {
+        refreshButton.addEventListener('click', function() {
+            console.log('Refresh button clicked');
+            clearFilters();
+        });
+    }
+
+    // Add click functionality to expand/collapse transaction details
+    const transactionRows = getTransactionRows();
+    transactionRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't trigger if clicking on action buttons
+            if (e.target.closest('.btn') || e.target.closest('button')) {
+                return;
+            }
+
+            const detailsRow = row.nextElementSibling;
+            if (detailsRow && detailsRow.classList.contains('transaction-details-row')) {
+                const isVisible = detailsRow.style.display !== 'none';
+                detailsRow.style.display = isVisible ? 'none' : 'table-row';
+                console.log('Transaction details toggled for ID:', row.dataset.transactionId);
+            }
+        });
+
+        // Add hover effect for better UX
+        row.style.cursor = 'pointer';
+    });
+
+    console.log('✅ Transaction search functionality initialized successfully');
+});
+</script>
