@@ -71,12 +71,20 @@ Route::get('/chatbot/stats', function() {
 // Route để lấy các câu hỏi gợi ý từ FAQ
 Route::get('/chatbot/suggestions', [ChatbotController::class, 'getSuggestions']);
 
-// Protected routes (authentication required)
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+// Protected routes (authentication required) - Using custom simple token auth
+Route::prefix('v1')->middleware('simpleauth')->group(function () {
     // User profile routes
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // New enhanced profile and transaction routes
+    Route::get('/user/profile', [AuthController::class, 'getProfile']);
+    Route::put('/user/profile', [AuthController::class, 'updateUserProfile']);
+    Route::get('/user/transactions', [AuthController::class, 'getTransactions']);
+    Route::get('/user/transactions/{id}', [AuthController::class, 'getTransactionDetail']);
+    Route::get('/user/commissions', [AuthController::class, 'getCommissions']); // New commission API
+    Route::get('/user/statistics', [AuthController::class, 'getTransactionStatistics']);
 
     // Appointment routes
     Route::get('/appointments', [AppointmentController::class, 'index']);
