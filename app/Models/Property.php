@@ -40,6 +40,12 @@ class Property extends Model
     {
         return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }
+
+    public function moigioi()
+    {
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
+    }
+
     // public function moigioi()
     // public function owner()
     // {

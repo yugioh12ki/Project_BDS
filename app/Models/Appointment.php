@@ -18,11 +18,11 @@ class Appointment extends Model
     public $timestamps = false;
 
     // Fillable attributes
-    protected $fillable = [
-        'PropertyID', 'AgentID', 'CusID', 'OwnerID',
-        'TitleAppoint', 'DescAppoint', 'AppointmentDateStart', 
-        'AppointmentDateEnd', 'Status'
-    ];
+    // protected $fillable = [
+    //     'PropertyID', 'AgentID', 'CusID', 'OwnerID',
+    //     'TitleAppoint', 'DescAppoint', 'AppointmentDateStart',
+    //     'AppointmentDateEnd', 'Status'
+    // ];
 
     // Cast attributes
     protected $casts = [
@@ -104,10 +104,10 @@ class Appointment extends Model
     }
 
     //Mối quan hệ với bảng 'property'
-    public function property()
-    {
-        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
-    }
+    // public function property()
+    // {
+    //     return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
+    // }
 
     protected $fillable = [
         'AppointmentID',

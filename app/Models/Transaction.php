@@ -33,18 +33,24 @@ class Transaction extends Model
     }
     public function trans_owner()
     {
-        return $this->belongsTo(user::class, 'OwnerID', 'UserID');
+        return $this->belongsTo(User::class, 'OwnerID', 'UserID');
     }
     public function trans_agent()
     {
-        return $this->belongsTo(user::class, 'AgentID', 'UserID');
+        return $this->belongsTo(User::class, 'AgentID', 'UserID');
     }
     public function trans_cus()
     {
-        return $this->belongsTo(user::class, 'CusID', 'UserID');
+        return $this->belongsTo(User::class, 'CusID', 'UserID');
     }
 
     public function trans_property()
+    {
+        return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
+    }
+
+    // Alias for compatibility with existing code
+    public function property()
     {
         return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
     }
