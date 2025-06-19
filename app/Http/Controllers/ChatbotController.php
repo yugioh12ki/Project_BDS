@@ -920,16 +920,21 @@ class ChatbotController extends Controller
                 $faqs = json_decode($faqContent, true) ?? [];
             }
 
-            // Thêm FAQ mới
-            $newFAQ = [
-                'question' => $data['question'],
-                'answer' => $data['answer'],
-                'keywords' => $data['keywords'] ? explode(',', $data['keywords']) : [],
-                'created_at' => now()->toISOString(),
-                'updated_at' => now()->toISOString()
-            ];
+            // Tạo key cho FAQ mới
+            $newKey = 'key_custom_' . time();
 
-            $faqs[] = $newFAQ;
+            // Xử lý keywords thành array questions
+            $questions = [$data['question']];
+            if (!empty($data['keywords'])) {
+                $additionalQuestions = array_map('trim', explode(',', $data['keywords']));
+                $questions = array_merge($questions, $additionalQuestions);
+            }
+
+            // Thêm FAQ mới với format đúng
+            $faqs[$newKey] = [
+                'questions' => $questions,
+                'answer' => $data['answer']
+            ];
 
             // Lưu lại file
             file_put_contents($faqPath, json_encode($faqs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -937,7 +942,7 @@ class ChatbotController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'FAQ đã được thêm thành công',
-                'faq' => $newFAQ,
+                'faq' => $faqs[$newKey],
                 'total_faqs' => count($faqs)
             ]);
 

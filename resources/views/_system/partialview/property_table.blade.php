@@ -1284,11 +1284,7 @@ function showPropertyNotification(propertyId) {
                             <div class="col-md-6">
                                 <div class="info-card mb-3">
                                     <h6 class="info-card-title"><i class="fas fa-expand-arrows-alt me-2"></i>Diện tích</h6>
-                                    ${property.Area ? `
-                                    <div class="info-item">
-                                        <span class="info-label">Diện tích:</span>
-                                        <span class="info-value">${property.Area} m²</span>
-                                    </div>` : ''}
+
                                     ${property.HouseLength && property.HouseWidth ? `
                                     <div class="info-item">
                                         <span class="info-label">Diện tích nhà:</span>

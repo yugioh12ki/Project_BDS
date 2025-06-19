@@ -623,9 +623,11 @@ Thông tin công ty:
         if ($faqContext) {
             $basePrompt .= "\n\n=== KIẾN THỨC FAQ ===\n";
             foreach ($faqContext as $key => $faq) {
-                $basePrompt .= "\nChủ đề: " . str_replace('key_', '', $key) . "\n";
-                $basePrompt .= "Câu hỏi thường gặp: " . implode(', ', $faq['questions']) . "\n";
-                $basePrompt .= "Trả lời: " . $faq['answer'] . "\n";
+                if (is_array($faq) && isset($faq['questions']) && isset($faq['answer'])) {
+                    $basePrompt .= "\nChủ đề: " . str_replace('key_', '', $key) . "\n";
+                    $basePrompt .= "Câu hỏi thường gặp: " . implode(', ', $faq['questions']) . "\n";
+                    $basePrompt .= "Trả lời: " . $faq['answer'] . "\n";
+                }
             }
         }
 

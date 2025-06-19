@@ -27,8 +27,29 @@ use App\Http\Controllers\API\AppointmentController;
 // MOBILE APP API ROUTES
 // ========================
 
+// Test endpoint để kiểm tra kết nối từ mobile
+Route::get('/test', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'API connection successful',
+        'server_time' => now(),
+        'server_ip' => request()->server('SERVER_ADDR'),
+        'client_ip' => request()->ip()
+    ]);
+});
+
 // Public routes (no authentication required)
 Route::prefix('v1')->group(function () {
+    // Test endpoint trong v1
+    Route::get('/test', function () {
+        return response()->json([
+            'status' => 'success',
+            'message' => 'API v1 connection successful',
+            'version' => 'v1',
+            'server_time' => now()
+        ]);
+    });
+
     // Authentication routes
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);

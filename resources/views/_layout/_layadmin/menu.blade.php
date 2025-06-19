@@ -94,19 +94,23 @@
                 $pendingSaleCount = \App\Models\Property::where('TypePro', 'Sale')->where('Status', 'pending')->count();
               @endphp
               <a href="{{ route('admin.property.type.status', ['type' => 'sale']) }}?status=pending">
-                Cho bán
+                Mua Bán
                 @if($pendingSaleCount > 0)
                   <span class="badge bg-danger rounded-pill ms-2">{{ $pendingSaleCount }}</span>
                 @endif
               </a>
             </li>
-            <li>
-                <a href="{{ route('admin.property.create') }}">Tiếp nhận hồ sơ</a>
-            </li>
+
           </ul>
         </li>
         @endif
+        @if($userPosition !== 'Giám đốc')
+        <li>
+                <a href="{{ route('admin.property.create') }}"><i class="fas fa-plus"></i>Tiếp nhận hồ sơ</a>
+        </li>
+        @endif
 
+        {{-- Property Type Management - Always show --}}
         {{-- Transaction Management - Always show --}}
         <li><a href="{{ route('admin.transaction') }}"><i class="fas fa-file-contract"></i> <span>Hợp đồng giao dịch</span></a></li>
 

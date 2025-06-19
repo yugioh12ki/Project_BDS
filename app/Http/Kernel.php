@@ -68,6 +68,7 @@ class Kernel extends HttpKernel
 
         'checkRole' => \App\Http\Middleware\CheckRole::class,
         'checkFAQ' => \App\Http\Middleware\CheckFAQFile::class,
+        'simpleauth' => \App\Http\Middleware\SimpleTokenAuth::class,
 
     ];
 }
