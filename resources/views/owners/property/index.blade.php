@@ -25,7 +25,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card h-100 border-0 rounded-3 shadow-sm">
                 <div class="card-body d-flex align-items-center">
@@ -40,7 +40,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card h-100 border-0 rounded-3 shadow-sm">
                 <div class="card-body d-flex align-items-center">
@@ -55,7 +55,7 @@
                 </div>
             </div>
         </div>
-        
+
     </div>
 
     @if(session('success'))
@@ -126,8 +126,8 @@
             <!-- Property List -->
             <div class="row property-list" id="propertyContainer">
                 @forelse($properties as $property)
-                    <div class="col-md-4 mb-4 property-item" 
-                         data-type="{{ $property->PropertyType }}" 
+                    <div class="col-md-4 mb-4 property-item"
+                         data-type="{{ $property->PropertyType }}"
                          data-status="{{ $property->TypePro }}"
                          data-title="{{ $property->Title }}"
                          data-address="{{ $property->Address }}">
@@ -137,17 +137,23 @@
                                 @php
                                     $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
                                     $firstImage = $property->images->first();
-                                    $imageUrl = $thumbnailImage ? $thumbnailImage->ImageURL : ($firstImage ? $firstImage->ImageURL : null);
+                                    $imageUrl = null;
+
+                                    if ($thumbnailImage) {
+                                        $imageUrl = \App\Helpers\ImageHelper::getImageUrl($thumbnailImage->ImagePath);
+                                    } elseif ($firstImage) {
+                                        $imageUrl = \App\Helpers\ImageHelper::getImageUrl($firstImage->ImagePath);
+                                    }
                                 @endphp
-                                
+
                                 @if($imageUrl)
-                                    <img src="{{ asset($imageUrl) }}" class="card-img-top rounded-top-4" alt="{{ $property->Title }}" style="height: 220px; object-fit: cover;">
+                                    <img src="{{ $imageUrl }}" class="card-img-top rounded-top-4" alt="{{ $property->Title }}" style="height: 220px; object-fit: cover;">
                                 @else
                                     <div class="bg-light d-flex align-items-center justify-content-center rounded-top-4" style="height: 220px;">
                                         <i class="bi bi-image text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
                                     </div>
                                 @endif
-                                
+
                                 <!-- Options Menu Button -->
                                 <div class="dropdown position-absolute top-0 end-0 m-3">
                                     <button class="btn btn-sm btn-light rounded-circle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -173,26 +179,26 @@
                                     </ul>
                                 </div>
                             </div>
-                            
+
                             <div class="card-body p-4">
                                 <!-- Property Type and Title -->
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h5 class="card-title mb-0 fw-bold text-truncate" style="max-width: 80%;">{{ $property->Title }}</h5>
                                 </div>
-                                
+
                                 <!-- Location -->
                                 <p class="card-text text-muted mb-3 text-truncate">
-                                    <i class="bi bi-geo-alt me-1"></i> 
+                                    <i class="bi bi-geo-alt me-1"></i>
                                     {{ $property->Address }}, {{ $property->Ward }}, {{ $property->District }}, {{ $property->Province }}
                                 </p>
-                                
+
                                 <!-- Property Type Badge -->
                                 <div class="mb-3">
                                     <span class="badge bg-light text-dark rounded-pill py-2 px-3 fw-normal">
                                         <i class="bi bi-building me-1"></i>
                                         {{ $property->danhMuc ? $property->danhMuc->ten_pro : 'Bất động sản' }}
                                     </span>
-                                    
+
                                     <span class="badge rounded-pill py-2 px-3 fw-normal ms-2
                                         @if($property->TypePro == 'Sale') bg-danger
                                         @elseif($property->TypePro == 'Rent') bg-primary
@@ -212,7 +218,7 @@
                                         @endif
                                     </span>
                                 </div>
-                                
+
                                 <!-- Property Features -->
                                 <div class="d-flex justify-content-between text-center mb-3 property-features-container">
                                     <div class="property-feature">
@@ -231,24 +237,24 @@
                                         <small class="text-muted">Phòng tắm</small>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Utility Prices -->
                                 @if($property->TypePro == 'Rent' || $property->TypePro == 'Rented')
                                 <div class="d-flex flex-wrap gap-2 mb-3">
                                     @if($property->chiTiet && $property->chiTiet->WaterPrice)
                                     <span class="badge bg-info text-dark">
-                                        <i class="bi bi-droplet-fill me-1"></i> Nước: 
+                                        <i class="bi bi-droplet-fill me-1"></i> Nước:
                                         {{ $property->chiTiet->WaterPrice }}
                                     </span>
                                     @endif
-                                    
+
                                     @if($property->chiTiet && $property->chiTiet->PowerPrice)
                                     <span class="badge bg-warning text-dark">
-                                        <i class="bi bi-lightning-fill me-1"></i> Điện: 
+                                        <i class="bi bi-lightning-fill me-1"></i> Điện:
                                         {{ $property->chiTiet->PowerPrice }}
                                     </span>
                                     @endif
-                                    
+
                                     @if($property->chiTiet && $property->chiTiet->Utilities)
                                     <span class="badge bg-secondary text-white">
                                         <i class="bi bi-tools me-1"></i> {{ $property->chiTiet->Utilities }}
@@ -256,7 +262,7 @@
                                     @endif
                                 </div>
                                 @endif
-                                
+
                                 <!-- Price Information -->
                                 <div class="d-flex justify-content-between align-items-center price-edit-container">
                                     @if($property->TypePro == 'Rent' || $property->TypePro == 'Rented')
@@ -268,7 +274,7 @@
                                             <h5 class="fw-bold mb-0 text-primary">{{ number_format($property->Price / 1000000000, 1) }} tỷ VNĐ</h5>
                                         </div>
                                     @endif
-                                    
+
                                     {{-- <div>
                                         <button class="btn btn-outline-primary edit-property" data-bs-toggle="modal" data-bs-target="#editPropertyModal" data-property-id="{{ $property->PropertyID }}">
                                             <i class="bi bi-pencil-square me-1"></i> Chỉnh sửa
@@ -373,7 +379,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
+
                                 <!-- Listing 2 -->
                                 <tr>
                                     <td>
@@ -408,7 +414,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
+
                                 <!-- Listing 3 -->
                                 <tr>
                                     <td>
@@ -443,7 +449,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
+
                                 <!-- Listing 4 -->
                                 <tr>
                                     <td>
@@ -478,7 +484,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
+
                                 <!-- Listing 5 -->
                                 <tr>
                                     <td>
@@ -513,7 +519,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                
+
                                 <!-- Listing 6 -->
                                 <tr>
                                     <td>

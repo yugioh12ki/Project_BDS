@@ -6,9 +6,9 @@
                 <li><a href="{{ route('home') }}">Trang chủ</a></li>
                 <li><a href="{{ route('properties.sale') }}">Mua</a></li>
                 <li><a href="{{ route('properties.rent') }}">Cho Thuê</a></li>
-                <li><a href="{{ route('customer.contact-agent') }}">Danh bạ</a></li>
                 @auth
                     @if(Auth::user()->Role == 'Customer')
+                        <li><a href="{{ route('customer.contact-agent') }}">Danh bạ</a></li>
                         <li>
                             <a href="{{ route('customer.appointments.index') }}" style="position: relative;">
                                 Lịch hẹn

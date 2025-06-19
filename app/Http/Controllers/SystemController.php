@@ -32,81 +32,110 @@ class SystemController extends Controller
     public function admin()
     {
         if (Auth::check()) {
-            // Get statistics
+            // Tính toán thống kê tổng quan
             $totalTransactions = Transaction::count();
-            $pendingTransactions = Transaction::where('TranStatus', 'Pending')->count();
-            $completedTransactions = Transaction::where('TranStatus', 'Paid')->count();
-            $canceledTransactions = Transaction::where('TranStatus', 'Cancel')->count();
-
             $totalProperties = Property::count();
             $totalCommissions = Commission::count();
-            $pendingCommissions = Commission::where('StatusCommission', 'Pending')->count();
+            $totalUsers = User::count();
+
+            // Thống kê giao dịch theo trạng thái
+            $paidTransactions = Transaction::where('TranStatus', 'Paid')->count();
+            $pendingTransactions = Transaction::where('TranStatus', 'Pending')->count();
+            $cancelledTransactions = Transaction::where('TranStatus', 'Cancelled')->count();
+
+            // Thống kê bất động sản theo trạng thái
+            $activeProperties = Property::where('Status', 'active')->count();
+            $pendingProperties = Property::where('Status', 'pending')->count();
+            $soldProperties = Property::where('Status', 'sold')->count();
+            $rentedProperties = Property::where('Status', 'rented')->count();
+            $rejectedProperties = Property::where('Status', 'rejected')->count();
+
+            // Thống kê hoa hồng
             $successCommissions = Commission::where('StatusCommission', 'Success')->count();
+            $pendingCommissions = Commission::where('StatusCommission', 'Pending')->count();
+            $cancelledCommissions = Commission::where('StatusCommission', 'Cancelled')->count();
 
-            // Calculate total commission amount
-            $totalCommissionAmount = Commission::sum('Amount');
+            // Thống kê người dùng theo vai trò
+            $totalAgents = User::where('Role', 'Agent')->count();
+            $totalOwners = User::where('Role', 'Owner')->count();
+            $totalCustomers = User::where('Role', 'Customer')->count();
+            $totalAdmins = User::where('Role', 'Admin')->count();
 
-            // Calculate average commission percentage
-            $avgCommissionPercentage = Commission::avg('Percentage');
+            // Thống kê doanh thu
+            $totalRevenue = Transaction::where('TranStatus', 'Paid')->sum('TotalPrice');
+            $totalCommissionAmount = Commission::where('StatusCommission', 'Success')->sum('Amount');
 
-            // Get top 5 agents by commission
-            $topAgents = DB::table('commission')
-                ->join('user', 'commission.AgentID', '=', 'user.UserID')
-                ->select('user.UserID', 'user.Name', DB::raw('SUM(commission.Amount) as totalAmount'))
-                ->groupBy('user.UserID', 'user.Name')
-                ->orderByDesc('totalAmount')
-                ->limit(5)
-                ->get();
+            // Thống kê cuộc hẹn
+            $totalAppointments = Appointment::count();
+            $completedAppointments = Appointment::where('Status', 'Hoàn Thành')->count();
+            $pendingAppointments = Appointment::where('Status', 'Khởi tạo')->count();
+            $inProgressAppointments = Appointment::where('Status', 'Đang Thực hiện')->count();
+            $cancelledAppointments = Appointment::where('Status', 'Hủy Hẹn')->count();
 
-            // Get recent transactions
-            $recentTransactions = Transaction::with(['trans_property', 'trans_agent', 'trans_owner', 'trans_cus'])
-                ->orderByDesc('TransactionDate')
-                ->limit(5)
-                ->get();
+            // Thống kê theo loại giao dịch
+            $rentTransactions = Transaction::where('TransactionType', 'Rent')->count();
+            $saleTransactions = Transaction::where('TransactionType', 'Sale')->count();
 
-            // Get monthly transaction statistics for current year
-            $currentYear = date('Y');
-            $monthlyStats = DB::table('transactions')
-                ->select(DB::raw('MONTH(TransactionDate) as month'), DB::raw('COUNT(*) as count'), DB::raw('SUM(TotalPrice) as total'))
-                ->whereYear('TransactionDate', $currentYear)
-                ->groupBy(DB::raw('MONTH(TransactionDate)'))
-                ->orderBy('month')
-                ->get();
+            // Thống kê doanh thu theo tháng (12 tháng gần đây)
+            $monthlyRevenue = [];
+            $monthlyTransactionCounts = [];
 
-            $monthlyData = array_fill(1, 12, ['count' => 0, 'total' => 0]);
-            foreach ($monthlyStats as $stat) {
-                $monthlyData[$stat->month] = ['count' => $stat->count, 'total' => $stat->total];
+            for ($i = 11; $i >= 0; $i--) {
+                $date = now()->subMonths($i);
+                $monthKey = $date->format('Y-m');
+
+                $revenue = Transaction::where('TranStatus', 'Paid')
+                    ->whereYear('TransactionDate', $date->year)
+                    ->whereMonth('TransactionDate', $date->month)
+                    ->sum('TotalPrice');
+
+                $count = Transaction::whereYear('TransactionDate', $date->year)
+                    ->whereMonth('TransactionDate', $date->month)
+                    ->count();
+
+                $monthlyRevenue[] = $revenue;
+                $monthlyTransactionCounts[] = $count;
             }
 
-            // Prepare data for charts
-            $transactionStatusLabels = ['Pending', 'Paid', 'Cancelled'];
-            $transactionStatusData = [$pendingTransactions, $completedTransactions, $canceledTransactions];
+            // Top agents by số lượng giao dịch
+            $topAgents = User::where('Role', 'Agent')
+                ->withCount(['trans_agent as transaction_count'])
+                ->orderBy('transaction_count', 'desc')
+                ->take(5)
+                ->get();
 
-            $commissionStatusLabels = ['Pending', 'Success', 'Cancelled'];
-            $commissionStatusData = [
-                $pendingCommissions,
-                $successCommissions,
-                Commission::where('StatusCommission', 'Cancel')->count()
-            ];
+            // Recent activities
+            $recentTransactions = Transaction::with(['trans_property', 'trans_agent', 'trans_cus', 'trans_owner'])
+                ->orderBy('TransactionDate', 'desc')
+                ->take(5)
+                ->get();
+
+            $recentProperties = Property::with(['chusohuu', 'danhMuc'])
+                ->orderBy('PostedDate', 'desc')
+                ->take(5)
+                ->get();
+
+            $recentCommissions = Commission::with(['comm_agent', 'comm_trans'])
+                ->orderBy('CommissionID', 'desc')
+                ->take(5)
+                ->get();
+
+            $recentAppointments = Appointment::with(['user_agent', 'user_customer', 'user_owner', 'property'])
+                ->orderBy('AppointmentDateStart', 'desc')
+                ->take(5)
+                ->get();
 
             return view('_system.index', compact(
-                'totalTransactions',
-                'pendingTransactions',
-                'completedTransactions',
-                'canceledTransactions',
-                'totalProperties',
-                'totalCommissions',
-                'pendingCommissions',
-                'successCommissions',
-                'totalCommissionAmount',
-                'avgCommissionPercentage',
-                'topAgents',
-                'recentTransactions',
-                'monthlyData',
-                'transactionStatusLabels',
-                'transactionStatusData',
-                'commissionStatusLabels',
-                'commissionStatusData'
+                'totalTransactions', 'totalProperties', 'totalCommissions', 'totalUsers',
+                'paidTransactions', 'pendingTransactions', 'cancelledTransactions',
+                'activeProperties', 'pendingProperties', 'soldProperties', 'rentedProperties', 'rejectedProperties',
+                'successCommissions', 'pendingCommissions', 'cancelledCommissions',
+                'totalAgents', 'totalOwners', 'totalCustomers', 'totalAdmins',
+                'totalRevenue', 'totalCommissionAmount',
+                'totalAppointments', 'completedAppointments', 'pendingAppointments', 'inProgressAppointments', 'cancelledAppointments',
+                'rentTransactions', 'saleTransactions',
+                'monthlyRevenue', 'monthlyTransactionCounts',
+                'topAgents', 'recentTransactions', 'recentProperties', 'recentCommissions', 'recentAppointments'
             ));
         } else {
             abort(403, 'Bạn không có quyền truy cập vào trang này.');
@@ -206,7 +235,7 @@ class SystemController extends Controller
         // Determine the role - use provided role or default to Customer
         $role = $validated['role'] ?? 'Customer';
 
-        $user = User::create([
+        $user = new User([
             'Name' => $validated['name'],
             'Email' => $validated['email'],
             'Birth' => $validated['birth'],
@@ -219,8 +248,11 @@ class SystemController extends Controller
             'Province' => $validated['province'],
             'Role' => $role,
             'StatusUser' => 'active',
-            'PasswordHash' => $validated['password'],
         ]);
+
+        // Sử dụng mutator để tự động mã hóa MD5
+        $user->PasswordHash = $validated['password']; // setPasswordAttribute sẽ tự động mã hóa MD5
+        $user->save();
 
         // Check if this is a redirect from property creation
         if ($request->has('redirect_to_property') && $role === 'Owner') {
@@ -272,6 +304,7 @@ class SystemController extends Controller
             'role' => 'required',
             'password' => 'required|min:6|max:30',
             'status' => 'required|in:active,inactive',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
         // Map lại tên trường cho đúng DB
@@ -290,9 +323,54 @@ class SystemController extends Controller
             'StatusUser' => $validated['status'],
         ];
 
+        // Handle avatar upload to avatars directory
+        if ($request->hasFile('avatar')) {
+            $avatar = $request->file('avatar');
+
+            // Validate avatar file
+            if (!$avatar->isValid()) {
+                return redirect()->back()->withErrors(['avatar' => 'Avatar file is not valid.'])->withInput();
+            }
+
+            // Ensure avatars directory exists
+            $avatarPath = public_path('storage/avatars');
+            if (!file_exists($avatarPath)) {
+                if (!mkdir($avatarPath, 0755, true)) {
+                    return redirect()->back()->withErrors(['avatar' => 'Cannot create avatars directory.'])->withInput();
+                }
+            }
+
+            // Check if directory is writable
+            if (!is_writable($avatarPath)) {
+                return redirect()->back()->withErrors(['avatar' => 'Avatars directory is not writable.'])->withInput();
+            }
+
+            // Generate unique filename - chỉ sử dụng số để tránh lỗi với tên tiếng Việt
+            $extension = $avatar->getClientOriginalExtension();
+            $avatarFileName = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+
+            // Delete old avatar if exists
+            if ($user->Avatar && file_exists(public_path('storage/avatars/' . $user->Avatar))) {
+                unlink(public_path('storage/avatars/' . $user->Avatar));
+            }
+
+            // Move the file with error handling
+            try {
+                if (!$avatar->move($avatarPath, $avatarFileName)) {
+                    throw new \Exception('Failed to move avatar file to destination.');
+                }
+                $data['Avatar'] = $avatarFileName; // Store only filename
+                Log::info("Avatar updated successfully: {$avatarFileName}");
+            } catch (\Exception $e) {
+                Log::error("Avatar upload failed: " . $e->getMessage());
+                return redirect()->back()->withErrors(['avatar' => 'The avatar failed to upload.'])->withInput();
+            }
+        }
+
         // Chỉ cập nhật password nếu có nhập password mới
         if (!empty($validated['password'])) {
-           $data['PasswordHash'] = $validated['password']; // MD5 sẽ được áp dụng tự động qua setPasswordAttribute
+           // Sử dụng mutator để tự động mã hóa MD5
+           $user->PasswordHash = $validated['password']; // setPasswordAttribute sẽ tự động mã hóa MD5
         }
 
         $user->update($data);
@@ -300,15 +378,156 @@ class SystemController extends Controller
         return redirect()->route('admin.users')->with('success', 'Người dùng đã được cập nhật thành công.');
     }
 
+    /**
+     * Update user with profile based on role
+     */
+    public function updateUserWithProfile(Request $request, $userId)
+    {
+        try {
+            $user = User::find($userId);
+            if (!$user) {
+                return redirect()->back()->withErrors(['error' => 'Người dùng không tồn tại.'])->withInput();
+            }
+
+            // Basic user validation
+            $rules = [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:user,Email,' . $userId . ',UserID',
+                'phone' => 'nullable|string|max:15',
+                'birth' => 'nullable|date',
+                'sex' => 'required|string|in:Nam,Nữ,Khác',
+                'identity_card' => 'required|string|max:12',
+                'address' => 'required|string|max:255',
+                'ward' => 'required|string|max:255',
+                'district' => 'required|string|max:255',
+                'province' => 'required|string|max:255',
+                'status' => 'required|in:active,inactive',
+                'password' => 'nullable|string|min:6|max:30', // Thêm validation cho password
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ];
+
+            // Role-specific validation
+            switch ($user->Role) {
+                case 'Admin':
+                    $rules['TenChucVu'] = 'nullable|string|in:Nhân viên,Quản trị viên,Giám đốc';
+                    break;
+                case 'Agent':
+                    $rules['Certificate'] = 'nullable|string';
+                    $rules['ContactAgent'] = 'nullable|string|max:15';
+                    $rules['NumberCardAgent'] = 'nullable|string';
+                    $rules['ProvinceAgent'] = 'nullable|string';
+                    $rules['DistrictAgent'] = 'nullable|string';
+                    break;
+                case 'Owner':
+                    $rules['ContactOwner'] = 'nullable|string|max:15';
+                    $rules['NumberCardOwner'] = 'nullable|string';
+                    $rules['GiayTo'] = 'nullable|string';
+                    break;
+                case 'Customer':
+                    $rules['Whitelist'] = 'nullable|string';
+                    $rules['PreferredPropertyType'] = 'nullable|string';
+                    break;
+            }
+
+            $validated = $request->validate($rules);
+
+            DB::beginTransaction();
+
+            // Handle avatar upload to avatars directory
+            $avatarFileName = $user->Avatar; // Keep existing avatar if no new upload
+            if ($request->hasFile('avatar')) {
+                $avatar = $request->file('avatar');
+
+                // Validate avatar file
+                if (!$avatar->isValid()) {
+                    throw new \Exception('Avatar file is not valid.');
+                }
+
+                // Ensure avatars directory exists
+                $avatarPath = public_path('storage/avatars');
+                if (!file_exists($avatarPath)) {
+                    if (!mkdir($avatarPath, 0755, true)) {
+                        throw new \Exception('Cannot create avatars directory: ' . $avatarPath);
+                    }
+                }
+
+                // Check if directory is writable
+                if (!is_writable($avatarPath)) {
+                    throw new \Exception('Avatars directory is not writable: ' . $avatarPath);
+                }
+
+                // Generate unique filename - chỉ sử dụng số để tránh lỗi với tên tiếng Việt
+                $extension = $avatar->getClientOriginalExtension();
+                $avatarFileName = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+
+                // Delete old avatar if exists
+                if ($user->Avatar && file_exists(public_path('storage/avatars/' . $user->Avatar))) {
+                    unlink(public_path('storage/avatars/' . $user->Avatar));
+                }
+
+                // Move the file with error handling
+                try {
+                    if (!$avatar->move($avatarPath, $avatarFileName)) {
+                        throw new \Exception('Failed to move avatar file to destination.');
+                    }
+                    Log::info("Avatar updated successfully: {$avatarFileName}");
+                } catch (\Exception $e) {
+                    Log::error("Avatar upload failed: " . $e->getMessage());
+                    throw new \Exception('The avatar failed to upload.');
+                }
+            }
+
+            // Update user basic info
+            $updateData = [
+                'Name' => $validated['name'],
+                'Email' => $validated['email'],
+                'Phone' => $validated['phone'] ?? null,
+                'Birth' => $validated['birth'] ?? null,
+                'Sex' => $validated['sex'],
+                'IdentityCard' => $validated['identity_card'],
+                'Address' => $validated['address'],
+                'Ward' => $validated['ward'],
+                'District' => $validated['district'],
+                'Province' => $validated['province'],
+                'StatusUser' => $validated['status'],
+                'Avatar' => $avatarFileName, // Store only filename
+            ];
+
+            // Chỉ cập nhật password nếu có nhập password mới
+            if (!empty($validated['password'])) {
+                // Sử dụng mutator để tự động mã hóa MD5
+                $user->PasswordHash = $validated['password']; // setPasswordAttribute sẽ tự động mã hóa MD5
+            }
+
+            $user->update($updateData);
+
+            // Update role-specific profile
+            $this->updateRoleProfile($user->UserID, $user->Role, $validated);
+
+            DB::commit();
+
+            return redirect()->route('admin.users')->with('success', 'Thông tin người dùng và profile đã được cập nhật thành công!');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error updating user with profile: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Có lỗi xảy ra khi cập nhật: ' . $e->getMessage()])->withInput();
+        }
+    }
+
     public function DeleteUser($id)
     {
-        // $user = User::find($id);
-        // if (!$user) {
-        //     return redirect()->back()->withErrors(['error' => 'Người dùng không tồn tại.'], 404);
-        // }
-        // $user->delete();
-
         try{
+            // Get user info before deletion to handle avatar cleanup
+            $user = User::find($id);
+            if ($user && $user->Avatar) {
+                $avatarPath = public_path('storage/avatars/' . $user->Avatar);
+                if (file_exists($avatarPath)) {
+                    unlink($avatarPath);
+                    Log::info("Avatar deleted: {$user->Avatar}");
+                }
+            }
+
             $result = DB::statement('CALL DeleteUser_Profile(?)', [$id]);
 
             if($result == 0)
@@ -322,7 +541,6 @@ class SystemController extends Controller
         {
             return redirect()->route('admin.users')->withErrors(['error' => 'Đã xảy ra lỗi: ' . $e->getMessage()]);
         }
-
     }
 
     /**
@@ -383,14 +601,47 @@ class SystemController extends Controller
 
             DB::beginTransaction();
 
-            // Handle avatar upload
-            $avatarPath = null;
+            // Handle avatar upload to avatars directory
+            $avatarFileName = null;
             if ($request->hasFile('avatar')) {
-                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+                $avatar = $request->file('avatar');
+
+                // Validate avatar file
+                if (!$avatar->isValid()) {
+                    throw new \Exception('Avatar file is not valid.');
+                }
+
+                // Ensure avatars directory exists
+                $avatarPath = public_path('storage/avatars');
+                if (!file_exists($avatarPath)) {
+                    if (!mkdir($avatarPath, 0755, true)) {
+                        throw new \Exception('Cannot create avatars directory: ' . $avatarPath);
+                    }
+                }
+
+                // Check if directory is writable
+                if (!is_writable($avatarPath)) {
+                    throw new \Exception('Avatars directory is not writable: ' . $avatarPath);
+                }
+
+                // Generate unique filename - chỉ sử dụng số để tránh lỗi với tên tiếng Việt
+                $extension = $avatar->getClientOriginalExtension();
+                $avatarFileName = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+
+                // Move the file with error handling
+                try {
+                    if (!$avatar->move($avatarPath, $avatarFileName)) {
+                        throw new \Exception('Failed to move avatar file to destination.');
+                    }
+                    Log::info("Avatar uploaded successfully: {$avatarFileName}");
+                } catch (\Exception $e) {
+                    Log::error("Avatar upload failed: " . $e->getMessage());
+                    throw new \Exception('The avatar failed to upload.');
+                }
             }
 
             // Create user
-            $user = User::create([
+            $user = new User([
                 'Name' => $validated['name'],
                 'Email' => $validated['email'],
                 'Phone' => $validated['phone'] ?? null,
@@ -403,9 +654,12 @@ class SystemController extends Controller
                 'Province' => $validated['province'] ?? null,
                 'Role' => $validated['role'],
                 'StatusUser' => 'active',
-                'PasswordHash' => $validated['password'], // MD5 sẽ được áp dụng tự động qua setPasswordAttribute
-                'Avatar' => $avatarPath,
+                'Avatar' => $avatarFileName, // Store only filename
             ]);
+
+            // Sử dụng mutator để tự động mã hóa MD5
+            $user->PasswordHash = $validated['password']; // setPasswordAttribute sẽ tự động mã hóa MD5
+            $user->save();
 
             // Update role-specific profile (profiles are auto-created by database triggers)
             $this->updateRoleProfile($user->UserID, $validated['role'], $validated);
@@ -1873,7 +2127,7 @@ class SystemController extends Controller
                 </div>
             </div>
 
-            <div class="print-footer" style="margin-top: 40px; text-align: center; border-top: 1px solid #ddd; padding-top: 20px;">
+            <div class="print-footer" style="margin-top: 40px; text-align: center; border-top: 1px solid #ddd; padding-top: 10px;">
                 <p style="color: #666; margin: 0; font-size: 0.9em;">
                     Tài liệu này được tạo từ hệ thống quản lý bất động sản<br>
                     Thời gian: ' . $currentDate . '
@@ -2919,6 +3173,7 @@ class SystemController extends Controller
             }
 
             $owners = User::where('Role', 'Owner')
+                ->where('StatusUser', 'active') // Chỉ tìm kiếm chủ sở hữu có tài khoản đang hoạt động
                 ->where(function($q) use ($query) {
                     $q->where('Name', 'LIKE', "%{$query}%")
                       ->orWhere('Phone', 'LIKE', "%{$query}%")
@@ -2943,12 +3198,13 @@ class SystemController extends Controller
     {
         try {
             $owner = User::where('Role', 'Owner')
+                ->where('StatusUser', 'active') // Chỉ lấy thông tin chủ sở hữu có tài khoản đang hoạt động
                 ->where('UserID', $id)
                 ->select('UserID', 'Name', 'Phone', 'Email', 'Address')
                 ->first();
 
             if (!$owner) {
-                return response()->json(['error' => 'Owner not found'], 404);
+                return response()->json(['error' => 'Owner not found or inactive'], 404);
             }
 
             return response()->json($owner);
@@ -3543,8 +3799,7 @@ class SystemController extends Controller
             $counter = 1;
             $finalFilename = $filename;
             while (file_exists($contractsPath . '/' . $finalFilename)) {
-                $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
-                $finalFilename = $nameWithoutExt . '_' . $counter . '.docx';
+                $finalFilename = $cleanName . '_' . $counter . '.docx';
                 $counter++;
             }
 
@@ -3836,5 +4091,116 @@ class SystemController extends Controller
 
         // Trả về view CŨ - view blade vẫn sử dụng relationships cũ ($property->chusohuu, $property->moigioi)
         return view('_system.property', compact('columns','properties','owners','agents','admins','categories', 'typePro'));
+    }
+
+    /**
+     * Get transaction statistics by period for charts
+     */
+    public function getTransactionStatsByPeriod(Request $request)
+    {
+        $period = $request->get('period', 'month');
+        $currentYear = date('Y');
+        $currentMonth = date('n');
+
+        $query = Transaction::query();
+
+        switch ($period) {
+            case 'month':
+                $query->whereMonth('TransactionDate', $currentMonth)
+                      ->whereYear('TransactionDate', $currentYear);
+                break;
+            case 'year':
+                $query->whereYear('TransactionDate', $currentYear);
+                break;
+        }
+
+        $stats = $query->selectRaw('
+                COUNT(CASE WHEN TransactionType = "Rent" THEN 1 END) as rent_count,
+                COUNT(CASE WHEN TransactionType = "Sale" THEN 1 END) as sale_count
+            ')->first();
+
+        return response()->json([
+            'rent_count' => $stats->rent_count ?? 0,
+            'sale_count' => $stats->sale_count ?? 0
+        ]);
+    }
+
+    /**
+     * Get commission statistics by period for charts
+     */
+    public function getCommissionStatsByPeriod(Request $request)
+    {
+        $period = $request->get('period', 'week');
+        $query = Commission::query();
+
+        switch ($period) {
+            case 'week':
+                $startOfWeek = now()->startOfWeek();
+                $endOfWeek = now()->endOfWeek();
+                $query->whereBetween('created_at', [$startOfWeek, $endOfWeek]);
+                break;
+            case 'month':
+                $query->whereMonth('created_at', date('n'))
+                      ->whereYear('created_at', date('Y'));
+                break;
+        }
+
+        $stats = $query->selectRaw('
+                COUNT(CASE WHEN StatusCommission = "Success" THEN 1 END) as success_count,
+                COUNT(CASE WHEN StatusCommission = "Pending" THEN 1 END) as pending_count,
+                COUNT(CASE WHEN StatusCommission = "Cancelled" THEN 1 END) as cancelled_count
+            ')->first();
+
+        return response()->json([
+            'success_count' => $stats->success_count ?? 0,
+            'pending_count' => $stats->pending_count ?? 0,
+            'cancelled_count' => $stats->cancelled_count ?? 0
+        ]);
+    }
+
+    /**
+     * Toggle user status between active and inactive
+     */
+    public function toggleUserStatus(Request $request, $userId)
+    {
+        try {
+            $user = User::find($userId);
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Người dùng không tồn tại.'
+                ], 404);
+            }
+
+            $validated = $request->validate([
+                'status' => 'required|in:active,inactive'
+            ]);
+
+            $oldStatus = $user->StatusUser;
+            $user->StatusUser = $validated['status'];
+            $user->save();
+
+            Log::info('User status toggled', [
+                'user_id' => $userId,
+                'old_status' => $oldStatus,
+                'new_status' => $validated['status'],
+                'changed_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Trạng thái tài khoản đã được cập nhật thành công.',
+                'old_status' => $oldStatus,
+                'new_status' => $validated['status']
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error toggling user status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi cập nhật trạng thái: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

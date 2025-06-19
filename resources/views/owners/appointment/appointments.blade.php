@@ -26,11 +26,11 @@
                             <div class="row">
                                 <div class="col-12">
                                     <div class="nav nav-tabs appointment-status-tabs" role="tablist" id="statusTabs">
-                                        <button type="button" class="nav-link active" data-filter="khoitao" id="btnKhoiTao" data-count="{{ $appointments->where('Status', 'Khởi Tạo')->count() }}">
-                                            Chờ Xác Nhận <span class="badge rounded-pill bg-warning text-dark">{{ $appointments->where('Status', 'Khởi Tạo')->count() }}</span>
+                                        <button type="button" class="nav-link active" data-filter="khoitao" id="btnKhoiTao" data-count="{{ $appointments->where('Status', 'Khởi tạo')->count() }}">
+                                            Chờ Xác Nhận <span class="badge rounded-pill bg-warning text-dark">{{ $appointments->where('Status', 'Khởi tạo')->count() }}</span>
                                         </button>
-                                        <button type="button" class="nav-link " data-filter="dangthuchien" id="btnDangThucHien" data-count="{{ $appointments->where('Status', 'Đang Thực Hiện')->count() }}">
-                                            Đang Thực Hiện <span class="badge rounded-pill bg-info text-white">{{ $appointments->where('Status', 'Đang Thực Hiện')->count() }}</span>
+                                        <button type="button" class="nav-link " data-filter="dangthuchien" id="btnDangThucHien" data-count="{{ $appointments->where('Status', 'Đang Thực hiện')->count() }}">
+                                            Đang Thực Hiện <span class="badge rounded-pill bg-info text-white">{{ $appointments->where('Status', 'Đang Thực hiện')->count() }}</span>
                                         </button>
                                         <button type="button" class="nav-link" data-filter="hoanthanh" id="btnHoanThanh" data-count="{{ $appointments->where('Status', 'Hoàn Thành')->count() }}">
                                             Đã Xác Nhận <span class="badge rounded-pill bg-success text-white">{{ $appointments->where('Status', 'Hoàn Thành')->count() }}</span>
@@ -66,8 +66,8 @@
                                     <tbody id="appointmentsTbody">
                                         @forelse($appointments as $appointment)
                                             <tr data-status="{{
-                                                $appointment->Status == 'Khởi Tạo' ? 'khoitao' :
-                                                ($appointment->Status == 'Đang Thực Hiện' ? 'dangthuchien' :
+                                                $appointment->Status == 'Khởi tạo' ? 'khoitao' :
+                                                ($appointment->Status == 'Đang Thực hiện' ? 'dangthuchien' :
                                                 ($appointment->Status == 'Hoàn Thành' ? 'hoanthanh' :
                                                 ($appointment->Status == 'Hủy Hẹn' ? 'huyhen' : 'unknown')))
                                             }}" data-appointment-status="{{ $appointment->Status }}" class="appointment-row">
@@ -131,9 +131,9 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    @if($appointment->Status == 'Khởi Tạo')
+                                                    @if($appointment->Status == 'Khởi tạo')
                                                         <span class="badge bg-warning text-dark">Chờ Xác Nhận</span>
-                                                    @elseif($appointment->Status == 'Đang Thực Hiện')
+                                                    @elseif($appointment->Status == 'Đang Thực hiện')
                                                         <span class="badge bg-info">Đang Thực Hiện</span>
                                                     @elseif($appointment->Status == 'Hoàn Thành')
                                                         <span class="badge bg-success">Hoàn Thành</span>
@@ -148,7 +148,7 @@
                                                         <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal" data-appointment-id="{{ $appointment->AppointmentID }}">
                                                             <i class="fa fa-eye"></i>
                                                         </button>
-                                                        @if($appointment->Status == 'Khởi Tạo')
+                                                        @if($appointment->Status == 'Khởi tạo')
                                                             <button class="btn btn-outline-success btn-sm"
                                                                onclick="confirmAppointment('{{ $appointment->AppointmentID ?? 'NULL' }}', '{{ $appointment->AgentID ?? 'NULL' }}')"
                                                                 title="Xác nhận lịch hẹn">
@@ -454,6 +454,103 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('Owner appointments debug script initialized successfully');
 });
+
+// Global functions for confirm and cancel appointments
+function confirmAppointment(appointmentId, agentId) {
+    if (!appointmentId || appointmentId == 0) {
+        alert('ID lịch hẹn không hợp lệ!');
+        return;
+    }
+    if (!confirm("Bạn có chắc chắn xác nhận lịch hẹn này?")) return;
+
+    const url = `/owner/appointments/${appointmentId}/confirm`;
+
+    // Show loading
+    const confirmBtn = document.querySelector(`[onclick*="confirmAppointment('${appointmentId}'"]`);
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            alert(data.message || 'Đã xác nhận lịch hẹn thành công');
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra khi xác nhận lịch hẹn');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi kết nối xảy ra. Vui lòng thử lại.');
+    })
+    .finally(() => {
+        // Restore button
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fa fa-check"></i>';
+        }
+    });
+}
+
+function cancelAppointment(appointmentId, agentId) {
+    if (!appointmentId || appointmentId == 0) {
+        alert('ID lịch hẹn không hợp lệ!');
+        return;
+    }
+    if (!confirm("Bạn có chắc chắn muốn hủy lịch hẹn này?")) return;
+
+    const url = `/owner/appointments/${appointmentId}/cancel`;
+
+    // Show loading
+    const cancelBtn = document.querySelector(`[onclick*="cancelAppointment('${appointmentId}'"]`);
+    if (cancelBtn) {
+        cancelBtn.disabled = true;
+        cancelBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            alert(data.message || 'Đã hủy lịch hẹn thành công');
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra khi hủy lịch hẹn');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi kết nối xảy ra. Vui lòng thử lại.');
+    })
+    .finally(() => {
+        // Restore button
+        if (cancelBtn) {
+            cancelBtn.disabled = false;
+            cancelBtn.innerHTML = '<i class="fa fa-times"></i>';
+        }
+    });
+}
 
 // Global error handler cho debugging
 window.addEventListener('error', function(event) {

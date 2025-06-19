@@ -145,4 +145,9 @@ class Property extends Model
         'ContactPhone',
         'ContactEmail',
     ];
+
+    protected $casts = [
+        'PostedDate' => 'datetime',
+        'ApprovedDate' => 'datetime',
+    ];
 }

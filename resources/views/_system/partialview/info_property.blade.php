@@ -229,17 +229,13 @@
         <div class="media-gallery">
           @foreach($property->images as $img)
             @php
-              // Xử lý đường dẫn hình ảnh
-              $imagePath = $img->ImagePath;
-              // Loại bỏ 'public/' hoặc '\public\' nếu có
-              $imagePath = preg_replace('/^(\\\\)?public(\\\\|\/)/', '', $imagePath);
-              // Thay thế dấu gạch chéo ngược bằng dấu gạch chéo
-              $imagePath = str_replace('\\', '/', $imagePath);
+              // Sử dụng ImageHelper để xử lý đường dẫn hình ảnh
+              $imageUrl = \App\Helpers\ImageHelper::getImageUrl($img->ImagePath);
             @endphp
-            <div class="media-item image-item" data-image="{{ asset('storage/' . $imagePath) }}">
-              <img src="{{ asset('storage/' . $imagePath) }}" alt="Hình ảnh BĐS" class="img-fluid">
+            <div class="media-item image-item" data-image="{{ $imageUrl }}">
+              <img src="{{ $imageUrl }}" alt="Hình ảnh BĐS" class="img-fluid">
               <div class="overlay">
-                <button type="button" class="btn-view view-image" data-src="{{ asset('storage/' . $imagePath) }}">
+                <button type="button" class="btn-view view-image" data-src="{{ $imageUrl }}">
                   <i class="fas fa-search-plus"></i>
                 </button>
               </div>

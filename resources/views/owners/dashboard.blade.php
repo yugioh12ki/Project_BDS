@@ -112,7 +112,7 @@
                                         <div class="col-4">
                                             @php
                                                 $image = $property->images->first();
-                                                $imageSrc = $image ? asset($image->ImagePath) : asset('images/default-property.jpg');
+                                                $imageSrc = $image ? \App\Helpers\ImageHelper::getImageUrl($image->ImagePath) : asset('images/default-property.jpg');
                                             @endphp
                                             <img src="{{ $imageSrc }}"
                                                  class="img-fluid rounded property-thumbnail"

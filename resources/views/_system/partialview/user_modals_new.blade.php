@@ -57,7 +57,7 @@
                         <div class="row">
                             <div class="col-md-3 text-center">
                                 @if($user->Avatar)
-                                    <img src="{{ asset('storage/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle mb-3" width="100" height="100">
+                                    <img src="{{ asset('storage/avatars/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle mb-3" width="100" height="100">
                                 @else
                                     <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 100px; height: 100px;">
                                         <span class="text-white fw-bold fs-1">{{ strtoupper(substr($user->Name, 0, 1)) }}</span>
@@ -341,7 +341,7 @@
                 </ul>
 
                 {{-- Form Content --}}
-                <form action="{{ route('admin.users.update', $user->UserID) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.users.updateWithProfile', $user->UserID) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -472,6 +472,19 @@
                                 </label>
                                 <input type="file" class="form-control" name="avatar" accept="image/*">
                                 <div class="form-text">Chấp nhận file ảnh: JPG, PNG, GIF (tối đa 2MB)</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-toggle-on text-primary me-2"></i>Trạng thái
+                                </label>
+                                <select class="form-select" name="status" required>
+                                    <option value="active" {{ $user->StatusUser == 'active' ? 'selected' : '' }}>
+                                        <i class="fas fa-check-circle text-success"></i> Hoạt động
+                                    </option>
+                                    <option value="inactive" {{ $user->StatusUser == 'inactive' ? 'selected' : '' }}>
+                                        <i class="fas fa-times-circle text-warning"></i> Không hoạt động
+                                    </option>
+                                </select>
                             </div>
                         </div>
 

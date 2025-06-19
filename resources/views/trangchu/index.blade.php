@@ -68,12 +68,11 @@
                                 // Sắp xếp ảnh theo ImageID tăng dần và lấy ảnh đầu tiên
                                 $sortedImages = $property->images->sortBy('ImageID');
                                 $mainImage = $sortedImages->first();
-                                $imageUrl = asset('storage/images/properties/' . $property->PropertyID . '/' . basename($mainImage->ImagePath));
-
+                                $imageUrl = \App\Helpers\ImageHelper::getImageUrl($mainImage->ImagePath);
                             @endphp
                             <img src="{{ $imageUrl }}" alt="{{ $property->Title }}" loading="lazy">
                         @else
-                            <img src="{{ asset('/storage/images/no-image.jpeg') }}" alt="{{ $property->Title }}" loading="lazy">
+                            <img src="{{ asset('storage/images/no-image.jpeg') }}" alt="{{ $property->Title }}" loading="lazy">
                         @endif
                         <div class="property-badge">Mới</div>
                         <div class="property-overlay">

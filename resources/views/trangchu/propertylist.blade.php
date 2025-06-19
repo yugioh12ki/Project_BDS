@@ -104,13 +104,12 @@
                                 // Sắp xếp ảnh theo ImageID tăng dần và lấy ảnh đầu tiên
                                 $sortedImages = $property->images->sortBy('ImageID');
                                 $mainImage = $sortedImages->first();
-                                // $imageUrl = 'public/storage/' . $mainImage->ImagePath;
-                                $imageUrl = asset('/storage') . '/' . $mainImage->ImagePath;
+                                $imageUrl = \App\Helpers\ImageHelper::getImageUrl($mainImage->ImagePath);
                             @endphp
 
                             <img src="{{ $imageUrl }}" alt="{{ $property->Title }}" loading="lazy">
                         @else
-                            <img src="{{ asset('/storage/images/no-image.jpeg') }}" alt="{{ $property->Title }}" loading="lazy">
+                            <img src="{{ asset('storage/images/no-image.jpeg') }}" alt="{{ $property->Title }}" loading="lazy">
                         @endif
 
                         <div class="property-badges">

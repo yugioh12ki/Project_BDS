@@ -697,26 +697,28 @@
                         </div>
 
                         <!-- Transaction Type Selection -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="fw-semibold mb-3">Loại giao dịch</h6>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="transaction-type-card" data-type="rent">
-                                            <div class="transaction-type-icon">
-                                                <i class="fas fa-home"></i>
+                        <div class="transaction-type-selection">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="fw-semibold mb-3">Loại giao dịch</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="transaction-type-card" data-type="rent">
+                                                <div class="transaction-type-icon">
+                                                    <i class="fas fa-home"></i>
+                                                </div>
+                                                <h6 class="fw-semibold">Cho Thuê</h6>
+                                                <p class="text-muted mb-0">Tạo hợp đồng cho thuê định kỳ</p>
                                             </div>
-                                            <h6 class="fw-semibold">Cho Thuê</h6>
-                                            <p class="text-muted mb-0">Tạo hợp đồng cho thuê định kỳ</p>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="transaction-type-card" data-type="sale">
-                                            <div class="transaction-type-icon">
-                                                <i class="fas fa-key"></i>
+                                        <div class="col-md-6">
+                                            <div class="transaction-type-card" data-type="sale">
+                                                <div class="transaction-type-icon">
+                                                    <i class="fas fa-key"></i>
+                                                </div>
+                                                <h6 class="fw-semibold">Bán</h6>
+                                                <p class="text-muted mb-0">Tạo hợp đồng mua bán</p>
                                             </div>
-                                            <h6 class="fw-semibold">Bán</h6>
-                                            <p class="text-muted mb-0">Tạo hợp đồng mua bán</p>
                                         </div>
                                     </div>
                                 </div>
@@ -829,12 +831,20 @@
                                 <!-- Rent-specific fields -->
                                 <div class="rent-transaction-fields d-none">
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Giá thuê hàng tháng</label>
+                                            <div class="alert alert-info mb-2">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <span id="monthlyRentDisplay">Chưa chọn bất động sản</span>
+                                            </div>
+                                            <small class="form-text text-muted">Giá được lấy từ thông tin bất động sản</small>
+                                        </div>
+                                        <div class="col-md-4">
                                             <label class="form-label">Số tháng thuê <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="rentMonths" min="1" placeholder="Nhập số tháng thuê">
-                                            <small class="form-text text-muted">Giá thuê sẽ được lấy từ thông tin bất động sản</small>
+                                            <small class="form-text text-muted">Tổng tiền = Giá tháng × Số tháng</small>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <label class="form-label">Ngày tạo giao dịch</label>
                                             <input type="date" class="form-control" id="transactionDate" value="{{ date('Y-m-d') }}">
                                             <small class="form-text text-muted">Tự động đặt ngày hôm nay ({{ date('d/m/Y') }})</small>
@@ -848,9 +858,10 @@
                                         <div class="col-md-6">
                                             <label class="form-label">Giá bán <span class="text-danger">*</span></label>
                                             <div class="input-group">
-                                                <input type="number" class="form-control" id="salePrice" placeholder="Nhập giá bán">
+                                                <input type="number" class="form-control" id="salePrice" placeholder="Giá sẽ được tự động điền từ BĐS">
                                                 <span class="input-group-text">VNĐ</span>
                                             </div>
+                                            <small class="form-text text-muted">Giá được tự động lấy từ bất động sản, có thể chỉnh sửa</small>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Ngày tạo giao dịch</label>
@@ -919,7 +930,7 @@
                             <div class="col-12">
                                 <p class="text-muted mb-4">Chọn phương thức thanh toán cho giao dịch:</p>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="payment-method" data-payment="cash">
                                             <div class="payment-icon">
                                                 <i class="fas fa-money-bill-wave"></i>
@@ -928,16 +939,28 @@
                                             <p class="text-muted mb-0">Thanh toán trực tiếp bằng tiền mặt</p>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="payment-method" data-payment="vnpay">
+                                    <div class="col-md-4">
+                                        <div class="payment-method" data-payment="bank">
                                             <div class="payment-icon">
-                                                <i class="fas fa-credit-card"></i>
+                                                <i class="fas fa-university"></i>
                                             </div>
-                                            <h6 class="fw-semibold">VNPAY</h6>
-                                            <p class="text-muted mb-0">Thanh toán online (Đang phát triển)</p>
+                                            <h6 class="fw-semibold">Chuyển Khoản</h6>
+                                            <p class="text-muted mb-0">Thanh toán qua ngân hàng</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="payment-method" data-payment="momo">
+                                            <div class="payment-icon">
+                                                <i class="fas fa-mobile-alt"></i>
+                                            </div>
+                                            <h6 class="fw-semibold">MoMo</h6>
+                                            <p class="text-muted mb-0">Thanh toán qua ví điện tử</p>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- First Payment Status (Hidden initially) -->
+                                <div id="firstPaymentStatus" class="d-none mt-3"></div>
 
                                 <div class="mt-4">
                                     <label class="form-label">Ghi Chú Thanh Toán</label>

@@ -2,7 +2,7 @@
 <div class="modal fade" id="viewTransactionModal" tabindex="-1" aria-labelledby="viewTransactionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header aqua-theme">
                 <h5 class="modal-title" id="viewTransactionModalLabel">
                     <i class="fas fa-eye me-2"></i>Chi tiết giao dịch
                 </h5>
@@ -125,7 +125,7 @@
 <div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header aqua-theme">
                 <h5 class="modal-title" id="editTransactionModalLabel">
                     <i class="fas fa-edit me-2"></i>Chỉnh sửa giao dịch
                 </h5>
@@ -214,7 +214,7 @@
 <div class="modal fade" id="documentsModal" tabindex="-1" aria-labelledby="documentsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header aqua-theme">
                 <h5 class="modal-title" id="documentsModalLabel">
                     <i class="fas fa-file-alt me-2"></i>Quản lý tài liệu giao dịch
                 </h5>

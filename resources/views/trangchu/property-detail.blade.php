@@ -113,74 +113,215 @@ body {
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 15px 40px var(--shadow-light);
+    /* Tăng kích thước gallery cho hiển thị tốt hơn */
+    max-width: 100%;
+    width: 100%;
 }
 
 .main-image {
     position: relative;
-    height: 500px;
+    height: 850px; /* Tăng từ 725px lên 850px (+17.2%) */
     overflow: hidden;
+    background: #000;
 }
 
-.main-image img {
+.main-image img,
+.main-image iframe,
+.main-image video {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
+    border: none;
 }
 
 .main-image:hover img {
     transform: scale(1.02);
 }
 
+/* Media Gallery Controls */
+.media-gallery-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.media-btn {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.media-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: translateY(-2px);
+}
+
 .thumbnail-list {
     display: flex;
-    gap: 12px;
-    padding: 20px;
+    gap: 18px;
+    padding: 30px;
     background: var(--white);
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: thin;
     scrollbar-color: var(--primary-gold) var(--cream);
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    /* Enhanced scrolling features for 10+ items */
+    scroll-snap-type: x mandatory;
+    scroll-padding: 30px;
+    /* Improve scroll performance */
+    transform: translateZ(0);
+    will-change: scroll-position;
+    /* Make sure content can scroll */
+    min-width: 100%;
+    width: 100%;
 }
 
 .thumbnail-list::-webkit-scrollbar {
-    height: 6px;
+    height: 12px; /* Increased for better usability */
 }
 
 .thumbnail-list::-webkit-scrollbar-track {
     background: var(--cream);
-    border-radius: 3px;
+    border-radius: 8px;
+    margin: 0 30px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .thumbnail-list::-webkit-scrollbar-thumb {
-    background: var(--primary-gold);
-    border-radius: 3px;
+    background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+    border-radius: 8px;
+    border: 2px solid var(--cream);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
 }
 
-.thumbnail {
-    min-width: 100px;
-    height: 80px;
-    border-radius: 12px;
-    overflow: hidden;
+.thumbnail-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--secondary-gold), var(--dark-brown));
+    transform: scaleY(1.2);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+/* Enhanced scrolling features for large thumbnail collections */
+.thumbnail-list::-webkit-scrollbar-corner {
+    background: var(--cream);
+}
+
+/* Scroll indicator shadows for visual feedback */
+.property-gallery {
+    position: relative;
+}
+
+.property-gallery::before,
+.property-gallery::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.property-gallery::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(255,255,255,0.9), transparent);
+}
+
+.property-gallery::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+}
+
+.property-gallery.has-scroll-left::before {
+    opacity: 1;
+}
+
+.property-gallery.has-scroll-right::after {
+    opacity: 1;
+}
+
+/* Thumbnail hover effects for better interactivity */
+.thumbnail:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px var(--shadow-light);
+    z-index: 5;
+}
+
+/* Thumbnail Navigation Buttons */
+.thumbnail-container {
+    position: relative;
+    background: var(--white);
+}
+
+.thumbnail-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--primary-gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 3px solid transparent;
+    z-index: 20;
+    font-size: 18px;
+    color: var(--primary-gold);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.thumbnail.active {
-    border-color: var(--primary-gold);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px var(--shadow-medium);
+.thumbnail-nav-btn:hover {
+    background: var(--primary-gold);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
-.thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.thumbnail-nav-btn.prev {
+    left: 15px;
 }
 
-.thumbnail:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px var(--shadow-light);
+.thumbnail-nav-btn.next {
+    right: 15px;
+}
+
+.thumbnail-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.thumbnail-nav-btn:disabled:hover {
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--primary-gold);
+}
+
+/* Hide navigation buttons when not needed */
+.thumbnail-nav-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Card Styles */
@@ -704,7 +845,61 @@ body {
     }
 
     .main-image {
-        height: 300px;
+        height: 500px; /* Tăng từ 422px lên 500px (+18.5%) */
+    }
+
+    .thumbnail-list {
+        gap: 15px; /* Increased from 13px for better spacing */
+        padding: 20px 18px; /* Better padding for mobile */
+        scroll-padding: 18px;
+        /* Enhanced mobile scrolling */
+        overscroll-behavior-x: contain;
+    }
+
+    .thumbnail-list::-webkit-scrollbar {
+        height: 8px; /* Smaller scrollbar for mobile */
+    }
+
+    .thumbnail {
+        min-width: 110px; /* Increased from 97px for better touch targets */
+        width: 110px;
+        height: 82px; /* Increased from 72px for better aspect ratio */
+        scroll-snap-align: center; /* Center alignment for mobile */
+    }
+
+    .media-gallery-controls {
+        top: 10px;
+        right: 10px;
+        gap: 5px;
+    }
+
+    .media-btn {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+
+    .video-play-overlay {
+        font-size: 1.5rem;
+    }
+
+    .media-type-badge {
+        padding: 2px 4px;
+        font-size: 0.6rem;
+    }
+
+    /* Mobile responsive navigation buttons */
+    .thumbnail-nav-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    .thumbnail-nav-btn.prev {
+        left: 10px;
+    }
+
+    .thumbnail-nav-btn.next {
+        right: 10px;
     }
 
     .detail-grid {
@@ -812,27 +1007,114 @@ body {
                         @endphp
                         <img src="{{ $imageUrl }}" alt="{{ $mainImage->Caption ?? $property->Title }}" id="mainImage">
                     @else
-                        <img src="{{ asset('storage/images/no-image.jpg') }}" alt="{{ $property->Title }}" id="mainImage">
+                        <img src="{{ asset('storage/images/no-image.jpeg') }}" alt="{{ $property->Title }}" id="mainImage">
                     @endif
+
+                    <!-- Media Gallery Controls -->
+                    <div class="media-gallery-controls">
+                        @if($property->images->count() > 1)
+                            <button class="media-btn images-btn" onclick="openImageGallery('{{ $property->PropertyID }}')">
+                                <i class="bi bi-images"></i>
+                                <span>{{ $property->images->count() }}</span>
+                            </button>
+                        @endif
+
+                        @if($property->videos->count() > 0)
+                            <button class="media-btn videos-btn" onclick="openVideoGallery('{{ $property->PropertyID }}')">
+                                <i class="bi bi-play-circle"></i>
+                                <span>{{ $property->videos->count() }}</span>
+                            </button>
+                        @endif
+                    </div>
                 </div>
 
-                <!-- Thumbnail gallery -->
-                <div class="thumbnail-list">
-                    @if($property->images->count() > 0)
-                        @foreach($property->images as $image)
-                            @php
-                                $thumbUrl = \App\Helpers\ImageHelper::getImageUrl($image->ImagePath);
-                            @endphp
-                            <div class="thumbnail {{ $loop->first ? 'active' : '' }}" onclick="changeImage('{{ $thumbUrl }}')">
-                                <img src="{{ $thumbUrl }}" alt="{{ $image->Caption ?? $property->Title }}">
+                <!-- Thumbnail gallery with videos -->
+                <div class="thumbnail-container">
+                    <!-- Navigation buttons -->
+                    <button class="thumbnail-nav-btn prev" id="thumbnailPrev" onclick="scrollThumbnails('left')">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button class="thumbnail-nav-btn next" id="thumbnailNext" onclick="scrollThumbnails('right')">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+
+                    <div class="thumbnail-list" id="thumbnailList">
+                    @php
+                        $mediaItems = collect();
+
+                        // Add images
+                        foreach($property->images as $image) {
+                            $mediaItems->push([
+                                'type' => 'image',
+                                'url' => \App\Helpers\ImageHelper::getImageUrl($image->ImagePath),
+                                'caption' => $image->Caption ?? $property->Title,
+                                'thumbnail' => \App\Helpers\ImageHelper::getImageUrl($image->ImagePath)
+                            ]);
+                        }
+
+                        // Add videos
+                        foreach($property->videos as $video) {
+                            $videoPath = $video->VideoPath;
+                            $isYoutube = strpos($videoPath, 'youtube.com') !== false || strpos($videoPath, 'youtu.be') !== false;
+
+                            if ($isYoutube) {
+                                // Extract YouTube video ID for thumbnail
+                                $videoId = '';
+                                if (strpos($videoPath, 'youtube.com/watch?v=') !== false) {
+                                    $videoId = substr($videoPath, strpos($videoPath, 'v=') + 2);
+                                    $videoId = explode('&', $videoId)[0];
+                                } elseif (strpos($videoPath, 'youtu.be/') !== false) {
+                                    $videoId = substr($videoPath, strpos($videoPath, 'youtu.be/') + 9);
+                                }
+
+                                $thumbnail = $videoId ? "https://img.youtube.com/vi/{$videoId}/mqdefault.jpg" : asset('storage/images/video-placeholder.jpg');
+                            } else {
+                                $thumbnail = asset('storage/images/video-placeholder.jpg');
+                            }
+
+                            $mediaItems->push([
+                                'type' => 'video',
+                                'url' => $videoPath,
+                                'caption' => $video->Caption ?? 'Video',
+                                'thumbnail' => $thumbnail,
+                                'is_youtube' => $isYoutube
+                            ]);
+                        }
+                    @endphp
+
+                    @if($mediaItems->count() > 0)
+                        @foreach($mediaItems as $index => $media)
+                            <div class="thumbnail media-thumbnail {{ $loop->first ? 'active' : '' }}"
+                                 data-type="{{ $media['type'] }}"
+                                 data-url="{{ $media['url'] }}"
+                                 data-youtube="{{ $media['is_youtube'] ?? false }}"
+                                 onclick="changeMedia('{{ $media['url'] }}', '{{ $media['type'] }}', {{ $media['is_youtube'] ?? 'false' }})">
+
+                                @if($media['type'] === 'video')
+                                    <div class="video-thumbnail-wrapper">
+                                        <img src="{{ $media['thumbnail'] }}" alt="{{ $media['caption'] }}" loading="lazy">
+                                        <div class="video-play-overlay">
+                                            <i class="bi bi-play-circle-fill"></i>
+                                        </div>
+                                        <div class="media-type-badge video">
+                                            <i class="bi bi-play-fill"></i>
+                                        </div>
+                                    </div>
+                                @else
+                                    <img src="{{ $media['thumbnail'] }}" alt="{{ $media['caption'] }}" loading="lazy">
+                                    <div class="media-type-badge image">
+                                        <i class="bi bi-image-fill"></i>
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     @else
-                        <!-- No images found, display placeholder -->
+                        <!-- No media found, display placeholder -->
                         <div class="thumbnail active">
-                            <img src="{{ asset('storage/images/no-image.jpg') }}" alt="{{ $property->Title }}">
+                            <img src="{{ asset('storage/images/no-image.jpeg') }}" alt="{{ $property->Title }}">
                         </div>
                     @endif
+                    </div>
                 </div>
             </div>
 
@@ -1345,7 +1627,7 @@ body {
                                     @endphp
                                     <img src="{{ $imageUrl }}" alt="{{ $relatedProperty->Title }}" loading="lazy">
                                 @else
-                                    <img src="{{ asset('storage/images/no-image.jpg') }}" alt="{{ $relatedProperty->Title }}" loading="lazy">
+                                    <img src="{{ asset('storage/images/no-image.jpeg') }}" alt="{{ $relatedProperty->Title }}" loading="lazy">
                                 @endif
 
                                 <!-- Property Type Badge -->
@@ -1450,34 +1732,254 @@ body {
         modal.show();
     }
 
-    // Enhanced image gallery functionality with smooth transitions
-    function changeImage(imgSrc) {
-        const mainImage = document.getElementById('mainImage');
+    // Thumbnail Navigation Functions
+    function scrollThumbnails(direction) {
+        const thumbnailList = document.getElementById('thumbnailList');
+        if (!thumbnailList) return;
+
+        const scrollAmount = 200; // Pixels to scroll
+        const currentScroll = thumbnailList.scrollLeft;
+
+        if (direction === 'left') {
+            thumbnailList.scrollTo({
+                left: currentScroll - scrollAmount,
+                behavior: 'smooth'
+            });
+        } else if (direction === 'right') {
+            thumbnailList.scrollTo({
+                left: currentScroll + scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        // Update button states after scrolling
+        setTimeout(() => updateNavButtons(), 100);
+    }
+
+    function updateNavButtons() {
+        const thumbnailList = document.getElementById('thumbnailList');
+        const prevBtn = document.getElementById('thumbnailPrev');
+        const nextBtn = document.getElementById('thumbnailNext');
+
+        if (!thumbnailList || !prevBtn || !nextBtn) return;
+
+        const { scrollLeft, scrollWidth, clientWidth } = thumbnailList;
+
+        // Check if we can scroll left
+        if (scrollLeft <= 0) {
+            prevBtn.disabled = true;
+            prevBtn.classList.add('hidden');
+        } else {
+            prevBtn.disabled = false;
+            prevBtn.classList.remove('hidden');
+        }
+
+        // Check if we can scroll right
+        if (scrollLeft >= scrollWidth - clientWidth - 1) {
+            nextBtn.disabled = true;
+            nextBtn.classList.add('hidden');
+        } else {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('hidden');
+        }
+    }
+
+    // Initialize navigation buttons on page load
+    function initThumbnailNavigation() {
+        const thumbnailList = document.getElementById('thumbnailList');
+        if (!thumbnailList) return;
+
+        // Update buttons on scroll
+        thumbnailList.addEventListener('scroll', updateNavButtons);
+
+        // Update buttons on window resize
+        window.addEventListener('resize', updateNavButtons);
+
+        // Check if navigation is needed
+        const needsNavigation = thumbnailList.scrollWidth > thumbnailList.clientWidth;
+        const navButtons = document.querySelectorAll('.thumbnail-nav-btn');
+
+        if (needsNavigation) {
+            navButtons.forEach(btn => btn.style.display = 'flex');
+        } else {
+            navButtons.forEach(btn => btn.style.display = 'none');
+        }
+
+        // Initial update
+        updateNavButtons();
+    }
+
+    // Enhanced media gallery functionality with smooth transitions for images and videos
+    function changeMedia(mediaSrc, mediaType, isYoutube = false) {
+        const mainImageContainer = document.querySelector('.main-image');
 
         // Add smooth fade effect
-        mainImage.style.transition = 'opacity 0.3s ease';
-        mainImage.style.opacity = '0.7';
+        mainImageContainer.style.transition = 'opacity 0.3s ease';
+        mainImageContainer.style.opacity = '0.7';
 
         setTimeout(() => {
-            mainImage.src = imgSrc;
-            mainImage.style.opacity = '1';
+            if (mediaType === 'video') {
+                if (isYoutube) {
+                    // Extract YouTube video ID for embedding
+                    let videoId = '';
+                    if (mediaSrc.includes('youtube.com/watch?v=')) {
+                        videoId = mediaSrc.split('v=')[1]?.split('&')[0];
+                    } else if (mediaSrc.includes('youtu.be/')) {
+                        videoId = mediaSrc.split('youtu.be/')[1]?.split('?')[0];
+                    }
+
+                    if (videoId) {
+                        mainImageContainer.innerHTML = `
+                            <iframe
+                                width="100%"
+                                height="100%"
+                                src="https://www.youtube.com/embed/${videoId}"
+                                frameborder="0"
+                                allowfullscreen
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            ></iframe>
+                        `;
+                    }
+                } else {
+                    // Direct video file
+                    mainImageContainer.innerHTML = `
+                        <video
+                            width="100%"
+                            height="100%"
+                            controls
+                            style="object-fit: cover;"
+                        >
+                            <source src="${mediaSrc}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    `;
+                }
+            } else {
+                // Display image
+                mainImageContainer.innerHTML = `
+                    <img src="${mediaSrc}" alt="Property Image" id="mainImage" style="width: 100%; height: 100%; object-fit: cover;">
+                `;
+            }
+
+            mainImageContainer.style.opacity = '1';
         }, 150);
 
-        // Update active thumbnail with enhanced styling
+        // Update active thumbnail with enhanced styling and smooth scrolling
         const thumbnails = document.querySelectorAll('.thumbnail');
+        const thumbnailList = document.querySelector('.thumbnail-list');
+
         thumbnails.forEach(thumbnail => {
             thumbnail.classList.remove('active');
-            const img = thumbnail.querySelector('img');
-            if (img && img.src === imgSrc) {
+            if (thumbnail.dataset.url === mediaSrc) {
                 thumbnail.classList.add('active');
+
+                // Smooth scroll to active thumbnail if it's not visible
+                if (thumbnailList && thumbnail) {
+                    const containerRect = thumbnailList.getBoundingClientRect();
+                    const thumbnailRect = thumbnail.getBoundingClientRect();
+
+                    // Check if thumbnail is outside visible area
+                    if (thumbnailRect.left < containerRect.left || thumbnailRect.right > containerRect.right) {
+                        thumbnail.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest',
+                            inline: 'center'
+                        });
+                    }
+                }
             }
         });
+    }
+
+    // Enhanced thumbnail navigation with keyboard support
+    function initThumbnailNavigation() {
+        const thumbnailList = document.querySelector('.thumbnail-list');
+        const thumbnails = document.querySelectorAll('.thumbnail');
+
+        if (!thumbnailList || thumbnails.length === 0) return;
+
+        // Add keyboard navigation
+        thumbnailList.addEventListener('keydown', function(e) {
+            const activeThumb = document.querySelector('.thumbnail.active');
+            if (!activeThumb) return;
+
+            let nextThumb = null;
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    nextThumb = activeThumb.previousElementSibling;
+                    break;
+                case 'ArrowRight':
+                    nextThumb = activeThumb.nextElementSibling;
+                    break;
+                case 'Home':
+                    nextThumb = thumbnails[0];
+                    break;
+                case 'End':
+                    nextThumb = thumbnails[thumbnails.length - 1];
+                    break;
+            }
+
+            if (nextThumb && nextThumb.classList.contains('thumbnail')) {
+                e.preventDefault();
+
+                nextThumb.click();
+                nextThumb.focus();
+            }
+        });
+
+        // Make thumbnails focusable for accessibility
+        thumbnails.forEach((thumb, index) => {
+            thumb.setAttribute('tabindex', index === 0 ? '0' : '-1');
+            thumb.setAttribute('role', 'button');
+            thumb.setAttribute('aria-label', `View ${thumb.dataset.type || 'media'} ${index + 1}`);
+        });
+    }
+
+    // Smooth scroll indicators for large thumbnail collections
+    function initScrollIndicators() {
+        const thumbnailList = document.querySelector('.thumbnail-list');
+        if (!thumbnailList) return;
+
+        function updateScrollIndicators() {
+            const { scrollLeft, scrollWidth, clientWidth } = thumbnailList;
+            const gallery = document.querySelector('.property-gallery');
+
+            if (gallery) {
+                // Show/hide left scroll indicator
+                if (scrollLeft > 10) {
+                    gallery.classList.add('has-scroll-left');
+                } else {
+                    gallery.classList.remove('has-scroll-left');
+                }
+
+                // Show/hide right scroll indicator
+                if (scrollLeft < scrollWidth - clientWidth - 10) {
+                    gallery.classList.add('has-scroll-right');
+                } else {
+                    gallery.classList.remove('has-scroll-right');
+                }
+            }
+        }
+
+        thumbnailList.addEventListener('scroll', updateScrollIndicators);
+        window.addEventListener('resize', updateScrollIndicators);
+        updateScrollIndicators(); // Initial call
+    }
+
+    // Legacy function for backward compatibility
+    function changeImage(imgSrc) {
+        changeMedia(imgSrc, 'image', false);
     }
 
     // Enhanced DOM loaded functionality
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize Leaflet Map
         initPropertyMap();
+
+        // Initialize enhanced thumbnail features
+        initThumbnailNavigation();
+        initScrollIndicators();
 
         // Smooth scroll reveal animation for cards
         const observerOptions = {
@@ -1571,6 +2073,10 @@ body {
                 console.log('Phone call initiated to:', this.href);
             });
         });
+
+        // Initialize thumbnail navigation and scrolling indicators
+        initThumbnailNavigation();
+        initScrollIndicators();
     });
 
     // Leaflet Map initialization
@@ -1787,6 +2293,197 @@ body {
             }, 300);
         }, 4000);
     }
+</script>
+
+<!-- Image Gallery Modal -->
+<div class="modal fade" id="imageGalleryModal" tabindex="-1" aria-labelledby="imageGalleryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageGalleryModalLabel">
+                    <i class="bi bi-images"></i> Gallery Hình Ảnh
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="imageGalleryContent" class="property-gallery">
+                    <!-- Images will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Gallery Modal -->
+<div class="modal fade" id="videoGalleryModal" tabindex="-1" aria-labelledby="videoGalleryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="videoGalleryModalLabel">
+                    <i class="bi bi-play-circle"></i> Gallery Video
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="videoGalleryContent" class="property-gallery">
+                    <!-- Videos will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Property data for galleries
+const propertyData = {
+    '{{ $property->PropertyID }}': {
+        images: [
+            @foreach($property->images as $img)
+            {
+                url: '{{ \App\Helpers\ImageHelper::getImageUrl($img->ImagePath) }}',
+                caption: '{{ $img->Caption ?? '' }}'
+            },
+            @endforeach
+        ],
+        videos: [
+            @foreach($property->videos as $video)
+            {
+                path: '{{ $video->VideoPath }}',
+                caption: '{{ $video->Caption ?? '' }}',
+                isYoutube: {{ strpos($video->VideoPath, 'youtube.com') !== false || strpos($video->VideoPath, 'youtu.be') !== false ? 'true' : 'false' }}
+            },
+            @endforeach
+        ]
+    }
+};
+
+// Open Image Gallery
+function openImageGallery(propertyId) {
+    const property = propertyData[propertyId];
+    if (!property || !property.images.length) return;
+
+    const gallery = document.getElementById('imageGalleryContent');
+    gallery.innerHTML = '';
+
+    property.images.forEach((image, index) => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.innerHTML = `
+            <img src="${image.url}" alt="Property Image ${index + 1}" class="gallery-image" onclick="openLightbox('${image.url}')">
+            ${image.caption ? `<div class="gallery-item-caption">${image.caption}</div>` : ''}
+        `;
+        gallery.appendChild(item);
+    });
+
+    const modal = new bootstrap.Modal(document.getElementById('imageGalleryModal'));
+    modal.show();
+}
+
+// Open Video Gallery
+function openVideoGallery(propertyId) {
+    const property = propertyData[propertyId];
+    if (!property || !property.videos.length) return;
+
+    const gallery = document.getElementById('videoGalleryContent');
+    gallery.innerHTML = '';
+
+    property.videos.forEach((video, index) => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+
+        let videoContent = '';
+        if (video.isYoutube) {
+            const videoId = getYouTubeVideoId(video.path);
+            videoContent = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+        } else if (video.path.includes('tiktok.com')) {
+            // TikTok video - show as link since embedding is complex
+            videoContent = `<div class="tiktok-video-placeholder">
+                <i class="bi bi-play-circle-fill" style="font-size: 3rem; color: #25f4ee;"></i>
+                <p class="mt-2">Video TikTok</p>
+                <a href="${video.path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-box-arrow-up-right"></i> Xem trên TikTok
+                </a>
+            </div>`;
+        } else {
+            // Other external video platforms or direct video URLs
+            videoContent = `<div class="external-video-placeholder">
+                <i class="bi bi-play-circle-fill" style="font-size: 3rem; color: #007bff;"></i>
+                <p class="mt-2">Video bên ngoài</p>
+                <a href="${video.path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-box-arrow-up-right"></i> Xem video
+                </a>
+            </div>`;
+        }
+
+        item.innerHTML = `
+            <div class="gallery-video">${videoContent}</div>
+            ${video.caption ? `<div class="gallery-item-caption">${video.caption}</div>` : ''}
+        `;
+        gallery.appendChild(item);
+    });
+
+    const modal = new bootstrap.Modal(document.getElementById('videoGalleryModal'));
+    modal.show();
+}
+
+// Extract YouTube video ID
+function getYouTubeVideoId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+// Lightbox functionality
+function openLightbox(imageSrc) {
+    const lightbox = document.getElementById('lightbox') || createLightbox();
+    const img = lightbox.querySelector('img');
+    img.src = imageSrc;
+    lightbox.style.display = 'block';
+}
+
+function createLightbox() {
+    const lightbox = document.createElement('div');
+    lightbox.id = 'lightbox';
+    lightbox.style.cssText = `
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.9);
+        cursor: pointer;
+    `;
+
+    lightbox.innerHTML = `
+        <img style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        ">
+        <span style="
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        ">&times;</span>
+    `;
+
+    lightbox.onclick = function() {
+        lightbox.style.display = 'none';
+    };
+
+    document.body.appendChild(lightbox);
+    return lightbox;
+}
 </script>
 
 <!-- Leaflet JavaScript -->

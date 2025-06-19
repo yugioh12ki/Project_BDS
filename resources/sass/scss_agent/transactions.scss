@@ -3,7 +3,7 @@
 // Page container and layout
 .transactions-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #00838f 0%, #004d40 100%);
     padding: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
@@ -12,14 +12,14 @@
         margin: 0 auto;
         background: white;
         border-radius: 15px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        box-shadow: 0 20px 60px rgba(0,131,143,0.2);
         overflow: hidden;
         min-height: calc(100vh - 40px);
     }
 
     // ===== HEADER STYLES =====
     .page-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00838f 0%, #006064 100%);
         color: white;
         padding: 30px;
         position: relative;
@@ -32,7 +32,24 @@
             right: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(178,235,242,0.2) 0%, transparent 70%);
+        }
+
+        &.aqua-theme {
+            background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+
+            .btn-primary {
+                background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+                color: #004d40;
+                border: 1px solid #00acc1;
+
+                &:hover {
+                    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+                    color: #006064;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(77, 208, 225, 0.4);
+                }
+            }
         }
 
         h2 {
@@ -85,6 +102,45 @@
         padding: 25px 30px;
         background: #f8f9fa;
         border-bottom: 1px solid #e9ecef;
+
+        &.aqua-theme {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            border-bottom: 3px solid #4dd0e1;
+
+            .search-box:focus {
+                border-color: #26c6da;
+                box-shadow: 0 0 0 0.2rem rgba(38, 198, 218, 0.25);
+            }
+
+            .filter-select:focus {
+                border-color: #26c6da;
+                box-shadow: 0 0 0 0.2rem rgba(38, 198, 218, 0.25);
+            }
+
+            .btn-clear-filters {
+                background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+                color: #004d40;
+                border: 1px solid #00acc1;
+
+                &:hover {
+                    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+                    color: white;
+                    transform: translateY(-2px);
+                }
+            }
+
+            .btn-export-excel {
+                background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+                color: white;
+                border: 1px solid #004d40;
+
+                &:hover {
+                    background: linear-gradient(135deg, #004d40 0%, #00251a 100%);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 77, 64, 0.4);
+                }
+            }
+        }
     }
 
     .filter-wrapper {
@@ -250,6 +306,33 @@
             }
         }
 
+        &.aqua-theme {
+            thead {
+                background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+                color: #004d40;
+
+                th:hover {
+                    background-color: rgba(0, 131, 143, 0.2);
+                }
+            }
+
+            tbody {
+                tr:nth-child(odd) {
+                    background: rgba(178, 235, 242, 0.1);
+                }
+
+                tr:nth-child(even) {
+                    background: rgba(77, 208, 225, 0.05);
+                }
+
+                tr:hover {
+                    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(77, 208, 225, 0.3);
+                }
+            }
+        }
+
         tbody {
             tr {
                 border-bottom: 1px solid #e9ecef;
@@ -268,7 +351,7 @@
                 font-size: 14px;
             }
         }
-    }
+
 
     .sort-icon {
         margin-left: 8px;
@@ -337,6 +420,19 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+
+        // Aqua Type Badge Styles
+        &.aqua-sale {
+            background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+            color: #004d40;
+            border: 1px solid #00acc1;
+        }
+
+        &.aqua-rent {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            color: #006064;
+            border: 1px solid #4dd0e1;
+        }
     }
 
     .transaction-value {
@@ -344,6 +440,13 @@
         color: #28a745;
         font-size: 16px;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+        // Aqua theme for transaction value
+        &.aqua-theme {
+            color: #00838f;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0, 131, 143, 0.1);
+        }
     }
 
     .transaction-date {
@@ -377,6 +480,25 @@
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
+        }
+
+        // Aqua Status Badge Styles
+        &.aqua-pending {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            color: #006064;
+            border: 1px solid #4dd0e1;
+        }
+
+        &.aqua-progress {
+            background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+            color: #004d40;
+            border: 1px solid #00acc1;
+        }
+
+        &.aqua-completed {
+            background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+            color: white;
+            border: 1px solid #004d40;
         }
     }
 
@@ -434,6 +556,45 @@
             &:hover {
                 background: #7b1fa2;
                 color: white;
+            }
+        }
+
+        // Aqua Action Button Styles
+        &.aqua-view {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            color: #006064;
+            border: 1px solid #4dd0e1;
+
+            &:hover {
+                background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+                color: #004d40;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(77, 208, 225, 0.4);
+            }
+        }
+
+        &.aqua-edit {
+            background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+            color: #004d40;
+            border: 1px solid #00acc1;
+
+            &:hover {
+                background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 131, 143, 0.4);
+            }
+        }
+
+        &.aqua-docs {
+            background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+            color: white;
+            border: 1px solid #004d40;
+
+            &:hover {
+                background: linear-gradient(135deg, #004d40 0%, #00251a 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 77, 64, 0.4);
             }
         }
     }
@@ -552,11 +713,11 @@
         .content-wrapper {
             margin: 0 20px;
         }
-        
+
         .table-container {
             padding: 20px;
         }
-        
+
         .transaction-table {
             font-size: 13px;
 
@@ -573,7 +734,7 @@
             margin: 0 10px;
             border-radius: 10px;
         }
-        
+
         .page-header {
             padding: 20px;
 
@@ -581,40 +742,40 @@
                 font-size: 24px;
             }
         }
-        
+
         .header-actions {
             flex-direction: column;
             gap: 20px;
             text-align: center;
         }
-        
+
         .filter-section {
             padding: 20px;
         }
-        
+
         .filter-wrapper {
             flex-direction: column;
             align-items: stretch;
         }
-        
+
         .search-input-container {
             min-width: auto;
         }
-        
+
         .date-filter {
             flex-direction: column;
         }
-        
+
         .filter-actions {
             margin-left: 0;
             justify-content: center;
         }
-        
+
         .table-container {
             padding: 15px;
             overflow-x: auto;
         }
-        
+
         .transaction-table {
             min-width: 800px;
             font-size: 12px;
@@ -623,28 +784,28 @@
                 padding: 10px 8px;
             }
         }
-        
+
         .property-details,
         .customer-details {
             max-width: 150px;
         }
-        
+
         .action-buttons {
             flex-direction: column;
             gap: 4px;
         }
-        
+
         .action-btn {
             font-size: 11px;
             padding: 4px 8px;
         }
-        
+
         .pagination-container {
             flex-direction: column;
             gap: 15px;
             text-align: center;
         }
-        
+
         .pagination-numbers {
             margin: 0;
         }
@@ -654,22 +815,22 @@
         .filter-wrapper {
             gap: 10px;
         }
-        
+
         .btn-clear-filters,
         .btn-export-excel {
             padding: 8px 16px;
             font-size: 12px;
         }
-        
+
         .transaction-table {
             min-width: 700px;
         }
-        
+
         .pagination-btn {
             padding: 8px 12px;
             font-size: 12px;
         }
-        
+
         .pagination-number {
             width: 32px;
             height: 32px;
@@ -751,12 +912,12 @@
         .action-buttons {
             display: none;
         }
-        
+
         .content-wrapper {
             box-shadow: none;
             border-radius: 0;
         }
-        
+
         .transaction-table {
             box-shadow: none;
 
@@ -765,5 +926,164 @@
                 color: #495057 !important;
             }
         }
+    }
+
+    // ===== AQUA THEME OVERRIDES =====
+
+    // Aqua Page Header
+    .page-header.aqua-theme {
+        background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+
+        &::before {
+            background: radial-gradient(circle, rgba(77, 208, 225, 0.1) 0%, transparent 70%);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+            color: #004d40;
+            border: 1px solid #00acc1;
+
+            &:hover {
+                background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+                color: #006064;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(77, 208, 225, 0.3);
+            }
+        }
+    }
+
+    // Aqua Filter Section
+    .filter-section.aqua-theme {
+        background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+        border-bottom: 3px solid #4dd0e1;
+
+        .search-box {
+            &:focus {
+                border-color: #26c6da;
+                box-shadow: 0 0 0 0.2rem rgba(38, 198, 218, 0.25);
+            }
+        }
+
+        .filter-select {
+            &:focus {
+                border-color: #26c6da;
+                box-shadow: 0 0 0 0.2rem rgba(38, 198, 218, 0.25);
+            }
+        }
+
+        .btn-clear-filters {
+            background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+            color: #004d40;
+            border: 1px solid #00acc1;
+
+            &:hover {
+                background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+                color: white;
+                transform: translateY(-1px);
+            }
+        }
+
+        .btn-export-excel {
+            background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+            color: white;
+            border: 1px solid #004d40;
+
+            &:hover {
+                background: linear-gradient(135deg, #004d40 0%, #00251a 100%);
+                transform: translateY(-2px);
+            }
+        }
+    }
+
+    // Aqua Table Theme
+    .transaction-table.aqua-theme {
+        thead {
+            background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+            color: #004d40;
+
+            th {
+                &:hover {
+                    background-color: rgba(0, 131, 143, 0.2);
+
+                    .sort-icon {
+                        opacity: 1;
+                        color: #00838f;
+                    }
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                &:nth-child(odd) {
+                    background: rgba(178, 235, 242, 0.1);
+                }
+
+                &:nth-child(even) {
+                    background: rgba(77, 208, 225, 0.05);
+                }
+
+                &:hover {
+                    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(77, 208, 225, 0.3);
+                }
+            }
+        }
+    }
+
+    // Aqua Loading Overlay
+    .loading-overlay.aqua-theme {
+        background: rgba(224, 247, 250, 0.9);
+
+        .spinner {
+            border-color: #b2ebf2;
+            border-top-color: #00838f;
+        }
+
+        p {
+            color: #006064;
+            font-weight: 500;
+        }
+    }
+
+    // Aqua Pagination
+    .pagination.aqua-theme {
+        .pagination-btn {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            color: #006064;
+            border: 1px solid #4dd0e1;
+
+            &:hover:not(:disabled) {
+                background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+                color: #004d40;
+                transform: translateX(-2px);
+            }
+
+            &:disabled {
+                background: #f5f5f5;
+                color: #bbb;
+                cursor: not-allowed;
+            }
+        }
+
+        .pagination-number {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            color: #006064;
+            border: 1px solid #4dd0e1;
+
+            &:hover {
+                background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+                color: #004d40;
+            }
+
+            &.active {
+                background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+                color: white;
+                border: 1px solid #004d40;
+                transform: scale(1.1);
+            }
+        }
+    }
     }
 }

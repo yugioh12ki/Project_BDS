@@ -49,13 +49,13 @@ class CustomerController extends Controller
         try {
             $user = Auth::user();
             Log::info('User is logged in', ['user' => $user]);
-            
+
             // Load customer profile with preferences
             $customerProfile = $user->profile_customer;
-            
+
             // Get property types for preferences dropdown
             $propertyTypes = DB::table('danhmuc_pro')->select('Protype_ID', 'ten_pro', 'Type')->get();
-            
+
             // Parse customer preferences if they exist
             $preferences = [
                 'preferred_property_types' => [],
@@ -68,13 +68,13 @@ class CustomerController extends Controller
                     'price_changes' => false
                 ]
             ];
-            
+
             if ($customerProfile) {
                 // Parse preferred property types
                 if ($customerProfile->PreferredPropertyType) {
                     $preferences['preferred_property_types'] = explode(',', $customerProfile->PreferredPropertyType);
                 }
-                
+
                 // Parse whitelist (contains other preferences)
                 if ($customerProfile->Whitelist) {
                     $whitelist = json_decode($customerProfile->Whitelist, true);
@@ -91,11 +91,11 @@ class CustomerController extends Controller
                     }
                 }
             }
-            
+
             Log::info('Profile data prepared', ['preferences' => $preferences, 'propertyTypes' => $propertyTypes]);
-            
+
             return view('_layout._layhome.profile', compact('propertyTypes', 'preferences'));
-            
+
         } catch (\Exception $e) {
             Log::error('Profile view error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json(['error' => $e->getMessage()], 500);
@@ -120,7 +120,7 @@ class CustomerController extends Controller
             'district' => ['nullable', 'string', 'max:100'],
             'ward' => ['nullable', 'string', 'max:100'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'], // 5MB max
-            
+
             // Customer preferences validation
             'preferred_property_types' => ['nullable', 'array'],
             'preferred_property_types.*' => ['nullable', 'string'],
@@ -155,19 +155,21 @@ class CustomerController extends Controller
             $avatarFileName = $user->Avatar; // Keep existing avatar if no new upload
             if ($request->hasFile('avatar')) {
                 $avatar = $request->file('avatar');
-                $avatarFileName = time() . '_' . uniqid() . '.' . $avatar->getClientOriginalExtension();
-                
+                // Generate unique filename - chỉ sử dụng số để tránh lỗi với tên tiếng Việt
+                $extension = $avatar->getClientOriginalExtension();
+                $avatarFileName = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+
                 // Create avatars directory if it doesn't exist
                 $avatarPath = public_path('storage/avatars');
                 if (!file_exists($avatarPath)) {
                     mkdir($avatarPath, 0755, true);
                 }
-                
+
                 // Delete old avatar if exists
                 if ($user->Avatar && file_exists(public_path('storage/avatars/' . $user->Avatar))) {
                     unlink(public_path('storage/avatars/' . $user->Avatar));
                 }
-                
+
                 $avatar->move($avatarPath, $avatarFileName);
             }
 
@@ -191,14 +193,14 @@ class CustomerController extends Controller
             if ($customerProfile) {
                 // Prepare preferences data
                 $preferences = [
-                    'preferred_property_types' => $request->preferred_property_types ? 
+                    'preferred_property_types' => $request->preferred_property_types ?
                         implode(',', $request->preferred_property_types) : null,
-                    'price_range' => ($request->price_range_min || $request->price_range_max) ? 
+                    'price_range' => ($request->price_range_min || $request->price_range_max) ?
                         json_encode([
                             'min' => $request->price_range_min,
                             'max' => $request->price_range_max
                         ]) : null,
-                    'area_range' => ($request->area_range_min || $request->area_range_max) ? 
+                    'area_range' => ($request->area_range_min || $request->area_range_max) ?
                         json_encode([
                             'min' => $request->area_range_min,
                             'max' => $request->area_range_max
@@ -225,7 +227,7 @@ class CustomerController extends Controller
             }
 
             return redirect()->route('customer.profile')->with('success', 'Thông tin cá nhân và sở thích đã được cập nhật thành công.');
-            
+
         } catch (\Exception $e) {
             Log::error('Error updating profile: ' . $e->getMessage());
             return back()->withInput()->with('error', 'Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.');
@@ -726,13 +728,44 @@ class CustomerController extends Controller
 
     private function processVnpayPayment($detailTransaction)
     {
-        // Logic xử lý thanh toán VNPay
-        // Tạm thời return success để demo
-        return response()->json([
-            'success' => true,
-            'redirect_url' => 'https://vnpay.vn/payment',
-            'message' => 'Đang chuyển hướng đến VNPay...'
-        ]);
+        try {
+            // Use PaymentController to process VNPay payment
+            $paymentController = new \App\Http\Controllers\PaymentController();
+
+            $request = new Request([
+                'transaction_id' => $detailTransaction->TransactionID,
+                'payment_type' => 'customer_payment',
+                'amount' => $detailTransaction->Price,
+                'payment_description' => "Thanh toán khách hàng - Giao dịch {$detailTransaction->TransactionID} - Kỳ {$detailTransaction->Num_Pay}"
+            ]);
+
+            $response = $paymentController->processTransactionPayment($request);
+
+            if ($response->getStatusCode() === 200) {
+                $data = json_decode($response->getContent(), true);
+
+                if ($data['success']) {
+                    return response()->json([
+                        'success' => true,
+                        'redirect_url' => $data['payment_url'],
+                        'message' => 'Đang chuyển hướng đến VNPAY...'
+                    ]);
+                }
+            }
+
+            // Fallback if PaymentController fails
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể tạo liên kết thanh toán VNPAY'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('VNPay payment error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xử lý thanh toán: ' . $e->getMessage()
+            ]);
+        }
     }
 
     public function transactionDetail($transactionId)

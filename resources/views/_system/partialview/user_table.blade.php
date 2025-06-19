@@ -78,7 +78,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             @if($user->Avatar)
-                                                <img src="{{ asset('storage/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
+                                                <img src="{{ asset('storage/avatars/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
                                             @else
                                                 <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
                                                     <span class="text-white fw-bold">{{ strtoupper(substr($user->Name, 0, 1)) }}</span>
@@ -198,7 +198,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             @if($user->Avatar)
-                                                <img src="{{ asset('storage/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle me-2 opacity-50" width="32" height="32">
+                                                <img src="{{ asset('storage/avatars/' . $user->Avatar) }}" alt="Avatar" class="rounded-circle me-2 opacity-50" width="32" height="32">
                                             @else
                                                 <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
                                                     <span class="text-white fw-bold">{{ strtoupper(substr($user->Name, 0, 1)) }}</span>
@@ -276,6 +276,39 @@
     @include('_system.partialview.user_modals_new', ['user' => $user])
 @endforeach
 
+{{-- Enhanced Confirmation Modal for User Status Toggle --}}
+<div class="modal fade" id="confirmStatusModal" tabindex="-1" aria-labelledby="confirmStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="confirmModalHeader">
+                <h5 class="modal-title" id="confirmStatusModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Xác nhận thay đổi trạng thái
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div id="confirmModalIcon" class="mb-3">
+                    <i class="fas fa-user-times fa-4x text-warning"></i>
+                </div>
+                <h5 id="confirmModalTitle">Xác nhận hành động</h5>
+                <p id="confirmModalMessage" class="text-muted mb-3"></p>
+                <div class="alert alert-warning" id="confirmModalWarning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span id="confirmModalWarningText">Hành động này có thể ảnh hưởng đến quyền truy cập của người dùng.</span>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Hủy bỏ
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmStatusAction">
+                    <i class="fas fa-check me-2"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 /* Enhanced User Management Styling for Better Readability - Improved Font Contrast */
 :root {
@@ -291,48 +324,127 @@
     --shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Enhanced Typography for Better Readability */
-body {
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: var(--dark-text);
-    line-height: 1.6;
+/* Enhanced Confirmation Modal Styling */
+#confirmStatusModal .modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    overflow: hidden;
 }
 
-/* Table Text Improvements */
-.table {
-    margin-bottom: 0;
-    color: var(--dark-text);
-    font-size: 0.95rem;
+#confirmStatusModal .modal-header {
+    border: none;
+    padding: 1.5rem 2rem 1rem;
+    border-radius: 15px 15px 0 0;
 }
 
-.table th {
-    background-color: var(--light-bg);
-    color: var(--dark-text);
-    font-weight: 700;
-    border-top: none;
-    border-bottom: 2px solid var(--border-color);
-    padding: 1rem 0.75rem;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+#confirmStatusModal .modal-body {
+    padding: 0 2rem 1.5rem;
 }
 
-.table td {
-    padding: 1rem 0.75rem;
-    vertical-align: middle;
-    border-top: 1px solid #f1f3f4;
-    font-weight: 500;
-    color: var(--dark-text);
+#confirmStatusModal .modal-footer {
+    border: none;
+    padding: 1rem 2rem 1.5rem;
 }
 
-.table tbody tr {
+#confirmModalIcon i {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+#confirmStatusModal .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    min-width: 120px;
     transition: all 0.3s ease;
 }
 
-.table tbody tr:hover {
-    background-color: rgba(52, 152, 219, 0.05);
+#confirmStatusModal .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+#confirmStatusModal .alert {
+    border: none;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* Loading state improvements */
+.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Enhanced button states */
+.btn.loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.btn.loading i.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Row transition improvements */
+tr[data-user-id] {
+    transition: all 0.3s ease;
+}
+
+tr[data-user-id]:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Status badge animations */
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+/* Enhanced empty state */
+.empty-state {
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Text Weight and Contrast Improvements */

@@ -95,7 +95,10 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 @if($property->images->first())
-                                                    <img src="{{ $property->images->first()->ImageURL }}"
+                                                    @php
+                                                        $imageUrl = \App\Helpers\ImageHelper::getImageUrl($property->images->first()->ImagePath);
+                                                    @endphp
+                                                    <img src="{{ $imageUrl }}"
                                                          alt="Property" class="rounded me-2"
                                                          style="width: 40px; height: 40px; object-fit: cover;">
                                                 @else

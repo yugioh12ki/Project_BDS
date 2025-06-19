@@ -12,6 +12,7 @@ use App\Http\Controllers\OwnerController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\SystemController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,15 @@ Route::prefix('password')->name('password.')->group(function () {
 
 // Chatbot API routes (public)
 Route::post('/api/chatbot', [ChatbotController::class, 'answerChatbot'])->name('chatbot.answer');
+
+// VNPAY Payment Routes (public - no auth needed for callbacks)
+Route::prefix('payment/vnpay')->name('payment.vnpay.')->group(function () {
+    Route::get('/return', [PaymentController::class, 'vnpayReturn'])->name('return');
+    Route::get('/return/transaction', [PaymentController::class, 'vnpayReturn'])->name('return.transaction');
+    Route::get('/return/commission', [PaymentController::class, 'vnpayReturn'])->name('return.commission');
+    Route::get('/return/customer', [PaymentController::class, 'vnpayReturn'])->name('return.customer');
+    Route::post('/ipn', [PaymentController::class, 'vnpayIPN'])->name('ipn');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -151,6 +161,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/transactions/commission/{id}', [OwnerController::class, 'updateCommissionStatus'])->name('transactions.commission.update');
         Route::post('/transactions/create-commission', [OwnerController::class, 'createCommission'])->name('transactions.create-commission');
         Route::post('/transactions/pay-commission', [OwnerController::class, 'payCommission'])->name('transactions.pay-commission');
+        Route::post('/transactions/process-vnpay-commission', [OwnerController::class, 'processVNPayCommission'])->name('transactions.process-vnpay-commission');
         Route::get('/transactions/commission-invoice/{id}', [OwnerController::class, 'commissionInvoice'])->name('transactions.commission-invoice');
         Route::get('/transactions/export', [OwnerController::class, 'exportTransactions'])->name('transactions.export');
         Route::get('/transactions/{id}/detail', [OwnerController::class, 'transactionDetail'])->name('transactions.detail');
@@ -202,6 +213,9 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/transactions/{id}/status', [AgentController::class, 'updateTransactionStatus'])->name('transactions.update-status');
         Route::get('/transactions/analytics/dashboard', [AgentController::class, 'getTransactionAnalytics'])->name('transactions.analytics');
 
+        // Customer search for transaction modal
+        Route::get('/search-customers', [AgentController::class, 'searchCustomers'])->name('search.customers');
+
         // Contract templates
         Route::get('/contract-templates', [AgentController::class, 'getContractTemplates'])->name('contract.templates');
         Route::get('/contract-templates/{id}/download', [AgentController::class, 'downloadContractTemplate'])->name('contract.templates.download');
@@ -221,9 +235,11 @@ Route::middleware(['auth'])->group(function () {
 
         // Search functions
         Route::get('/search-owners', [AgentController::class, 'searchOwners'])->name('search.owners');
-        Route::get('/search-customers', [AgentController::class, 'searchCustomers'])->name('search.customers');
         Route::get('/search-properties', [AgentController::class, 'searchProperties'])->name('search.properties');
         Route::get('/api/customers', [AgentController::class, 'getAvailableCustomers'])->name('api.customers.available');
+
+        // VNPAY Payment Routes
+        Route::post('/process-vnpay-payment', [AgentController::class, 'processVNPayPayment'])->name('process.vnpay.payment');
 
         // Profile
         Route::get('/profile', [AgentController::class, 'profile'])->name('profile');
@@ -276,6 +292,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/user/role/{role}/search', [SystemController::class, 'SearchUser'])->name('users.search');
         Route::post('/users/{userId}/toggle-status', [SystemController::class, 'toggleUserStatus'])->name('users.toggleStatus');
         Route::get('/users/search', [SystemController::class, 'searchUsers'])->name('users.search.enhanced');
+
+        // Enhanced user management with profiles
         Route::post('/users/create-with-profile', [SystemController::class, 'createUserWithProfile'])->name('users.createWithProfile');
         Route::put('/users/{userId}/update-with-profile', [SystemController::class, 'updateUserWithProfile'])->name('users.updateWithProfile');
         Route::put('/users/{userId}/profile/{role}', [SystemController::class, 'updateRoleProfile'])->name('users.updateRoleProfile');
@@ -342,6 +360,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Dashboard analytics
         Route::get('/dashboard/monthly-stats', [SystemController::class, 'getMonthlyStats'])->name('dashboard.monthlyStats');
+        Route::get('/dashboard/transaction-stats', [SystemController::class, 'getTransactionStatsByPeriod'])->name('dashboard.transactionStats');
+        Route::get('/dashboard/commission-stats', [SystemController::class, 'getCommissionStatsByPeriod'])->name('dashboard.commissionStats');
 
         // Owner search
         Route::get('/owners/search', [SystemController::class, 'searchOwners'])->name('owners.search');

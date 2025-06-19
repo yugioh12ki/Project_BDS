@@ -20,9 +20,13 @@ class detail_transaction extends Model
 
     protected $fillable = [
         'TransactionID',
-        'Num_Pay',
+        // Don't include Num_Pay - trigger auto-increments
+        // Don't include DTran_Date - trigger sets to NOW()
+        // For rent: don't include Price - trigger calculates from property.Price * RentMonth
+        // For sale: Price is manually set
         'Price',
-        'DTran_Date',
+        'RentMonth',
+        'InstallPayment',
         'PaymentType',
         'DTran_Status'
     ];

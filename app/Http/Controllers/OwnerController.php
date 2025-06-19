@@ -139,7 +139,7 @@ class OwnerController extends Controller
         }
 
         Appointment::where('OwnerID', $owner->UserID)
-            ->where('Status', 'Đang Thực Hiện')
+            ->where('Status', 'Đang Thực hiện')
             ->where('AppointmentDateEnd', '<=', now())
             ->update(['Status' => 'Hoàn Thành']);
 
@@ -149,7 +149,7 @@ class OwnerController extends Controller
             ->get();
 
         $upcomingAppointments = $appointments->filter(function ($a) {
-            return in_array($a->Status, ['Khởi Tạo', 'Đang Thực Hiện'])
+            return in_array($a->Status, ['Khởi tạo', 'Đang Thực hiện'])
                 && Carbon::parse($a->AppointmentDateStart)->isAfter(now());
         })->sortBy('AppointmentDateStart');
 
@@ -163,29 +163,17 @@ class OwnerController extends Controller
         $newStatus = $request->status;
 
         $request->validate([
-            'status' => 'required|string|in:Đang Thực Hiện,Hủy Hẹn'
+            'status' => 'required|string|in:Đang Thực hiện,Hủy Hẹn'
         ]);
 
-        if ($appointment->OwnerID !== Auth::id() || $appointment->Status !== 'Khởi Tạo') {
+        if ($appointment->OwnerID !== Auth::id() || $appointment->Status !== 'Khởi tạo') {
             return redirect()->back()->with('error', 'Bạn không có quyền cập nhật lịch hẹn này');
         }
 
         $appointment->Status = $newStatus;
         $appointment->save();
 
-        // Gửi thông báo cho agent (người môi giới)
-        if ($appointment->agentUser) {
-            $appointment->agentUser->notify(
-                new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus, $appointment->ownerUser ? $appointment->ownerUser->Name : null)
-            );
-        }
-
-        // Gửi thông báo cho khách hàng (nếu muốn)
-        if ($appointment->cusUser) {
-            $appointment->cusUser->notify(
-                new \App\Notifications\AppointmentStatusChanged($appointment, $oldStatus, $newStatus, $appointment->ownerUser ? $appointment->ownerUser->Name : null)
-            );
-        }
+        // Note: Notifications are handled manually, not through Laravel notification system
 
         return redirect()->back()->with('success', 'Cập nhật trạng thái lịch hẹn thành công');
     }
@@ -407,13 +395,22 @@ class OwnerController extends Controller
         // Xử lý upload avatar nếu có
         if ($request->hasFile('Avatar')) {
             // Xóa avatar cũ nếu có
-            if ($user->Avatar && file_exists(public_path('images/avatars/' . $user->Avatar))) {
-                unlink(public_path('images/avatars/' . $user->Avatar));
+            if ($user->Avatar && file_exists(public_path('storage/avatars/' . $user->Avatar))) {
+                unlink(public_path('storage/avatars/' . $user->Avatar));
             }
 
             $avatar = $request->file('Avatar');
-            $filename = time() . '.' . $avatar->getClientOriginalExtension();
-            $avatar->move(public_path('images/avatars'), $filename);
+            // Generate unique filename - chỉ sử dụng số để tránh lỗi với tên tiếng Việt
+            $extension = $avatar->getClientOriginalExtension();
+            $filename = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+
+            // Ensure avatars directory exists
+            $avatarPath = public_path('storage/avatars');
+            if (!file_exists($avatarPath)) {
+                mkdir($avatarPath, 0755, true);
+            }
+
+            $avatar->move($avatarPath, $filename);
             $user->Avatar = $filename;
         }
 
@@ -503,12 +500,12 @@ class OwnerController extends Controller
                 $thumbnailImage = $property->images->where('IsThumbnail', 1)->first();
                 $firstImage = $property->images->first();
 
-                // Handle image URL
+                // Handle image URL using ImageHelper
                 $imageUrl = null;
                 if ($thumbnailImage) {
-                    $imageUrl = $thumbnailImage->ImageURL ?: ($thumbnailImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($thumbnailImage->ImagePath) : null);
+                    $imageUrl = \App\Helpers\ImageHelper::getImageUrl($thumbnailImage->ImagePath);
                 } elseif ($firstImage) {
-                    $imageUrl = $firstImage->ImageURL ?: ($firstImage->ImagePath ? 'data:image/jpeg;base64,' . base64_encode($firstImage->ImagePath) : null);
+                    $imageUrl = \App\Helpers\ImageHelper::getImageUrl($firstImage->ImagePath);
                 }
 
                 return [
@@ -548,7 +545,7 @@ class OwnerController extends Controller
         // Lấy các lịch hẹn với trạng thái cần hiển thị thông báo
         $recentAppointments = Appointment::with(['property', 'agentUser', 'cusUser'])
             ->where('OwnerID', $ownerId)
-            ->whereIn('Status', ['Khởi Tạo', 'Đang Thực Hiện', 'Hủy Hẹn', 'Hoàn Thành']) // tùy bạn cần
+            ->whereIn('Status', ['Khởi tạo', 'Đang Thực hiện', 'Hủy Hẹn', 'Hoàn Thành']) // tùy bạn cần
             ->whereDate('AppointmentDateStart', '>=', Carbon::now()->subDays(30))
             ->orderBy('AppointmentDateStart', 'desc')
             ->limit(20)
@@ -565,11 +562,11 @@ class OwnerController extends Controller
             $customerName = $appointment->cusUser->Name ?? 'Khách hàng';
 
             switch ($appointment->Status) {
-                case 'Khởi Tạo':
+                case 'Khởi tạo':
                     $statusMsg = "Người môi giới {$agentName} đã tạo lịch hẹn cho BĐS: {$propertyTitle}";
                     $title = 'Lịch hẹn mới';
                     break;
-                case 'Đang Thực Hiện':
+                case 'Đang Thực hiện':
                     $statusMsg = "Lịch hẹn cho BĐS: {$propertyTitle} đang được thực hiện.";
                     break;
                 case 'Hủy Hẹn':
@@ -632,8 +629,8 @@ class OwnerController extends Controller
 
         // Map filter status to database status
         $statusMap = [
-            'khoitao' => 'Khởi Tạo',
-            'dangthuchien' => 'Đang Thực Hiện',
+            'khoitao' => 'Khởi tạo',
+            'dangthuchien' => 'Đang Thực hiện',
             'hoanthanh' => 'Hoàn Thành',
             'huyhen' => 'Hủy Hẹn'
         ];
@@ -694,9 +691,9 @@ class OwnerController extends Controller
     private function getStatusBadge($status)
     {
         switch ($status) {
-            case 'Khởi Tạo':
+            case 'Khởi tạo':
                 return '<span class="badge bg-warning text-dark">Khởi Tạo</span>';
-            case 'Đang Thực Hiện':
+            case 'Đang Thực hiện':
                 return '<span class="badge bg-success">Đang Thực Hiện</span>';
             case 'Hoàn Thành':
                 return '<span class="badge bg-info">Hoàn Thành</span>';
@@ -714,8 +711,8 @@ class OwnerController extends Controller
     private function isValidStatusTransition($currentStatus, $newStatus)
     {
         $validTransitions = [
-            'Khởi Tạo' => ['Đang Thực Hiện', 'Hủy Hẹn'],
-            'Đang Thực Hiện' => ['Hoàn Thành', 'Hủy Hẹn'],
+            'Khởi tạo' => ['Đang Thực hiện', 'Hủy Hẹn'],
+            'Đang Thực hiện' => ['Hoàn Thành', 'Hủy Hẹn'],
             'Hoàn Thành' => [], // Cannot change from completed
             'Hủy Hẹn' => [] // Cannot change from cancelled
         ];
@@ -741,7 +738,7 @@ class OwnerController extends Controller
             }
 
             // Check if appointment can be confirmed
-            if ($appointment->Status !== 'Khởi Tạo') {
+            if ($appointment->Status !== 'Khởi tạo') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Lịch hẹn này không thể xác nhận'
@@ -749,24 +746,13 @@ class OwnerController extends Controller
             }
 
             $oldStatus = $appointment->Status;
-            $newStatus = 'Đang Thực Hiện';
+            $newStatus = 'Đang Thực hiện';
 
             // Update appointment status
             $appointment->Status = $newStatus;
             $appointment->save();
 
-            // Send notification to agent
-            if ($appointment->agentUser) {
-                $ownerName = Auth::user()->Name;
-                $appointment->agentUser->notify(
-                    new \App\Notifications\AppointmentStatusChanged(
-                        $appointment,
-                        $oldStatus,
-                        $newStatus,
-                        $ownerName
-                    )
-                );
-            }
+            // Note: Notifications are handled manually, not through Laravel notification system
 
             // Return success response
             return response()->json([
@@ -801,7 +787,7 @@ class OwnerController extends Controller
             }
 
             // Check if appointment can be cancelled
-            if (!in_array($appointment->Status, ['Khởi Tạo', 'Đang Thực Hiện'])) {
+            if (!in_array($appointment->Status, ['Khởi tạo', 'Đang Thực hiện'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Lịch hẹn này không thể hủy'
@@ -815,18 +801,7 @@ class OwnerController extends Controller
             $appointment->Status = $newStatus;
             $appointment->save();
 
-            // Send notification to agent
-            if ($appointment->agentUser) {
-                $ownerName = Auth::user()->Name;
-                $appointment->agentUser->notify(
-                    new \App\Notifications\AppointmentStatusChanged(
-                        $appointment,
-                        $oldStatus,
-                        $newStatus,
-                        $ownerName
-                    )
-                );
-            }
+            // Note: Notifications are handled manually, not through Laravel notification system
 
             // Return success response
             return response()->json([
@@ -1463,7 +1438,7 @@ class OwnerController extends Controller
         try {
             $validated = $request->validate([
                 'commission_id' => 'required|exists:commission,CommissionID',
-                'payment_method' => 'required|in:transfer,cash',
+                'payment_method' => 'required|in:transfer,cash,vnpay',
                 'note' => 'nullable|string|max:500'
             ]);
 
@@ -1488,7 +1463,12 @@ class OwnerController extends Controller
                 ], 400);
             }
 
-            // Cập nhật trạng thái commission
+            // If VNPAY, redirect to VNPAY processing
+            if ($validated['payment_method'] === 'vnpay') {
+                return $this->processVNPayCommission($request);
+            }
+
+            // Cập nhật trạng thái commission cho transfer và cash
             DB::table('commission')
                 ->where('CommissionID', $validated['commission_id'])
                 ->update([
@@ -1516,6 +1496,81 @@ class OwnerController extends Controller
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi thanh toán hoa hồng'
             ], 500);
+        }
+    }
+
+    /**
+     * Process VNPAY commission payment
+     */
+    public function processVNPayCommission(Request $request)
+    {
+        try {
+            $request->validate([
+                'commission_id' => 'required|exists:commission,CommissionID',
+                'payment_method' => 'required|in:vnpay',
+                'note' => 'nullable|string|max:500'
+            ]);
+
+            $owner = Auth::user();
+            $commissionId = $request->commission_id;
+
+            // Get commission and transaction details
+            $commission = DB::table('commission')
+                ->join('transactions', 'commission.TransactionID', '=', 'transactions.TransactionID')
+                ->where('commission.CommissionID', $commissionId)
+                ->where('transactions.OwnerID', $owner->UserID)
+                ->select('commission.*', 'transactions.TransactionID')
+                ->first();
+
+            if (!$commission) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy hoa hồng hoặc bạn không có quyền truy cập'
+                ], 404);
+            }
+
+            if ($commission->StatusCommission === 'Success') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hoa hồng này đã được thanh toán'
+                ], 400);
+            }
+
+            // Create VNPAY payment URL using PaymentController
+            $paymentController = new \App\Http\Controllers\PaymentController();
+            $paymentRequest = new Request([
+                'transaction_id' => $commission->TransactionID,
+                'payment_type' => 'commission',
+                'amount' => $commission->Amount,
+                'payment_description' => $request->note ?? "Thanh toán hoa hồng #{$commissionId}"
+            ]);
+
+            $response = $paymentController->processTransactionPayment($paymentRequest);
+
+            if ($response->getStatusCode() === 200) {
+                $data = json_decode($response->getContent(), true);
+
+                if ($data['success']) {
+                    return response()->json([
+                        'success' => true,
+                        'payment_url' => $data['payment_url'],
+                        'message' => 'Đang chuyển hướng đến VNPAY...'
+                    ]);
+                }
+            }
+
+            // Fallback if PaymentController fails
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể tạo liên kết thanh toán VNPAY'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('VNPAY commission payment error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xử lý thanh toán VNPAY: ' . $e->getMessage()
+            ]);
         }
     }
 

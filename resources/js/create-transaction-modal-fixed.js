@@ -75,17 +75,26 @@ class TransactionModal {
                 $clickedCard.removeClass('selected');
                 this.selectedProperty = null;
                 this.resetTransactionType();
+                this.clearPropertyPrice();
             } else {
                 // Select new property
                 $(`${modalSelector} .property-card`).removeClass('selected');
                 $clickedCard.addClass('selected');
-                this.selectedProperty = $clickedCard.data('property-id');
 
-                // Auto-set transaction type based on property type
+                // Store full property data
+                this.selectedProperty = {
+                    id: $clickedCard.data('property-id'),
+                    price: $clickedCard.data('price'),
+                    transactionType: $clickedCard.data('transaction-type'),
+                    title: $clickedCard.find('.property-title').text().trim()
+                };
+
+                // Auto-set transaction type and price
                 const transactionType = $clickedCard.data('transaction-type');
                 if (transactionType) {
                     this.transactionType = transactionType;
                     this.autoSetTransactionType(transactionType);
+                    this.setPropertyPrice($clickedCard.data('price'));
                 }
             }
 
@@ -118,8 +127,8 @@ class TransactionModal {
         $(document).off('click.transactionModal', `${modalSelector} .payment-method`).on('click.transactionModal', `${modalSelector} .payment-method`, (e) => {
             $(`${modalSelector} .payment-method`).removeClass('selected');
             $(e.currentTarget).addClass('selected');
-            this.paymentMethod = $(e.currentTarget).data('payment');
-            this.updateNavigationButtons();
+            const paymentMethod = $(e.currentTarget).data('payment');
+            this.selectPaymentMethod(paymentMethod);
         });
     }
 
@@ -321,16 +330,28 @@ class TransactionModal {
         const saleContractTypeSection = $('#saleContractType');
 
         if (type === 'rent') {
-            rentFields.removeClass('d-none');
-            saleFields.addClass('d-none');
-            saleContractTypeSection.addClass('d-none');
+            rentFields.removeClass('d-none').show();
+            saleFields.addClass('d-none').hide();
+            saleContractTypeSection.addClass('d-none').hide();
+
+            // Disable sale fields
+            saleFields.find('input, select').prop('disabled', true);
+
+            // Enable rent fields
+            rentFields.find('input, select').prop('disabled', false);
 
             $('#rentMonths').prop('required', true);
             $('#salePrice').prop('required', false);
         } else if (type === 'sale') {
-            rentFields.addClass('d-none');
-            saleFields.removeClass('d-none');
-            saleContractTypeSection.removeClass('d-none');
+            rentFields.addClass('d-none').hide();
+            saleFields.removeClass('d-none').show();
+            saleContractTypeSection.removeClass('d-none').show();
+
+            // Disable rent fields
+            rentFields.find('input, select').prop('disabled', true);
+
+            // Enable sale fields
+            saleFields.find('input, select').prop('disabled', false);
 
             $('#rentMonths').prop('required', false);
             $('#salePrice').prop('required', true);
@@ -378,16 +399,91 @@ class TransactionModal {
         }
     }
 
-    calculateRentPayments() {
-        const months = parseInt($('#rentMonths').val());
-        const monthlyRent = this.selectedProperty ? parseFloat($('#propertiesContainer .property-card.selected').data('price')) : 0;
+    // Method to handle payment method selection
+    selectPaymentMethod(paymentMethod) {
+        console.log('Payment method selected:', paymentMethod);
 
-        if (months && monthlyRent) {
-            const totalRent = monthlyRent * months;
-            console.log('Calculated rent payment:', totalRent);
+        this.paymentMethod = paymentMethod;
+
+        // Show/hide payment status notification for cash payment
+        const firstPaymentStatus = $('#firstPaymentStatus');
+
+        if (paymentMethod === 'cash') {
+            if (firstPaymentStatus.length === 0) {
+                // Create the status element if it doesn't exist
+                $('.payment-method.selected').after(`
+                    <div id="firstPaymentStatus" class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Thanh toán tiền mặt:</strong> Lần thanh toán đầu tiên sẽ được đánh dấu "Hoàn Thành" tự động.
+                    </div>
+                `);
+            } else {
+                firstPaymentStatus.removeClass('d-none').html(`
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Thanh toán tiền mặt:</strong> Lần thanh toán đầu tiên sẽ được đánh dấu "Hoàn Thành" tự động.
+                `);
+            }
+        } else {
+            firstPaymentStatus.addClass('d-none');
+        }
+
+        this.updateNavigationButtons();
+    }
+
+    // Method to set property price in step 3
+    setPropertyPrice(price) {
+        console.log('Setting property price:', price);
+
+        // Set price in appropriate field based on transaction type
+        if (this.transactionType === 'rent') {
+            // For rent, show monthly price and calculate total based on months
+            $('#monthlyRentDisplay').text(this.formatCurrency(price));
+            this.calculateRentPayments();
+        } else if (this.transactionType === 'sale') {
+            // For sale, set the sale price
+            $('#salePrice').val(price);
+            this.calculateSalePayments();
         }
     }
 
+    // Method to clear property price
+    clearPropertyPrice() {
+        console.log('Clearing property price');
+
+        $('#monthlyRentDisplay').text('');
+        $('#salePrice').val('');
+        $('#rentMonths').val('');
+        $('#paymentInstallments').val('');
+        $('#depositAmount').val('');
+        $('#remainingAmount').val('');
+        $('#paymentSchedule').addClass('d-none');
+    }
+
+    // Enhanced calculation for rent payments
+    calculateRentPayments() {
+        const months = parseInt($('#rentMonths').val());
+        let monthlyRent = 0;
+
+        if (this.selectedProperty && this.selectedProperty.price) {
+            monthlyRent = parseFloat(this.selectedProperty.price);
+        }
+
+        if (months && monthlyRent) {
+            const totalRent = monthlyRent * months;
+
+            // Update display
+            $('.total-rent-amount').text(this.formatCurrency(totalRent));
+            $('.monthly-rent-price').text(this.formatCurrency(monthlyRent));
+
+            console.log('Calculated rent payment:', {
+                monthlyRent,
+                months,
+                totalRent
+            });
+        }
+    }
+
+    // Enhanced calculation for sale payments
     calculateSalePayments() {
         const salePrice = parseFloat($('#salePrice').val());
         const installments = parseInt($('#paymentInstallments').val());
@@ -398,6 +494,10 @@ class TransactionModal {
             $('#remainingAmount').val(remainingAmount);
 
             this.generatePaymentSchedule(salePrice, installments, depositAmount);
+        } else if (salePrice && this.saleContractType === 'full') {
+            // For full payment, just show the total
+            $('.total-sale-amount').text(this.formatCurrency(salePrice));
+            $('#paymentSchedule').addClass('d-none');
         } else {
             $('#remainingAmount').val('');
             $('#paymentSchedule').addClass('d-none');
@@ -631,7 +731,8 @@ class TransactionModal {
             case 1:
                 return this.selectedProperty !== null;
             case 2:
-                return this.selectedDocuments.length > 0 || this.selectedTemplates.length > 0;
+                // Make step 2 optional for now - documents are not required
+                return true; // Always allow proceeding from step 2
             case 3:
                 return this.validateTransactionDetailsQuiet();
             case 4:
@@ -880,6 +981,7 @@ class TransactionModal {
 
         try {
             const transactionData = this.collectTransactionData();
+            console.log('Submitting transaction data:', transactionData); // Debug log
 
             const response = await fetch('/agent/transactions', {
                 method: 'POST',
@@ -891,13 +993,30 @@ class TransactionModal {
             });
 
             const data = await response.json();
+            console.log('Response data:', data); // Debug log
 
             if (data.success) {
-                alert('Tạo giao dịch thành công!');
-                $('#createTransactionModal').modal('hide');
-                location.reload();
+                // Check if payment method requires VNPay processing
+                if (this.paymentMethod === 'bank' || this.paymentMethod === 'momo') {
+                    // Process VNPay payment
+                    await this.processVNPayPayment(data.transaction.id, data.transaction.total_price);
+                } else {
+                    // Show success message for cash payment
+                    alert('Tạo giao dịch thành công! ' + data.message);
+                    $('#createTransactionModal').modal('hide');
+                    location.reload();
+                }
             } else {
-                alert('Lỗi: ' + data.message);
+                // Show detailed error messages if available
+                if (data.errors) {
+                    let errorMessage = 'Lỗi xác thực:\n';
+                    Object.keys(data.errors).forEach(field => {
+                        errorMessage += `- ${field}: ${data.errors[field].join(', ')}\n`;
+                    });
+                    alert(errorMessage);
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Có lỗi xảy ra'));
+                }
             }
         } catch (error) {
             console.error('Error submitting transaction:', error);
@@ -905,33 +1024,110 @@ class TransactionModal {
         }
     }
 
+    /**
+     * Process VNPay payment for the created transaction
+     */
+    async processVNPayPayment(transactionId, amount) {
+        try {
+            console.log('Processing VNPay payment for transaction:', transactionId, 'Amount:', amount);
+
+            // Show loading state
+            const submitBtn = $('#submitBtn');
+            const originalText = submitBtn.text();
+            submitBtn.text('Đang xử lý thanh toán...').prop('disabled', true);
+
+            const paymentResponse = await fetch('/agent/process-vnpay-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                body: JSON.stringify({
+                    transaction_id: transactionId,
+                    payment_amount: amount,
+                    payment_description: `Thanh toán giao dịch ${transactionId} - ${this.selectedProperty?.title || 'Bất động sản'}`
+                })
+            });
+
+            const paymentData = await paymentResponse.json();
+
+            if (paymentData.success) {
+                // Show success message and redirect to VNPay
+                alert('Giao dịch đã được tạo thành công! Bạn sẽ được chuyển hướng đến trang thanh toán VNPAY.');
+                $('#createTransactionModal').modal('hide');
+
+                // Store transaction ID in session storage for return handling
+                sessionStorage.setItem('pending_transaction_id', transactionId);
+
+                // Redirect to VNPay payment page
+                window.location.href = paymentData.payment_url;
+            } else {
+                // Reset button state
+                submitBtn.text(originalText).prop('disabled', false);
+
+                alert('Giao dịch đã được tạo nhưng có lỗi khi xử lý thanh toán: ' + paymentData.message);
+
+                // Still close modal and reload to show the created transaction
+                $('#createTransactionModal').modal('hide');
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error processing VNPay payment:', error);
+
+            // Reset button state
+            const submitBtn = $('#submitBtn');
+            submitBtn.text('Hoàn Thành').prop('disabled', false);
+
+            alert('Giao dịch đã được tạo nhưng có lỗi khi xử lý thanh toán. Vui lòng liên hệ quản trị viên.');
+
+            // Still close modal and reload to show the created transaction
+            $('#createTransactionModal').modal('hide');
+            location.reload();
+        }
+    }
+
     collectTransactionData() {
         const customerId = $('#selectedCustomerId').val();
         const transactionDate = $('#transactionDate').val();
 
+        console.log('Collecting transaction data...'); // Debug
+        console.log('Selected property:', this.selectedProperty);
+        console.log('Transaction type:', this.transactionType);
+        console.log('Sale contract type:', this.saleContractType);
+
         const data = {
-            property_id: this.selectedProperty,
+            property_id: this.selectedProperty?.id || this.selectedProperty,
             customer_id: customerId,
             transaction_type: this.transactionType,
             transaction_date: transactionDate,
             payment_method: this.paymentMethod,
-            documents: this.selectedDocuments,
-            templates: this.selectedTemplates,
-            payment_note: $('#paymentNote').val()
+            // Temporarily remove documents to test basic transaction creation
+            // documents: this.selectedDocuments,
+            // templates: this.selectedTemplates,
+            payment_note: $('#paymentNote').val() || '',
+            // Add flag for cash payment to auto-complete first payment
+            auto_complete_first_payment: this.paymentMethod === 'cash'
         };
 
         if (this.transactionType === 'rent') {
-            data.rent_months = $('#rentMonths').val();
+            data.rent_months = parseInt($('#rentMonths').val()) || 1;
+            // Calculate total rent price
+            if (this.selectedProperty && this.selectedProperty.price) {
+                data.total_price = parseFloat(this.selectedProperty.price) * data.rent_months;
+            }
         } else if (this.transactionType === 'sale') {
-            data.sale_price = $('#salePrice').val();
-            data.sale_contract_type = this.saleContractType;
+            data.sale_price = parseFloat($('#salePrice').val()) || 0;
+            // Ensure sale_contract_type is set, default to full_payment if not set
+            data.sale_contract_type = this.saleContractType || 'full_payment';
+            data.total_price = data.sale_price;
 
             if (this.saleContractType === 'deposit') {
-                data.payment_installments = $('#paymentInstallments').val();
-                data.deposit_amount = $('#depositAmount').val();
+                data.payment_installments = parseInt($('#paymentInstallments').val()) || 2;
+                data.deposit_amount = parseFloat($('#depositAmount').val()) || 0;
             }
         }
 
+        console.log('Final transaction data:', data); // Debug
         return data;
     }
 
@@ -951,6 +1147,12 @@ class TransactionModal {
         $('#selectedCustomerId').val('');
         $('#customerSearch').val('');
         $('.rent-transaction-fields, .sale-transaction-fields, #saleContractType, .deposit-contract-fields, #paymentSchedule').addClass('d-none');
+
+        // Clear price fields and payment status
+        this.clearPropertyPrice();
+        $('#firstPaymentStatus').addClass('d-none');
+        $('.transaction-type-selection').removeClass('d-none');
+        $('#selectedTransactionTypeInfo').addClass('d-none');
     }
 
     autoSetTransactionType(transactionType) {

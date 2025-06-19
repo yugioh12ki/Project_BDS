@@ -38,6 +38,10 @@ class Commission extends Model
         'StatusCommission', // Trạng thái hoa hồng (ví dụ: 'pending', 'success', 'Cancelled')
     ];
 
+    protected $casts = [
+        'PaidDate' => 'datetime',
+    ];
+
 
 
     public function transaction()

@@ -83,12 +83,12 @@
     <ul class="nav nav-tabs agent-tab-nav mb-3" id="appointmentTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-appointments" data-filter="khoitao" type="button" role="tab" aria-controls="pending-appointments" aria-selected="true">
-                Khởi Tạo <span class="badge rounded-pill bg-warning text-dark">{{ $appointments->where('Status', 'Khởi Tạo')->count() }}</span>
+                Khởi tạo <span class="badge rounded-pill bg-warning text-dark">{{ $appointments->where('Status', 'Khởi tạo')->count() }}</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="confirmed-tab" data-bs-toggle="tab" data-bs-target="#confirmed-appointments" data-filter="dangthuchien" type="button" role="tab" aria-controls="confirmed-appointments" aria-selected="false">
-                Đang Thực Hiện <span class="badge rounded-pill bg-success text-white">{{ $appointments->where('Status', 'Đang Thực Hiện')->count() }}</span>
+                Đang Thực hiện <span class="badge rounded-pill bg-success text-white">{{ $appointments->where('Status', 'Đang Thực hiện')->count() }}</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -116,7 +116,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Date Range Filter -->
         <div class="d-flex align-items-center gap-3 mt-3">
             <div class="date-filter-container">
@@ -136,7 +136,7 @@
                 </button>
             </div>
         </div>
-        
+
         <div>
             <span class="me-2">Lọc theo:</span>
             <select class="filter-dropdown" id="appointmentFilter">
@@ -148,16 +148,16 @@
             </select>
         </div>
     </div>
-    
+
     <!-- Bảng phân công bất động sản -->
     <div class="tab-content" id="appointmentTabContent">
         <div class="tab-pane fade show active" id="pending-appointments" role="tabpanel" aria-labelledby="pending-tab" tabindex="0">
-            @forelse($appointments->where('Status', 'Khởi Tạo') as $appointment)
+            @forelse($appointments->where('Status', 'Khởi tạo') as $appointment)
             <div class="appointment-card"
-                 data-property-id="{{ $appointment->PropertyID }}" 
+                 data-property-id="{{ $appointment->PropertyID }}"
                  data-owner-id="{{ $appointment->OwnerID }}"
                  data-date="{{ $appointment->AppointmentDateStart }}"
-                 data-status="Khởi Tạo">
+                 data-status="Khởi tạo">
                 <div class="appointment-header">
                     <div class="appointment-date-time me-auto">
                         <span class="appointment-date">{{ date('d-m-Y', strtotime($appointment->AppointmentDateStart)) }}</span>
@@ -177,7 +177,7 @@
                         </div>
                     </div>
                     <div class="appointment-actions">
-                        
+
                         <button class="btn btn-action btn-view" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal{{ $appointment->AppointmentID }}">
                             <i class="bi bi-eye me-1"></i> Chi tiết
                         </button>
@@ -193,18 +193,18 @@
         </div>
 
         <div class="tab-pane fade" id="confirmed-appointments" role="tabpanel" aria-labelledby="confirmed-tab" tabindex="0">
-            @forelse($appointments->where('Status', 'Đang Thực Hiện') as $appointment)
+            @forelse($appointments->where('Status', 'Đang Thực hiện') as $appointment)
             <div class="appointment-card"
-                 data-property-id="{{ $appointment->PropertyID }}" 
+                 data-property-id="{{ $appointment->PropertyID }}"
                  data-owner-id="{{ $appointment->OwnerID }}"
                  data-date="{{ $appointment->AppointmentDateStart }}"
-                 data-status="Đang Thực Hiện">
+                 data-status="Đang Thực hiện">
                 <div class="appointment-header">
                     <div class="appointment-date-time me-auto">
                         <span class="appointment-date">{{ date('d-m-Y', strtotime($appointment->AppointmentDateStart)) }}</span>
                         <span class="time-badge">{{ date('H:i', strtotime($appointment->AppointmentDateStart)) }}</span>
                     </div>
-                    <span class="badge-status success">Đang Thực Hiện</span>
+                    <span class="badge-status success">Đang Thực hiện</span>
                 </div>
                 <div class="appointment-detail">
                     <div class="property-info">
@@ -226,7 +226,7 @@
                                 <i class="bi bi-check-circle me-1"></i> Hoàn thành
                             </button>
                         </form>
-                        
+
                         <button class="btn btn-action btn-view" data-bs-toggle="modal" data-bs-target="#appointmentDetailModal{{ $appointment->AppointmentID }}">
                             <i class="bi bi-eye me-1"></i> Chi tiết
                         </button>
@@ -244,7 +244,7 @@
         <div class="tab-pane fade" id="cancelled-appointments" role="tabpanel" aria-labelledby="cancelled-tab" tabindex="0">
             @forelse($appointments->where('Status', 'Hủy Hẹn') as $appointment)
             <div class="appointment-card"
-                 data-property-id="{{ $appointment->PropertyID }}" 
+                 data-property-id="{{ $appointment->PropertyID }}"
                  data-owner-id="{{ $appointment->OwnerID }}"
                  data-date="{{ $appointment->AppointmentDateStart }}"
                  data-status="Hủy Hẹn">
@@ -280,11 +280,11 @@
             </div>
             @endforelse
         </div>
-        
+
         <div class="tab-pane fade" id="completed-appointments" role="tabpanel" aria-labelledby="completed-tab" tabindex="0">
             @forelse($appointments->where('Status', 'Hoàn Thành') as $appointment)
             <div class="appointment-card"
-                 data-property-id="{{ $appointment->PropertyID }}" 
+                 data-property-id="{{ $appointment->PropertyID }}"
                  data-owner-id="{{ $appointment->OwnerID }}"
                  data-date="{{ $appointment->AppointmentDateStart }}"
                  data-status="Hoàn Thành">

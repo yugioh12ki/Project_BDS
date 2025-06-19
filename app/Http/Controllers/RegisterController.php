@@ -98,16 +98,17 @@ class RegisterController extends Controller
             $avatarFileName = null;
             if ($request->hasFile('avatar')) {
                 $avatar = $request->file('avatar');
-                
+
                 // Ensure avatars directory exists
                 $avatarPath = public_path('storage/avatars');
                 if (!file_exists($avatarPath)) {
                     mkdir($avatarPath, 0755, true);
                 }
-                
-                // Generate unique filename
-                $avatarFileName = time() . '_' . uniqid() . '.' . $avatar->getClientOriginalExtension();
-                
+
+                // Generate unique filename - chỉ sử dụng số để tránh lỗi với tên tiếng Việt
+                $extension = $avatar->getClientOriginalExtension();
+                $avatarFileName = 'avatar_' . time() . '_' . uniqid() . '.' . $extension;
+
                 // Move the file
                 if (!$avatar->move($avatarPath, $avatarFileName)) {
                     return back()->withInput()->with('error', 'Có lỗi khi tải lên ảnh đại diện. Vui lòng thử lại.');

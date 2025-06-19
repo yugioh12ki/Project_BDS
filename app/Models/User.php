@@ -181,7 +181,7 @@ class User extends Authenticatable
 
     public function comm_agent()
     {
-        return $this->hasOne(Commission::class, 'UserID', 'UserID');
+        return $this->hasOne(Commission::class, 'AgentID', 'UserID');
     }
 
 

@@ -320,6 +320,309 @@
     color: #28a745;
 }
 
+/* AQUA COLOR THEME - 3 LAYERS FOR TRANSACTIONS */
+
+/* Aqua Light - Lớp 1 (Nhạt nhất) - Cho background và hover effects */
+.aqua-light {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #006064;
+    border: 1px solid #4dd0e1;
+}
+
+.aqua-light-bg {
+    background: rgba(178, 235, 242, 0.3);
+}
+
+.aqua-light-border {
+    border-color: #b2ebf2;
+}
+
+.aqua-light-text {
+    color: #0097a7;
+}
+
+/* Aqua Medium - Lớp 2 (Trung bình) - Cho main elements */
+.aqua-medium {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+    border: 1px solid #00acc1;
+}
+
+.aqua-medium-bg {
+    background: rgba(77, 208, 225, 0.6);
+}
+
+.aqua-medium-border {
+    border-color: #26c6da;
+}
+
+.aqua-medium-text {
+    color: #00838f;
+}
+
+/* Aqua Dark - Lớp 3 (Đậm nhất) - Cho highlights và active states */
+.aqua-dark {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+    border: 1px solid #004d40;
+}
+
+.aqua-dark-bg {
+    background: rgba(0, 131, 143, 0.8);
+}
+
+.aqua-dark-border {
+    border-color: #006064;
+}
+
+.aqua-dark-text {
+    color: #004d40;
+}
+
+/* SPECIFIC TRANSACTION ELEMENTS WITH AQUA THEME */
+
+/* Transaction table header với aqua theme */
+.transaction-table.aqua-theme thead {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+}
+
+.transaction-table.aqua-theme thead th:hover {
+    background-color: rgba(0, 131, 143, 0.2);
+}
+
+/* Transaction rows với aqua alternating */
+.transaction-table.aqua-theme tbody tr:nth-child(odd) {
+    background: rgba(178, 235, 242, 0.1);
+}
+
+.transaction-table.aqua-theme tbody tr:nth-child(even) {
+    background: rgba(77, 208, 225, 0.05);
+}
+
+.transaction-table.aqua-theme tbody tr:hover {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(77, 208, 225, 0.3);
+}
+
+/* Status badges với aqua theme */
+.status-badge.aqua-pending {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #006064;
+    border: 1px solid #4dd0e1;
+}
+
+.status-badge.aqua-progress {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+    border: 1px solid #00acc1;
+}
+
+.status-badge.aqua-completed {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+    border: 1px solid #004d40;
+}
+
+/* Transaction type badges với aqua theme */
+.type-badge.aqua-sale {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+    border: 1px solid #00acc1;
+}
+
+.type-badge.aqua-rent {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #006064;
+    border: 1px solid #4dd0e1;
+}
+
+/* Action buttons với aqua theme */
+.action-btn.aqua-view {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #006064;
+    border: 1px solid #4dd0e1;
+}
+
+.action-btn.aqua-view:hover {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(77, 208, 225, 0.4);
+}
+
+.action-btn.aqua-edit {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+    border: 1px solid #00acc1;
+}
+
+.action-btn.aqua-edit:hover {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 131, 143, 0.4);
+}
+
+.action-btn.aqua-docs {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+    border: 1px solid #004d40;
+}
+
+.action-btn.aqua-docs:hover {
+    background: linear-gradient(135deg, #004d40 0%, #00251a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 77, 64, 0.4);
+}
+
+/* Filter section với aqua theme */
+.filter-section.aqua-theme {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    border-bottom: 3px solid #4dd0e1;
+}
+
+.filter-section.aqua-theme .search-box:focus {
+    border-color: #26c6da;
+    box-shadow: 0 0 0 0.2rem rgba(38, 198, 218, 0.25);
+}
+
+.filter-section.aqua-theme .filter-select:focus {
+    border-color: #26c6da;
+    box-shadow: 0 0 0 0.2rem rgba(38, 198, 218, 0.25);
+}
+
+.filter-section.aqua-theme .btn-clear-filters {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+    border: 1px solid #00acc1;
+}
+
+.filter-section.aqua-theme .btn-clear-filters:hover {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+}
+
+.filter-section.aqua-theme .btn-export-excel {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+    border: 1px solid #004d40;
+}
+
+.filter-section.aqua-theme .btn-export-excel:hover {
+    background: linear-gradient(135deg, #004d40 0%, #00251a 100%);
+    transform: translateY(-2px);
+}
+
+/* Page header với aqua theme */
+.page-header.aqua-theme {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+}
+
+.page-header.aqua-theme .btn-primary {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+    border: 1px solid #00acc1;
+}
+
+.page-header.aqua-theme .btn-primary:hover {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #006064;
+    transform: translateY(-2px);
+}
+
+/* Pagination với aqua theme */
+.pagination.aqua-theme .pagination-btn {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #006064;
+    border: 1px solid #4dd0e1;
+}
+
+.pagination.aqua-theme .pagination-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+    color: #004d40;
+}
+
+.pagination.aqua-theme .pagination-number.active {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+    border: 1px solid #004d40;
+}
+
+/* Modal header với aqua theme */
+.modal-header.aqua-theme {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+    color: white;
+}
+
+/* Loading overlay với aqua theme */
+.loading-overlay.aqua-theme {
+    background: rgba(224, 247, 250, 0.9);
+}
+
+.loading-overlay.aqua-theme .spinner {
+    border-color: #b2ebf2;
+    border-top-color: #00838f;
+}
+
+/* Transaction value styling với aqua theme */
+.transaction-value.aqua-theme {
+    color: #00838f;
+    font-weight: 700;
+}
+
+/* Commission display với aqua theme */
+.commission-amount.aqua-positive {
+    color: #4dd0e1;
+    font-weight: 700;
+}
+
+.commission-amount.aqua-negative {
+    color: #00838f;
+    font-weight: 700;
+}
+
+/* RESPONSIVE AQUA ADJUSTMENTS */
+@media (max-width: 768px) {
+    .transaction-table.aqua-theme tbody tr:hover {
+        transform: none;
+        box-shadow: 0 2px 8px rgba(77, 208, 225, 0.2);
+    }
+
+    .action-btn.aqua-view:hover,
+    .action-btn.aqua-edit:hover,
+    .action-btn.aqua-docs:hover {
+        transform: none;
+    }
+}
+
+/* UTILITY CLASSES FOR AQUA THEME */
+.aqua-gradient-1 {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+}
+
+.aqua-gradient-2 {
+    background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%);
+}
+
+.aqua-gradient-3 {
+    background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+}
+
+.aqua-shadow-light {
+    box-shadow: 0 2px 8px rgba(178, 235, 242, 0.3);
+}
+
+.aqua-shadow-medium {
+    box-shadow: 0 4px 12px rgba(77, 208, 225, 0.4);
+}
+
+.aqua-shadow-dark {
+    box-shadow: 0 6px 20px rgba(0, 131, 143, 0.3);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .modal-body {

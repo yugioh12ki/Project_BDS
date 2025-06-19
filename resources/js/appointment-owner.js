@@ -64,11 +64,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Test modal configuration
         try {
-            const testModal = new bootstrap.Modal(appointmentModal, {
-                backdrop: true,
-                keyboard: true,
-                focus: true
-            });
+            // Use createSafeModal helper if available, otherwise use direct bootstrap.Modal
+            const testModal = (typeof createSafeModal !== 'undefined') ?
+                createSafeModal(appointmentModal, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                }) :
+                new bootstrap.Modal(appointmentModal, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
             console.log('✅ Modal instance created successfully');
 
             // Add event listeners for debugging
@@ -387,13 +394,12 @@ function updateStatusCounts() {
 
 // ========== BOOTSTRAP ERROR HANDLING & DEBUGGING ==========
 
-// Bootstrap Modal Error Interceptor
+// Bootstrap Modal Error Handling
 if (typeof bootstrap !== 'undefined') {
-    console.log('🛡️ Setting up Bootstrap error interceptor...');
+    console.log('🛡️ Setting up Bootstrap error handling...');
 
-    // Override bootstrap Modal constructor to add error handling
-    const originalModal = bootstrap.Modal;
-    bootstrap.Modal = function(element, options) {
+    // Create a safe modal helper function instead of overriding bootstrap.Modal
+    window.createSafeModal = function(element, options) {
         try {
             console.log('🏗️ Creating Modal instance for:', element?.id || 'unknown element');
 
@@ -407,7 +413,7 @@ if (typeof bootstrap !== 'undefined') {
 
             console.log('⚙️ Modal options:', safeOptions);
 
-            return new originalModal(element, safeOptions);
+            return new bootstrap.Modal(element, safeOptions);
         } catch (error) {
             console.error('❌ BOOTSTRAP MODAL ERROR INTERCEPTED:', {
                 error: error.message,
@@ -421,7 +427,7 @@ if (typeof bootstrap !== 'undefined') {
 
             // Try to create a basic modal as fallback
             try {
-                return new originalModal(element, { backdrop: true, keyboard: true, focus: true });
+                return new bootstrap.Modal(element, { backdrop: true, keyboard: true, focus: true });
             } catch (fallbackError) {
                 console.error('❌ Even fallback modal failed:', fallbackError);
                 throw error;
@@ -429,13 +435,9 @@ if (typeof bootstrap !== 'undefined') {
         }
     };
 
-    // Copy static methods
-    Object.setPrototypeOf(bootstrap.Modal, originalModal);
-    Object.assign(bootstrap.Modal, originalModal);
-
-    console.log('✅ Bootstrap Modal error interceptor installed');
+    console.log('✅ Bootstrap Modal error handling installed');
 } else {
-    console.error('❌ Bootstrap not available for error interception');
+    console.error('❌ Bootstrap not available for error handling');
 }
 
 // Global Error Handler for Bootstrap-related errors

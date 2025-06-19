@@ -209,6 +209,40 @@
         width: 16px;
     }
 
+    /* Enhanced Radio Button Styling */
+    .form-check-inline {
+        margin-right: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-check-inline .form-check-input {
+        margin-top: 0.25rem;
+    }
+
+    .form-check-inline .form-check-label {
+        padding-left: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .form-check-inline .form-check-label:hover {
+        color: #19f5c5;
+        transform: translateX(2px);
+    }
+
+    /* Form Text Enhancement */
+    .form-text.text-muted {
+        color: #3498db !important;
+        font-weight: 500;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .form-text.text-muted i {
+        color: #19f5c5;
+        margin-right: 0.25rem;
+    }
+
     /* Loading state */
     .autocomplete-loading {
         padding: 12px 15px;
@@ -744,19 +778,17 @@
                                         <h6 class="text-primary mb-3"><i class="fas fa-building me-2"></i>Thông số kỹ thuật</h6>
 
                                         <div class="row">
-                                            <div class="col-6">
-                                                <div class="form-group mb-3">
-                                                    <label class="form-label">Số tầng / Nhà Cấp</label>
-                                                    <input type="number" name="LevelHouse" class="form-control" value="{{ old('LevelHouse') }}"  min="0" max="5">
-                                                    <small> Chỉ có nhà, văn phòng, shophouse, kho mới điền, nếu khác bỏ trống</small>
-                                                </div>
+                                            <div class="col-6">                                        <div class="form-group mb-3">
+                                            <label class="form-label">Số tầng / Nhà Cấp</label>
+                                            <input type="number" name="LevelHouse" class="form-control" value="{{ old('LevelHouse') }}"  min="0" max="5">
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Chỉ có nhà, văn phòng, shophouse, kho mới điền, nếu khác bỏ trống</small>
+                                        </div>
                                             </div>
-                                            <div class="col-6">
-                                                <div class="form-group mb-3">
-                                                    <label class="form-label">Lầu</label>
-                                                    <input type="number" name="Floor" class="form-control" value="{{ old('Floor') }}" min="0">
-                                                    <small> Chỉ có chung cư mới điền, nếu khác bỏ trống</small>
-                                                </div>
+                                            <div class="col-6">                                        <div class="form-group mb-3">
+                                            <label class="form-label">Lầu</label>
+                                            <input type="number" name="Floor" class="form-control" value="{{ old('Floor') }}" min="0">
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Chỉ có chung cư mới điền, nếu khác bỏ trống</small>
+                                        </div>
                                             </div>
                                         </div>
 
@@ -765,12 +797,14 @@
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều dài nhà (m)</label>
                                                     <input type="number" name="HouseLength" class="form-control" value="{{ old('HouseLength') }}" min="0">
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Chiều dài của ngôi nhà</small>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều rộng nhà (m)</label>
                                                     <input type="number" name="HouseWidth" class="form-control" value="{{ old('HouseWidth') }}" min="0">
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Chiều rộng của ngôi nhà</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -780,12 +814,14 @@
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều dài tổng thể (m)</label>
                                                     <input type="number" name="TotalLength" class="form-control" value="{{ old('TotalLength') }}" min="0">
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Chiều dài của toàn bộ lô đất</small>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Chiều rộng tổng thể (m)</label>
                                                     <input type="number" name="TotalWidth" class="form-control" value="{{ old('TotalWidth') }}" min="0">
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Chiều rộng của toàn bộ lô đất</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -795,12 +831,14 @@
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Số phòng ngủ</label>
                                                     <input type="number" name="Bedroom" class="form-control" value="{{ old('Bedroom') }}" min="0">
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Tổng số phòng ngủ</small>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Số phòng WC</label>
                                                     <input type="number" name="Bath_WC" class="form-control" value="{{ old('Bath_WC') }}" min="0">
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Tổng số phòng tắm/WC</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -813,12 +851,14 @@
                                                         <option value="1" {{ old('Balcony') == '1' ? 'selected' : '' }}>Có</option>
                                                         <option value="0" {{ old('Balcony') == '0' ? 'selected' : '' }}>Không</option>
                                                     </select>
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Có ban công hay không</small>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Đường vào (m)</label>
                                                     <input type="number" name="Road" class="form-control" value="{{ old('Road') }}" min="0">
+                                                    <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Độ rộng của đường vào</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -829,7 +869,32 @@
 
                                         <div class="form-group mb-3">
                                             <label class="form-label">Pháp lý</label>
-                                            <input type="text" name="legal" class="form-control" value="{{ old('legal') }}" placeholder="Sổ đỏ, sổ hồng...">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="legal" id="legal_sodo" value="Sổ đỏ" {{ old('legal') == 'Sổ đỏ' ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="legal_sodo">
+                                                            <i class="fas fa-book text-danger me-1"></i>Sổ đỏ
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="legal" id="legal_sohong" value="Sổ hồng" {{ old('legal') == 'Sổ hồng' ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="legal_sohong">
+                                                            <i class="fas fa-book text-success me-1"></i>Sổ hồng
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="legal" id="legal_khac" value="Khác" {{ old('legal') != 'Sổ đỏ' && old('legal') != 'Sổ hồng' && old('legal') ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="legal_khac">
+                                                            <i class="fas fa-edit text-warning me-1"></i>Khác
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2" id="legalOtherInput" style="display: {{ old('legal') && old('legal') != 'Sổ đỏ' && old('legal') != 'Sổ hồng' ? 'block' : 'none' }};">
+                                                <input type="text" name="legal_other" class="form-control" placeholder="Nhập loại pháp lý khác..." value="{{ old('legal') && old('legal') != 'Sổ đỏ' && old('legal') != 'Sổ hồng' ? old('legal') : '' }}">
+                                            </div>
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Trạng thái pháp lý của bất động sản</small>
                                         </div>
 
                                         <div class="form-group mb-3">
@@ -845,12 +910,13 @@
                                                 <option value="Đông" {{ old('view') == 'Đông' ? 'selected' : '' }}>Đông</option>
                                                 <option value="Đông Bắc" {{ old('view') == 'Đông Bắc' ? 'selected' : '' }}>Đông Bắc</option>
                                             </select>
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Hướng nhìn chính của bất động sản</small>
                                         </div>
 
                                         <div class="form-group mb-3">
                                             <label class="form-label">Lân cận</label>
                                             <input type="text" name="near" class="form-control" value="{{ old('near') }}" placeholder="Trường học, bệnh viện, siêu thị...">
-                                            <small class="form-text text-muted">Các địa điểm lân cận quan trọng</small>
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Các địa điểm lân cận quan trọng như trường học, bệnh viện, siêu thị...</small>
                                         </div>
 
                                         <div class="form-group mb-3">
@@ -860,6 +926,7 @@
                                                 <option value="Cơ bản" {{ old('Interior') == 'Cơ bản' ? 'selected' : '' }}>Cơ bản</option>
                                                 <option value="Đầy đủ" {{ old('Interior') == 'Đầy đủ' ? 'selected' : '' }}>Đầy đủ</option>
                                             </select>
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Mức độ trang bị nội thất hiện có</small>
                                         </div>
 
                                         <h6 class="text-warning mb-3 mt-4"><i class="fas fa-bolt me-2"></i>Tiện ích</h6>
@@ -867,27 +934,33 @@
                                         <div class="form-group mb-3">
                                             <label class="form-label">Giá nước</label>
                                             <select name="WaterPrice" class="form-control">
+                                                <option value="">-- Chọn --</option>
                                                 <option value="Thỏa thuận" {{ old('WaterPrice') == 'Thỏa thuận' ? 'selected' : '' }}>Thỏa thuận</option>
                                                 <option value="Do chủ nhà quy định" {{ old('WaterPrice') == 'Do chủ nhà quy định' ? 'selected' : '' }}>Do chủ nhà quy định</option>
                                                 <option value="Theo nhà nước" {{ old('WaterPrice') == 'Theo nhà nước' ? 'selected' : '' }}>Theo nhà nước</option>
                                             </select>
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Cách tính giá nước cho thuê nhà</small>
                                         </div>
 
                                         <div class="form-group mb-3">
                                             <label class="form-label">Giá điện</label>
                                             <select name="PowerPrice" class="form-control">
+                                                <option value="">-- Chọn --</option>
                                                 <option value="Thỏa thuận" {{ old('PowerPrice') == 'Thỏa thuận' ? 'selected' : '' }}>Thỏa thuận</option>
                                                 <option value="Do chủ nhà quy định" {{ old('PowerPrice') == 'Do chủ nhà quy định' ? 'selected' : '' }}>Do chủ nhà quy định</option>
                                                 <option value="Theo nhà nước" {{ old('PowerPrice') == 'Theo nhà nước' ? 'selected' : '' }}>Theo nhà nước</option>
                                             </select>
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Cách tính giá điện cho thuê nhà</small>
                                         </div>
 
                                         <div class="form-group mb-3">
                                             <label class="form-label">Tiện ích khác</label>
                                             <select name="Utilities" class="form-control">
+                                                <option value="">-- Chọn --</option>
                                                 <option value="Thỏa thuận" {{ old('Utilities') == 'Thỏa thuận' ? 'selected' : '' }}>Thỏa thuận</option>
                                                 <option value="Do chủ nhà quy định" {{ old('Utilities') == 'Do chủ nhà quy định' ? 'selected' : '' }}>Do chủ nhà quy định</option>
                                             </select>
+                                            <small class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Các tiện ích khác như internet, truyền hình, vệ sinh...</small>
                                         </div>
                                     </div>
                                 </div>
@@ -1212,14 +1285,14 @@ document.getElementById('addVideoUrl').addEventListener('click', function() {
         </div>
     `;
     container.appendChild(newGroup);
-    
+
     // Update remove button visibility
     updateRemoveButtonVisibility();
-    
+
     // Add event listener for the new input
     const newInput = newGroup.querySelector('.video-url-input');
     newInput.addEventListener('input', updateVideoPreview);
-    
+
     // Add event listener for remove button
     newGroup.querySelector('.remove-video-url').addEventListener('click', function() {
         newGroup.remove();
@@ -1249,21 +1322,21 @@ function getVideoEmbedUrl(url) {
     if (youtubeMatch) {
         return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
     }
-    
+
     // TikTok
     const tiktokRegex = /(?:tiktok\.com\/)(?:.*\/video\/|@[^\/]+\/video\/)(\d+)/;
     const tiktokMatch = url.match(tiktokRegex);
     if (tiktokMatch) {
         return `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`;
     }
-    
+
     // Vimeo
     const vimeoRegex = /(?:vimeo\.com\/)(\d+)/;
     const vimeoMatch = url.match(vimeoRegex);
     if (vimeoMatch) {
         return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
     }
-    
+
     return null;
 }
 
@@ -1272,14 +1345,14 @@ function updateVideoPreview() {
     const preview = document.getElementById('videoPreview');
     const inputs = document.querySelectorAll('.video-url-input');
     preview.innerHTML = '';
-    
+
     inputs.forEach((input, index) => {
         const url = input.value.trim();
         if (url) {
             const embedUrl = getVideoEmbedUrl(url);
             const div = document.createElement('div');
             div.className = 'preview-item d-flex align-items-center mb-3 p-3 border rounded';
-            
+
             if (embedUrl) {
                 div.innerHTML = `
                     <iframe width="200" height="120" src="${embedUrl}" frameborder="0" allowfullscreen class="me-3"></iframe>
@@ -1410,7 +1483,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle TypePro radio button change to show/hide utilities section
     const typeProRadios = document.querySelectorAll('input[name="TypePro"]');
     const utilitiesSection = document.querySelector('h6.text-warning');
-    
+
     // Find the utilities section and its parent container
     let utilitiesContainer = null;
     if (utilitiesSection && utilitiesSection.textContent.includes('Tiện ích')) {
@@ -1423,20 +1496,44 @@ document.addEventListener('DOMContentLoaded', function() {
             nextElement = nextElement.nextElementSibling;
         }
         utilitiesContainer = { heading: utilitiesSection, elements: utilityElements };
-    }
-
-    function toggleUtilitiesSection() {
+    }    function toggleUtilitiesSection() {
         if (!utilitiesContainer) return;
-        
+
         const selectedType = document.querySelector('input[name="TypePro"]:checked');
         if (selectedType && selectedType.value === 'Sale') {
             // Hide utilities section for Sale
             utilitiesContainer.heading.style.display = 'none';
-            utilitiesContainer.elements.forEach(el => el.style.display = 'none');
-        } else {
-            // Show utilities section for Rent or no selection
+            utilitiesContainer.elements.forEach(el => {
+                el.style.display = 'none';
+                // Clear values for Sale
+                const selects = el.querySelectorAll('select');
+                selects.forEach(select => {
+                    if (select.name === 'WaterPrice' || select.name === 'PowerPrice' || select.name === 'Utilities') {
+                        select.value = ''; // Set empty value for Sale
+                    }
+                });
+            });
+        } else if (selectedType && selectedType.value === 'Rent') {
+            // Show utilities section for Rent
             utilitiesContainer.heading.style.display = 'block';
-            utilitiesContainer.elements.forEach(el => el.style.display = 'block');
+            utilitiesContainer.elements.forEach(el => {
+                el.style.display = 'block';
+                // Set default values for Rent
+                const selects = el.querySelectorAll('select');
+                selects.forEach(select => {
+                    if (select.name === 'WaterPrice' || select.name === 'PowerPrice' || select.name === 'Utilities') {
+                        if (!select.value || select.value === '') {
+                            select.value = 'Thỏa thuận'; // Set default value for rent
+                        }
+                    }
+                });
+            });
+        } else {
+            // No selection - hide utilities
+            utilitiesContainer.heading.style.display = 'none';
+            utilitiesContainer.elements.forEach(el => {
+                el.style.display = 'none';
+            });
         }
     }
 
@@ -1462,10 +1559,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const district = escapeHtml(owner.District || '');
                 const province = escapeHtml(owner.Province || '');
                 const identityCard = escapeHtml(owner.IdentityCard || '');
-                
+
                 // Build complete address
                 const fullAddress = [address, ward, district, province].filter(Boolean).join(', ');
-                
+
                 return `
                     <div class="autocomplete-item" data-owner-id="${owner.UserID}" onclick="selectOwner('${owner.UserID}', '${name}', '${phone}', '${email}', '${address}', '${ward}', '${district}', '${province}', '${identityCard}')">
                         <div class="owner-name"><i class="fas fa-user me-2"></i>${name}</div>
@@ -1635,10 +1732,10 @@ function handleOwnerCreationReturn() {
     if (newOwnerId && newOwnerName) {
         // Select the newly created owner with all details
         selectOwner(
-            newOwnerId, 
-            newOwnerName, 
-            newOwnerPhone || '', 
-            newOwnerEmail || '', 
+            newOwnerId,
+            newOwnerName,
+            newOwnerPhone || '',
+            newOwnerEmail || '',
             newOwnerAddress || '',
             newOwnerWard || '',
             newOwnerDistrict || '',
@@ -1705,7 +1802,7 @@ let propertyMarker = null;
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize map
     initializeMap();
-    
+
     // Add address change listeners
     addAddressChangeListeners();
 });
@@ -1713,12 +1810,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeMap() {
     // Initialize Leaflet map centered on Vietnam
     propertyMap = L.map('property-map').setView([16.0583, 108.2772], 6);
-    
+
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(propertyMap);
-    
+
     // Add custom marker styles
     const customIcon = L.divIcon({
         className: 'custom-marker',
@@ -1727,7 +1824,7 @@ function initializeMap() {
         iconAnchor: [15, 30],
         popupAnchor: [0, -30]
     });
-    
+
     // Store the custom icon for later use
     window.customMapIcon = customIcon;
 }
@@ -1779,7 +1876,7 @@ function addAddressChangeListeners() {
         } else {
             addressInfo.style.display = 'none';
             addressInfo.classList.remove('show');
-            
+
             // Reset map to Vietnam view
             if (propertyMap) {
                 propertyMap.setView([16.0583, 108.2772], 6);
@@ -1829,17 +1926,17 @@ async function updateMapLocation(address) {
             {
                 name: 'Photon',
                 url: `https://photon.komoot.io/api/?q=${encodeURIComponent(address + ', Vietnam')}&limit=1`,
-                parser: (data) => data && data.features && data.features.length > 0 ? { 
-                    lat: data.features[0].geometry.coordinates[1], 
-                    lon: data.features[0].geometry.coordinates[0] 
+                parser: (data) => data && data.features && data.features.length > 0 ? {
+                    lat: data.features[0].geometry.coordinates[1],
+                    lon: data.features[0].geometry.coordinates[0]
                 } : null
             },
             {
                 name: 'MapBox (free tier)',
                 url: `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address + ', Vietnam')}.json?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw&limit=1`,
-                parser: (data) => data && data.features && data.features.length > 0 ? { 
-                    lat: data.features[0].center[1], 
-                    lon: data.features[0].center[0] 
+                parser: (data) => data && data.features && data.features.length > 0 ? {
+                    lat: data.features[0].center[1],
+                    lon: data.features[0].center[0]
                 } : null
             }
         ];
@@ -1851,10 +1948,10 @@ async function updateMapLocation(address) {
             const api = geocodingAPIs[i];
             try {
                 console.log(`Trying geocoding API: ${api.name}`);
-                
+
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-                
+
                 const response = await fetch(api.url, {
                     signal: controller.signal,
                     headers: {
@@ -1862,13 +1959,13 @@ async function updateMapLocation(address) {
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 clearTimeout(timeoutId);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     const coords = api.parser(data);
-                    
+
                     if (coords && coords.lat && coords.lon) {
                         lat = coords.lat;
                         lon = coords.lon;
@@ -1948,7 +2045,7 @@ async function updateMapLocation(address) {
                     Không thể định vị địa chỉ. Vui lòng kiểm tra lại thông tin.
                 `;
             }
-            
+
             // Reset to Vietnam center view
             if (propertyMarker) {
                 propertyMap.removeLayer(propertyMarker);
@@ -1965,7 +2062,7 @@ async function updateMapLocation(address) {
                 Hiển thị vị trí ước tính cho khu vực này
             `;
         }
-        
+
         // Show approximate location as fallback
         showApproximateLocation(address);
     }
@@ -2046,7 +2143,7 @@ function getApproximateCoordinates(province, fullAddress) {
 function showApproximateLocation(address) {
     const province = document.getElementById('province')?.value || '';
     const coordinates = getApproximateCoordinates(province, address);
-    
+
     if (coordinates) {
         // Remove existing marker
         if (propertyMarker) {
@@ -2104,10 +2201,10 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < apiEndpoints.length; i++) {
                 try {
                     console.log(`Attempting to load provinces from API ${i + 1}:`, apiEndpoints[i]);
-                    
+
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-                    
+
                     const response = await fetch(apiEndpoints[i], {
                         signal: controller.signal,
                         method: 'GET',
@@ -2118,13 +2215,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         mode: 'cors' // Enable CORS
                     });
-                    
+
                     clearTimeout(timeoutId);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
+
                     const data = await response.json();
                     let provinces = [];
 
@@ -2148,7 +2245,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (provinces && provinces.length > 0) {
                         console.log(`Successfully loaded ${provinces.length} provinces from API ${i + 1}`);
-                        
+
                         provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
                         provinces.forEach(province => {
                             const option = document.createElement('option');
@@ -2157,7 +2254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             option.setAttribute('data-code', province.code || province.Id || province.Code);
                             provinceSelect.appendChild(option);
                         });
-                        
+
                         // Success! Exit the loop
                         return;
                     } else {
@@ -2167,14 +2264,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 } catch (error) {
                     lastError = error;
                     console.warn(`API ${i + 1} failed:`, error.message);
-                    
+
                     // If this is a network error, show user-friendly message
                     if (error.name === 'AbortError') {
                         console.warn(`API ${i + 1} timed out after 5 seconds`);
                     } else if (error.message.includes('fetch')) {
                         console.warn(`API ${i + 1} network error:`, error.message);
                     }
-                    
+
                     // Continue to next API
                     continue;
                 }
@@ -2312,10 +2409,10 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < apiEndpoints.length; i++) {
                 try {
                     console.log(`Loading districts from API ${i + 1}:`, apiEndpoints[i]);
-                    
+
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    
+
                     const response = await fetch(apiEndpoints[i], {
                         signal: controller.signal,
                         method: 'GET',
@@ -2324,13 +2421,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             'User-Agent': 'PropertyApp/1.0'
                         }
                     });
-                    
+
                     clearTimeout(timeoutId);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
+
                     const data = await response.json();
                     let districts = [];
 
@@ -2350,7 +2447,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (districts && districts.length > 0) {
                         console.log(`Successfully loaded ${districts.length} districts from API ${i + 1}`);
-                        
+
                         districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
                         districts.forEach(district => {
                             const option = document.createElement('option');
@@ -2359,10 +2456,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             option.setAttribute('data-code', district.code || district.Id);
                             districtSelect.appendChild(option);
                         });
-                        
+
                         // Success! Exit the loop
                         return;
-                        
+
                     } else {
                         throw new Error('No districts data found');
                     }
@@ -2377,13 +2474,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // All APIs failed, show fallback message
             console.error('All APIs failed for districts. Last error:', lastError?.message);
             districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu - vui lòng thử lại</option>';
-            
+
             // Show approximate location for the province on map
             if (provinceName) {
                 const coordinates = getApproximateCoordinates(provinceName, '');
                 if (coordinates && propertyMap) {
                     propertyMap.setView([coordinates.lat, coordinates.lon], 10);
-                    
+
                     // Show notification
                     const mapInfo = document.querySelector('.map-info small');
                     if (mapInfo) {
@@ -2420,10 +2517,10 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < apiEndpoints.length; i++) {
                 try {
                     console.log(`Loading wards from API ${i + 1}:`, apiEndpoints[i]);
-                    
+
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    
+
                     const response = await fetch(apiEndpoints[i], {
                         signal: controller.signal,
                         method: 'GET',
@@ -2432,13 +2529,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             'User-Agent': 'PropertyApp/1.0'
                         }
                     });
-                    
+
                     clearTimeout(timeoutId);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                    
+
                     const data = await response.json();
                     let wards = [];
 
@@ -2449,7 +2546,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // GitHub data format - find district and get wards
                         for (const province of data) {
                             if (province.Districts) {
-                                const districtData = province.Districts.find(d => 
+                                const districtData = province.Districts.find(d =>
                                     d.Id === districtCode || d.Name === districtName
                                 );
                                 if (districtData && districtData.Wards) {
@@ -2465,7 +2562,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (wards && wards.length > 0) {
                         console.log(`Successfully loaded ${wards.length} wards from API ${i + 1}`);
-                        
+
                         wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
                         wards.forEach(ward => {
                             const option = document.createElement('option');
@@ -2473,10 +2570,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             option.textContent = ward.name || ward.Name;
                             wardSelect.appendChild(option);
                         });
-                        
+
                         // Success! Exit the loop
                         return;
-                        
+
                     } else {
                         throw new Error('No wards data found');
                     }
@@ -2518,6 +2615,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Load provinces on page load
         loadProvinces();
+    }
+
+    // Handle legal radio buttons
+    const legalRadios = document.querySelectorAll('input[name="legal"]');
+    const legalOtherInput = document.getElementById('legalOtherInput');
+    const legalOtherInputField = document.querySelector('input[name="legal_other"]');
+
+    legalRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'Khác') {
+                legalOtherInput.style.display = 'block';
+                legalOtherInputField.required = true;
+                legalOtherInputField.focus();
+            } else {
+                legalOtherInput.style.display = 'none';
+                legalOtherInputField.required = false;
+                legalOtherInputField.value = '';
+            }
+        });
+    });
+
+    // Handle form submission for legal field
+    const propertyForm = document.querySelector('form');
+    if (propertyForm) {
+        propertyForm.addEventListener('submit', function(e) {
+            const selectedLegal = document.querySelector('input[name="legal"]:checked');
+            if (selectedLegal && selectedLegal.value === 'Khác') {
+                const otherValue = legalOtherInputField.value.trim();
+                if (otherValue) {
+                    // Create a hidden input to send the custom legal value
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'legal';
+                    hiddenInput.value = otherValue;
+                    this.appendChild(hiddenInput);
+
+                    // Disable the radio button to avoid conflict
+                    selectedLegal.disabled = true;
+                }
+            }
+        });
     }
 });
 </script>

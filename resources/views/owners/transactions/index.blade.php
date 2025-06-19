@@ -357,6 +357,7 @@
                             <option value="">Chọn phương thức thanh toán</option>
                             <option value="transfer">Chuyển khoản</option>
                             <option value="cash">Tiền mặt</option>
+                            <option value="vnpay">VNPAY</option>
                         </select>
                     </div>
 
@@ -823,47 +824,95 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
     const formData = new FormData(this);
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
+    const paymentMethod = formData.get('payment_method');
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Đang xử lý...';
 
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Hide modal with fallback methods
-            const modalElement = document.getElementById('paymentModal');
-            if (typeof bootstrap !== 'undefined') {
-                bootstrap.Modal.getInstance(modalElement).hide();
-            } else if (typeof $ !== 'undefined' && $.fn.modal) {
-                $(modalElement).modal('hide');
-            } else {
-                modalElement.style.display = 'none';
-                modalElement.classList.remove('show');
-                document.body.classList.remove('modal-open');
-                const backdrop = document.querySelector('.modal-backdrop');
-                if (backdrop) backdrop.remove();
+    // Check if VNPAY payment
+    if (paymentMethod === 'vnpay') {
+        // Process VNPAY payment
+        const commissionId = formData.get('commission_id');
+
+        fetch('{{ route("owner.transactions.process-vnpay-commission") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
             }
-            showSuccessToast(data.message);
-            setTimeout(() => window.location.reload(), 1500);
-        } else {
-            showErrorToast(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showErrorToast('Có lỗi xảy ra khi thanh toán hoa hồng');
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-    });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Hide modal
+                const modalElement = document.getElementById('paymentModal');
+                if (typeof bootstrap !== 'undefined') {
+                    bootstrap.Modal.getInstance(modalElement).hide();
+                } else if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $(modalElement).modal('hide');
+                } else {
+                    modalElement.style.display = 'none';
+                    modalElement.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                }
+
+                // Redirect to VNPAY
+                alert('Đang chuyển hướng đến trang thanh toán VNPAY...');
+                window.location.href = data.payment_url;
+            } else {
+                showErrorToast(data.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorToast('Có lỗi xảy ra khi xử lý thanh toán VNPAY');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    } else {
+        // Process traditional payment methods
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Hide modal with fallback methods
+                const modalElement = document.getElementById('paymentModal');
+                if (typeof bootstrap !== 'undefined') {
+                    bootstrap.Modal.getInstance(modalElement).hide();
+                } else if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $(modalElement).modal('hide');
+                } else {
+                    modalElement.style.display = 'none';
+                    modalElement.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                }
+                showSuccessToast(data.message);
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showErrorToast(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorToast('Có lỗi xảy ra khi thanh toán hoa hồng');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    }
 });
 
 function showCommissionModal(transactionId, transactionType, totalPrice, rentMonths) {

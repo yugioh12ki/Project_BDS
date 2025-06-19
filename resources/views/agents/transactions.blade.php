@@ -4,13 +4,14 @@
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/transaction-modal.css') }}">
+<link rel="stylesheet" href="{{ asset('css/transactions-aqua.css') }}">
 @endsection
 
 @section('transactions')
 <div class="transactions-page">
     <div class="content-wrapper">
         <!-- Header Section -->
-        <div class="page-header">
+        <div class="page-header aqua-theme">
             <div class="header-actions">
                 <div>
                     <h2>Danh sách giao dịch</h2>
@@ -24,7 +25,7 @@
         </div>
 
         <!-- Filter Section -->
-        <div class="filter-section">
+        <div class="filter-section aqua-theme">
             <div class="filter-wrapper">
                 <div class="search-input-container">
                     <i class="fas fa-search search-icon"></i>
@@ -59,13 +60,13 @@
         <!-- Table Section -->
         <div class="table-container">
             <!-- Loading State -->
-            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-overlay aqua-theme" id="loadingOverlay" style="display: none;">
                 <div class="spinner"></div>
                 <p>Đang tải dữ liệu...</p>
             </div>
 
             <!-- Transaction Table -->
-            <table class="transaction-table" id="transactionTable">
+            <table class="transaction-table aqua-theme" id="transactionTable">
                 <thead>
                     <tr>
                         <th class="sortable" data-sort="id">ID Giao dịch
@@ -107,16 +108,16 @@
                                 </div>
                             </td>
                             <td class="transaction-type">
-                                <span class="type-badge {{ ($transaction->TransactionType ?? '') === 'Sale' ? 'type-sale' : 'type-rent' }}">
+                                <span class="type-badge {{ ($transaction->TransactionType ?? '') === 'Sale' ? 'aqua-sale' : 'aqua-rent' }}">
                                     {{ ($transaction->TransactionType ?? '') === 'Sale' ? 'Mua bán' : 'Cho thuê' }}
                                 </span>
                             </td>
-                            <td class="transaction-value">{{ number_format($transaction->TotalPrice ?? 0, 0, ',', '.') }} ₫</td>
+                            <td class="transaction-value aqua-theme">{{ number_format($transaction->TotalPrice ?? 0, 0, ',', '.') }} ₫</td>
                             <td class="transaction-date">{{ $transaction->TransactionDate ? date('d/m/Y', strtotime($transaction->TransactionDate)) : 'N/A' }}</td>
                             <td>
                                 <span class="status-badge
-                                    @if(($transaction->TranStatus ?? '') === 'Paid') status-paid
-                                    @elseif(($transaction->TranStatus ?? '') === 'Pending') status-pending
+                                    @if(($transaction->TranStatus ?? '') === 'Paid') aqua-completed
+                                    @elseif(($transaction->TranStatus ?? '') === 'Pending') aqua-pending
                                     @elseif(($transaction->TranStatus ?? '') === 'Cancelled') status-cancelled
                                     @endif">
                                     @if(($transaction->TranStatus ?? '') === 'Paid') Đã thanh toán
@@ -127,15 +128,15 @@
                                 </span>
                             </td>
                             <td class="action-buttons">
-                                <a href="#" class="action-btn btn-view" title="Xem chi tiết"
+                                <a href="#" class="action-btn aqua-view" title="Xem chi tiết"
                                    data-action="view" data-transaction-id="{{ $transaction->TransactionID ?? '' }}">
                                     👁️ Chi tiết
                                 </a>
-                                <a href="#" class="action-btn btn-edit" title="Chỉnh sửa"
+                                <a href="#" class="action-btn aqua-edit" title="Chỉnh sửa"
                                    data-action="edit" data-transaction-id="{{ $transaction->TransactionID ?? '' }}">
                                     ✏️ Sửa
                                 </a>
-                                <a href="#" class="action-btn btn-docs" title="Tài liệu"
+                                <a href="#" class="action-btn aqua-docs" title="Tài liệu"
                                    data-action="docs" data-transaction-id="{{ $transaction->TransactionID ?? '' }}">
                                     📄 Tài liệu
                                 </a>
@@ -159,7 +160,7 @@
                 <div class="pagination-info">
                     <span id="paginationInfo">Hiển thị {{ isset($transactions) ? $transactions->count() : 0 }} giao dịch</span>
                 </div>
-                <div class="pagination">
+                <div class="pagination aqua-theme">
                     <button class="pagination-btn" id="prevPage" disabled>
                         <i class="fas fa-chevron-left"></i>
                         Trước
@@ -542,15 +543,10 @@ function saveTransactionChanges() {
         return;
     }
 
-    // Convert status to numeric values for API
-    let statusValue;
-    switch (newStatus) {
-        case 'Pending': statusValue = 0; break;
-        case 'Paid': statusValue = 1; break;
-        case 'Cancelled': statusValue = 2; break;
-        default:
-            showToast('Trạng thái không hợp lệ', 'error');
-            return;
+    // Convert status values for validation (keeping original enum values)
+    if (!['Pending', 'Paid', 'Cancelled'].includes(newStatus)) {
+        showToast('Trạng thái không hợp lệ', 'error');
+        return;
     }
 
     // Show loading button
@@ -567,7 +563,7 @@ function saveTransactionChanges() {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify({
-            status: statusValue,
+            status: newStatus, // Send enum string directly
             notes: notes
         })
     })
@@ -584,27 +580,30 @@ function saveTransactionChanges() {
             const currentStatusElement = currentRow.querySelector('.status-badge');
 
             let newStatusClass;
-            switch (statusValue) {
-                case 1: // Paid
-                    newStatusClass = 'bg-success';
-                    break;
-                case 0: // Pending
+            switch (newStatus) {
+                case 'Pending':
                     newStatusClass = 'bg-warning text-dark';
                     break;
-                case 2: // Cancelled
+                case 'Paid':
+                    newStatusClass = 'bg-success';
+                    break;
+                case 'Cancelled':
                     newStatusClass = 'bg-danger';
+                    break;
+                default:
+                    newStatusClass = 'bg-secondary';
                     break;
             }
 
             // Update table row
             if (currentStatusElement) {
-                currentStatusElement.textContent = data.transaction.status_text;
+                currentStatusElement.textContent = data.new_status;
                 currentStatusElement.className = `status-badge badge ${newStatusClass}`;
             }
 
             // Show success message
-            if (statusValue === 1) {
-                showToast('Cập nhật thành công! Trạng thái bất động sản sẽ được cập nhật tự động.', 'success');
+            if (newStatus === 'Paid') {
+                showToast('Cập nhật thành công! Trạng thái bất động sản sẽ được cập nhật tự động khi giao dịch hoàn tất.', 'success');
             } else {
                 showToast('Cập nhật trạng thái giao dịch thành công!', 'success');
             }
@@ -617,8 +616,10 @@ function saveTransactionChanges() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('editTransactionModal'));
             modal.hide();
 
-            // Refresh table data if needed
-            filterTransactions();
+            // Reload page after a short delay to show the success message
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         } else {
             throw new Error(data.message || 'Failed to update transaction status');
         }

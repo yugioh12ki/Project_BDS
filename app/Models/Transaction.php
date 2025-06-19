@@ -18,6 +18,17 @@ class Transaction extends Model
 
     protected $keyType = 'string';
 
+    // Fillable fields - exclude fields that triggers handle automatically
+    protected $fillable = [
+        'PropertyID',
+        'CusID',
+        'TotalPrice',
+        'TransactionDate',
+        'TranStatus'
+        // Don't include: TransactionID, AgentID, OwnerID, TransactionType (triggers handle these)
+        // Don't include: Description (field doesn't exist in database)
+    ];
+
     public function detailTransaction()
     {
         return $this->hasMany(detail_transaction::class, 'TransactionID', 'TransactionID');
@@ -27,10 +38,7 @@ class Transaction extends Model
     {
         return $this->hasMany(Document::class, 'TransactionID', 'TransactionID');
     }
-    public function transactionLog()
-    {
-        return $this->hasMany(transactionlog::class, 'TransactionID', 'TransactionID');
-    }
+
     public function trans_owner()
     {
         return $this->belongsTo(User::class, 'OwnerID', 'UserID');
@@ -62,16 +70,18 @@ class Transaction extends Model
 
 
 
-    protected $fillable = [
-        'TransactionID',
-        'PropertyID',
-        'OwnerID',
-        'AgentID',
-        'CusID',
-        'TranStatus',
-        'TotalPrice',
-        'TransactionDate',
-        'TransactionType',
+    // protected $fillable = [
+    //     // Don't include TransactionID - trigger auto-generates
+    //     'PropertyID',
+    //     // Don't include OwnerID, AgentID, TransactionType - trigger gets from properties table
+    //     'CusID',
+    //     'TranStatus',
+    //     'TotalPrice',
+    //     'TransactionDate',
+    //     'Description',
+    // ];
 
+    protected $casts = [
+        'TransactionDate' => 'datetime',
     ];
 }

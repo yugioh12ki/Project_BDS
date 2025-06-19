@@ -18,11 +18,11 @@ class Appointment extends Model
     public $timestamps = false;
 
     // Fillable attributes
-    // protected $fillable = [
-    //     'PropertyID', 'AgentID', 'CusID', 'OwnerID',
-    //     'TitleAppoint', 'DescAppoint', 'AppointmentDateStart',
-    //     'AppointmentDateEnd', 'Status'
-    // ];
+    protected $fillable = [
+        'PropertyID', 'AgentID', 'CusID', 'OwnerID',
+        'TitleAppoint', 'DescAppoint', 'AppointmentDateStart',
+        'AppointmentDateEnd', 'Status'
+    ];
 
     // Cast attributes
     protected $casts = [
@@ -31,8 +31,8 @@ class Appointment extends Model
     ];
 
     // Status constants
-    const STATUS_PENDING = 'Khởi Tạo';
-    const STATUS_ACTIVE = 'Đang Thực Hiện';
+    const STATUS_PENDING = 'Khởi tạo';
+    const STATUS_ACTIVE = 'Đang Thực hiện';
     const STATUS_CANCELLED = 'Hủy Hẹn';
     const STATUS_COMPLETED = 'Hoàn Thành';
 
@@ -108,15 +108,4 @@ class Appointment extends Model
     // {
     //     return $this->belongsTo(Property::class, 'PropertyID', 'PropertyID');
     // }
-
-    protected $fillable = [
-        'AppointmentID',
-        'PropertyID',
-        'OwnerID',
-        'AgentID',
-        'CusID',
-        'AppointmentDate',
-        'Status', // Trạng thái cuộc hẹn (ví dụ: 'pending', 'confirmed', 'cancelled')
-        'Notes', // Ghi chú về cuộc hẹn
-    ];
 }

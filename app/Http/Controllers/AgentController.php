@@ -240,64 +240,182 @@ class AgentController extends Controller
     public function createAppointment(Request $request)
     {
         // Validate request data
-        $request->validate([
-            'PropertyID' => 'required|exists:properties,PropertyID',
-            'CusID' => 'required|exists:user,UserID',
-            'OwnerID' => 'required|exists:user,UserID',
+        $validator = Validator::make($request->all(), [
+            'PropertyID' => 'required|string',
+            'CusID' => 'required|string',
+            'OwnerID' => 'required|string',
             'TitleAppoint' => 'required|string|max:255',
-            'DescAppoint' => 'required|string',
-            'AppointmentDateStart' => 'required|date',
+            'DescAppoint' => 'required|string|max:1000',
+            'AppointmentDateStart' => 'required|date|after:now',
             'AppointmentDateEnd' => 'required|date|after:AppointmentDateStart',
+        ], [
+            'PropertyID.required' => 'Vui lòng chọn bất động sản',
+            'CusID.required' => 'Vui lòng chọn khách hàng',
+            'OwnerID.required' => 'Vui lòng chọn chủ sở hữu',
+            'TitleAppoint.required' => 'Vui lòng nhập tiêu đề cuộc hẹn',
+            'TitleAppoint.max' => 'Tiêu đề không được vượt quá 255 ký tự',
+            'DescAppoint.required' => 'Vui lòng nhập mô tả cuộc hẹn',
+            'DescAppoint.max' => 'Mô tả không được vượt quá 1000 ký tự',
+            'AppointmentDateStart.required' => 'Vui lòng chọn thời gian bắt đầu',
+            'AppointmentDateStart.after' => 'Thời gian bắt đầu phải sau thời điểm hiện tại',
+            'AppointmentDateEnd.required' => 'Vui lòng chọn thời gian kết thúc',
+            'AppointmentDateEnd.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu',
         ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
 
         // Get authenticated agent
         $agent = Auth::user();
         if (!$agent) {
-            return back()->with('error', 'Bạn cần đăng nhập để tạo lịch hẹn');
+            $message = 'Bạn cần đăng nhập để tạo lịch hẹn';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 401);
+            }
+            return back()->with('error', $message);
         }
-
-        // Get property with owner information
-        $property = Property::with('owner')->findOrFail($request->PropertyID);
-
-        // Check if agent is assigned to this property (optional check)
-        if ($property->AgentID !== null && $property->AgentID !== $agent->UserID) {
-            return back()->with('error', 'Bạn không được phân công cho bất động sản này');
-        }
-
-        // Auto-correct OwnerID to match property's owner
-        $correctOwnerID = $property->OwnerID;
 
         try {
-            // Create appointment - ONLY ONE METHOD
+            // Verify property exists and get owner information
+            $property = Property::where('PropertyID', $request->PropertyID)->first();
+            if (!$property) {
+                $message = 'Bất động sản không tồn tại';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message], 404);
+                }
+                return back()->with('error', $message);
+            }
+
+            // Verify customer exists and has Customer role
+            $customer = User::where('UserID', $request->CusID)
+                ->where('Role', 'Customer')
+                ->where('StatusUser', 'active')
+                ->first();
+            if (!$customer) {
+                $message = 'Khách hàng không tồn tại hoặc không hoạt động';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message], 404);
+                }
+                return back()->with('error', $message);
+            }
+
+            // Verify owner exists and has Owner role
+            $owner = User::where('UserID', $request->OwnerID)
+                ->where('Role', 'Owner')
+                ->where('StatusUser', 'active')
+                ->first();
+            if (!$owner) {
+                $message = 'Chủ sở hữu không tồn tại hoặc không hoạt động';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message], 404);
+                }
+                return back()->with('error', $message);
+            }
+
+            // Check if agent is assigned to this property (if property has agent assigned)
+            if ($property->AgentID !== null && $property->AgentID !== $agent->UserID) {
+                $message = 'Bạn không được phân công quản lý bất động sản này';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message], 403);
+                }
+                return back()->with('error', $message);
+            }
+
+            // Check for appointment time conflicts
+            $startTime = Carbon::parse($request->AppointmentDateStart);
+            $endTime = Carbon::parse($request->AppointmentDateEnd);
+
+            $conflictingAppointment = Appointment::where('AgentID', $agent->UserID)
+                ->whereNotIn('Status', ['Hủy Hẹn'])
+                ->where(function($query) use ($startTime, $endTime) {
+                    $query->whereBetween('AppointmentDateStart', [$startTime, $endTime])
+                        ->orWhereBetween('AppointmentDateEnd', [$startTime, $endTime])
+                        ->orWhere(function($q) use ($startTime, $endTime) {
+                            $q->where('AppointmentDateStart', '<=', $startTime)
+                              ->where('AppointmentDateEnd', '>=', $endTime);
+                        });
+                })
+                ->exists();
+
+            if ($conflictingAppointment) {
+                $message = 'Bạn đã có lịch hẹn khác trong khoảng thời gian này';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message], 409);
+                }
+                return back()->with('error', $message);
+            }
+
+            // Create appointment with Khởi tạo status
             $appointment = Appointment::create([
                 'PropertyID' => $property->PropertyID,
                 'AgentID' => $agent->UserID,
-                'CusID' => $request->CusID,
-                'OwnerID' => $correctOwnerID,
+                'CusID' => $customer->UserID,
+                'OwnerID' => $owner->UserID,
                 'TitleAppoint' => $request->TitleAppoint,
                 'DescAppoint' => $request->DescAppoint,
-                'AppointmentDateStart' => $request->AppointmentDateStart,
-                'AppointmentDateEnd' => $request->AppointmentDateEnd,
-                'Status' => 'Khởi tạo'
+                'AppointmentDateStart' => $startTime,
+                'AppointmentDateEnd' => $endTime,
+                'Status' => 'Khởi tạo' // Trạng thái mặc định
             ]);
 
             Log::info('Appointment created successfully', [
                 'AppointmentID' => $appointment->AppointmentID,
                 'PropertyID' => $property->PropertyID,
                 'AgentID' => $agent->UserID,
-                'CusID' => $request->CusID
+                'CusID' => $customer->UserID,
+                'OwnerID' => $owner->UserID,
+                'Status' => 'Khởi tạo',
+                'StartTime' => $startTime->format('Y-m-d H:i:s'),
+                'EndTime' => $endTime->format('Y-m-d H:i:s')
             ]);
 
-            return back()->with('success', 'Tạo lịch hẹn thành công');
+            $successMessage = 'Tạo lịch hẹn thành công! Cuộc hẹn đang ở trạng thái "Khởi tạo" và chờ xác nhận từ chủ sở hữu.';
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage,
+                    'appointment' => [
+                        'id' => $appointment->AppointmentID,
+                        'title' => $appointment->TitleAppoint,
+                        'status' => $appointment->Status,
+                        'start_time' => $startTime->format('d/m/Y H:i'),
+                        'end_time' => $endTime->format('d/m/Y H:i'),
+                        'property_title' => $property->Title ?? 'N/A',
+                        'customer_name' => $customer->Name,
+                        'owner_name' => $owner->Name
+                    ]
+                ]);
+            }
+
+            return back()->with('success', $successMessage);
 
         } catch (\Exception $e) {
             Log::error('Failed to create appointment', [
                 'error' => $e->getMessage(),
-                'PropertyID' => $request->PropertyID,
-                'AgentID' => $agent->UserID
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+                'agent_id' => $agent->UserID ?? null
             ]);
 
-            return back()->with('error', 'Lỗi khi tạo lịch hẹn: ' . $e->getMessage());
+            $errorMessage = 'Lỗi khi tạo lịch hẹn. Vui lòng thử lại sau.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'debug_error' => config('app.debug') ? $e->getMessage() : null
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
         }
     }
 
@@ -306,9 +424,27 @@ class AgentController extends Controller
         $ownerId = $request->query('owner_id');
         if (!$ownerId) return response()->json([]);
 
-        $properties = Property::where('OwnerID', $ownerId)
+        $agent = Auth::user();
+
+        $properties = Property::with(['danhMuc'])
+            ->where('OwnerID', $ownerId)
+            ->where('AgentID', $agent->UserID) // Only properties assigned to current agent
             ->whereIn('Status', ['active', 'Active', 'approved', 'Approved'])
-            ->get(['PropertyID as id', 'Title as title']);
+            ->get(['PropertyID', 'Title', 'Address', 'Ward', 'District', 'Province', 'Price', 'PropertyType', 'TypePro'])
+            ->map(function($property) {
+                return [
+                    'id' => $property->PropertyID,
+                    'title' => $property->Title,
+                    'address' => $property->Address,
+                    'ward' => $property->Ward,
+                    'district' => $property->District,
+                    'province' => $property->Province,
+                    'price' => $property->Price,
+                    'type_pro' => $property->TypePro,
+                    'category_name' => $property->danhMuc->Protype_Name ?? 'Khác',
+                    'formatted_price' => number_format($property->Price) . ' VNĐ'
+                ];
+            });
 
         return response()->json($properties);
     }
@@ -400,27 +536,32 @@ class AgentController extends Controller
                 'property_id' => 'required|exists:properties,PropertyID',
                 'customer_id' => 'required|exists:user,UserID',
                 'transaction_type' => 'required|in:rent,sale',
-                'payment_method' => 'required|in:cash,bank',
+                'payment_method' => 'required|in:cash,bank,momo',
+                'transaction_date' => 'required|date',
                 // Rent-specific validation
                 'rent_months' => 'required_if:transaction_type,rent|integer|min:1',
-                'monthly_rent' => 'required_if:transaction_type,rent|numeric|min:0',
-                'start_date' => 'required_if:transaction_type,rent|date',
-                'end_date' => 'required_if:transaction_type,rent|date',
                 // Sale-specific validation
                 'sale_price' => 'required_if:transaction_type,sale|numeric|min:0',
-                'sale_contract_type' => 'required_if:transaction_type,sale|in:full,deposit',
+                'sale_contract_type' => 'required_if:transaction_type,sale|in:full_payment,deposit',
                 'deposit_amount' => 'required_if:sale_contract_type,deposit|numeric|min:0',
-                'payment_installments' => 'required_if:sale_contract_type,deposit|integer|min:1',
-                'payment_schedule' => 'nullable|string',
-                // Document validation
-                'documents.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
-                'templates.*' => 'nullable',
-                'total_price' => 'required|numeric|min:0'
+                'payment_installments' => 'required_if:sale_contract_type,deposit|integer|min:2',
+                // Document validation - make these optional for JSON requests
+                'documents' => 'nullable|array',
+                'templates' => 'nullable|array',
+                'payment_note' => 'nullable|string',
+                // Auto-completion flag
+                'auto_complete_first_payment' => 'nullable|boolean'
             ]);
 
             if ($validator->fails()) {
+                Log::error('Transaction validation failed', [
+                    'errors' => $validator->errors()->toArray(),
+                    'request_data' => $request->all()
+                ]);
+
                 return response()->json([
                     'success' => false,
+                    'message' => 'Dữ liệu không hợp lệ',
                     'errors' => $validator->errors()
                 ], 422);
             }
@@ -435,36 +576,108 @@ class AgentController extends Controller
                     'success' => false,
                     'message' => 'Khách hàng không tồn tại.'
                 ], 404);
-            }
-
-            // Begin database transaction
+            }            // Begin database transaction
             DB::beginTransaction();
 
-            // Create transaction with 4-step workflow data
-            $transaction = new Transaction();
-            $transaction->PropertyID = $request->property_id;
-            $transaction->AgentID = $agent->UserID;
-            $transaction->OwnerID = $property->OwnerID;
-            $transaction->CusID = $request->customer_id;
-            $transaction->TotalPrice = $request->total_price;
-            $transaction->TransactionDate = now(); // Use current timestamp
-            $transaction->TransactionType = ucfirst($request->transaction_type); // 'Rent' or 'Sale'
+            // PHASE 1: Create Transaction Record using raw DB insert
+            // Let database triggers handle TransactionID, AgentID, OwnerID, TransactionType
 
-            // Set status based on payment method
-            if ($request->payment_method === 'cash') {
-                $transaction->TranStatus = 1; // Paid
+            // Calculate price based on transaction type
+            if ($request->transaction_type === 'rent') {
+                // For rent: calculate total rent = monthly rent * months
+                $monthlyRent = $property->Price;
+                $rentMonths = $request->rent_months;
+                $totalPrice = $monthlyRent * $rentMonths;
             } else {
-                $transaction->TranStatus = 0; // Pending
+                // For sale: use property price or custom sale price
+                $totalPrice = $request->sale_price ?: $property->Price;
             }
 
-            $transaction->save();
+            // Agent không được tự động set TranStatus = 'Paid'
+            // Chỉ Owner mới có quyền xác nhận thanh toán
+            $tranStatus = 'Pending'; // Agent luôn tạo với trạng thái Pending
 
-            // Get the generated TransactionID
+            // Use DB::table to insert and let triggers work
+            $insertResult = DB::table('transactions')->insert([
+                'PropertyID' => $request->property_id,
+                'CusID' => $request->customer_id,
+                'TotalPrice' => $totalPrice,
+                'TransactionDate' => now(),
+                'TranStatus' => $tranStatus
+                // DO NOT include: TransactionID, AgentID, OwnerID, TransactionType (triggers handle these)
+            ]);
+
+            if (!$insertResult) {
+                throw new \Exception('Failed to insert transaction record');
+            }
+
+            // Get the transaction that was just created
+            $transaction = DB::table('transactions')
+                ->where('PropertyID', $request->property_id)
+                ->where('CusID', $request->customer_id)
+                ->where('TotalPrice', $totalPrice)
+                ->orderBy('TransactionDate', 'desc')
+                ->first();
+
+            if (!$transaction) {
+                throw new \Exception('Failed to retrieve created transaction');
+            }
+
             $transactionId = $transaction->TransactionID;
 
-            // Handle document uploads with new path structure
+            Log::info('Transaction created successfully', [
+                'TransactionID' => $transactionId,
+                'AgentID' => $transaction->AgentID,
+                'OwnerID' => $transaction->OwnerID,
+                'TransactionType' => $transaction->TransactionType,
+                'TotalPrice' => $transaction->TotalPrice
+            ]);
+
+            if (!$transactionId) {
+                throw new \Exception('Database trigger failed to generate TransactionID');
+            }
+
+            Log::info('Transaction created successfully with auto-generated ID: ' . $transactionId);
+
+            // PHASE 2: Create Detail Transaction Record using raw DB insert
+            // Let trigger handle Num_Pay, DTran_Date, and Price calculation for rent
+
+            $detailTransactionData = [
+                'TransactionID' => $transactionId,
+                'PaymentType' => strtoupper($request->payment_method),
+                'InstallPayment' => $request->transaction_type === 'sale' ? 'Toàn bộ' : 'Hàng tháng'
+                // DO NOT set Num_Pay, DTran_Date - trigger handles these
+            ];
+
+            if ($request->transaction_type === 'rent') {
+                // For rent, set RentMonth and let trigger calculate Price
+                $detailTransactionData['RentMonth'] = $request->rent_months;
+                // DO NOT set Price - trigger will calculate: property.Price * RentMonth
+            } else {
+                // For sale, set the price directly
+                $detailTransactionData['Price'] = $totalPrice;
+                $detailTransactionData['RentMonth'] = null;
+            }
+
+            // Set detail transaction status based on payment method
+            if ($request->payment_method === 'cash' && $request->auto_complete_first_payment) {
+                $detailTransactionData['DTran_Status'] = 'Hoàn Thành'; // Cash payment completed immediately
+                Log::info('Cash payment set as completed for transaction: ' . $transactionId);
+            } else {
+                $detailTransactionData['DTran_Status'] = 'Chờ đợi'; // Other payment methods wait for confirmation
+            }
+
+            $detailInsertResult = DB::table('detail_transaction')->insert($detailTransactionData);
+
+            if (!$detailInsertResult) {
+                throw new \Exception('Failed to insert detail transaction record');
+            }
+
+            Log::info('Detail transaction created successfully for TransactionID: ' . $transactionId);
+
+            // PHASE 3: Handle Document Uploads (Optional)
             if ($request->hasFile('documents')) {
-                // Create transaction-specific directory
+                // Handle traditional file uploads
                 $documentPath = 'storage/document/' . $transactionId;
                 $fullPath = public_path($documentPath);
 
@@ -473,21 +686,53 @@ class AgentController extends Controller
                 }
 
                 foreach ($request->file('documents') as $file) {
-                    // Use original filename for new path format: {transactionID}/{filename}
                     $fileName = $file->getClientOriginalName();
                     $customPath = $transactionId . '/' . $fileName;
 
-                    // Move file to public directory
                     $file->move($fullPath, $fileName);
 
-                    // Save document record in database with new path format
                     $document = new Document();
                     $document->TransactionID = $transactionId;
-                    $document->FilePath = $customPath; // Using {transactionID}/{filename} format
+                    $document->FilePath = $customPath;
                     $document->DocumentType = $file->getClientMimeType();
                     $document->UploadedDate = now();
                     $document->save();
                 }
+
+                Log::info('Documents uploaded successfully for TransactionID: ' . $transactionId);
+            } elseif ($request->has('documents') && is_array($request->documents)) {
+                // Handle JSON document metadata (documents already uploaded to temp)
+                $tempPath = public_path('storage/document/temp_uploads/' . $agent->UserID);
+                $documentPath = 'storage/document/' . $transactionId;
+                $fullPath = public_path($documentPath);
+
+                if (!file_exists($fullPath)) {
+                    mkdir($fullPath, 0755, true);
+                }
+
+                foreach ($request->documents as $docData) {
+                    if (isset($docData['name']) && isset($docData['path'])) {
+                        $tempFilePath = public_path('storage/document/' . $docData['path']);
+
+                        if (file_exists($tempFilePath)) {
+                            $fileName = $docData['name'];
+                            $customPath = $transactionId . '/' . $fileName;
+                            $newFilePath = $fullPath . '/' . $fileName;
+
+                            // Move from temp to transaction folder
+                            if (rename($tempFilePath, $newFilePath)) {
+                                $document = new Document();
+                                $document->TransactionID = $transactionId;
+                                $document->FilePath = $customPath;
+                                $document->DocumentType = pathinfo($fileName, PATHINFO_EXTENSION);
+                                $document->UploadedDate = now();
+                                $document->save();
+                            }
+                        }
+                    }
+                }
+
+                Log::info('JSON documents processed successfully for TransactionID: ' . $transactionId);
             }
 
             // Handle template files if provided
@@ -495,94 +740,18 @@ class AgentController extends Controller
                 // Templates are already stored files from the template selection step
                 // Just log the template usage
                 foreach ($request->templates as $template) {
-                    DB::table('transactionlog')->insert([
-                        'TransactionID' => $transactionId,
-                        'Action' => 'Template Used',
-                        'Description' => 'Template file: ' . json_encode($template),
-                        'LogDate' => now(),
-                        'UserID' => $agent->UserID
+                    Log::info('Template used in transaction', [
+                        'transaction_id' => $transactionId,
+                        'template' => $template,
+                        'agent_id' => $agent->UserID
                     ]);
                 }
             }
 
-            // Create detail transaction record with type-specific data
-            if ($request->transaction_type === 'rent') {
-                DB::table('detail_transaction')->insert([
-                    'TransactionID' => $transactionId,
-                    'Num_Pay' => 1,
-                    'Price' => $request->monthly_rent,
-                    'RentMonth' => $request->rent_months,
-                    'DTran_Date' => $request->start_date,
-                    'InstallPayment' => $request->rent_months, // Total months
-                    'PaymentType' => 'Monthly', // Default for rent
-                    'DTran_Status' => 'Active'
-                ]);
-            } elseif ($request->transaction_type === 'sale') {
-                // Create detail record for sale
-                $installments = 1; // Default to 1 for full payment
-                if ($request->sale_contract_type === 'deposit' && $request->payment_installments) {
-                    $installments = $request->payment_installments;
-                }
-
-                DB::table('detail_transaction')->insert([
-                    'TransactionID' => $transactionId,
-                    'Num_Pay' => 1,
-                    'Price' => $request->sale_price,
-                    'RentMonth' => null, // Not applicable for sale
-                    'DTran_Date' => now(),
-                    'InstallPayment' => $installments,
-                    'PaymentType' => $request->sale_contract_type === 'deposit' ? 'Installment' : 'Full',
-                    'DTran_Status' => 'Active'
-                ]);
-
-                // If deposit contract with payment schedule, save the schedule
-                if ($request->sale_contract_type === 'deposit' && $request->has('payment_schedule')) {
-                    $paymentSchedule = json_decode($request->payment_schedule, true);
-                    if (is_array($paymentSchedule)) {
-                        foreach ($paymentSchedule as $payment) {
-                            DB::table('detail_transaction')->insert([
-                                'TransactionID' => $transactionId,
-                                'Num_Pay' => $payment['payment_number'],
-                                'Price' => $payment['amount'],
-                                'RentMonth' => null,
-                                'DTran_Date' => $payment['due_date'],
-                                'InstallPayment' => count($paymentSchedule),
-                                'PaymentType' => 'Installment',
-                                'DTran_Status' => 'Pending'
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Calculate and create commission record
-            $commissionRate = $request->transaction_type === 'rent' ? 0.05 : 0.03; // 5% for rent, 3% for sale
-            $commissionAmount = $request->total_price * $commissionRate;
-
-            DB::table('commission')->insert([
-                'TransactionID' => $transactionId,
-                'AgentID' => $agent->UserID,
-                'Amount' => $commissionAmount,
-                'Percentage' => $commissionRate * 100,
-                'TypeCom' => ucfirst($request->transaction_type),
-                'StatusCommission' => 'Pending',
-                'CommissionDate' => now()
-            ]);
-
-            // Add transaction log
-            DB::table('transactionlog')->insert([
-                'TransactionID' => $transactionId,
-                'Action' => 'Transaction Created',
-                'Description' => 'Transaction created via 4-step modal. Type: ' . $request->transaction_type,
-                'LogDate' => now(),
-                'UserID' => $agent->UserID
-            ]);
-
             // Commit the transaction
             DB::commit();
 
-            // Refresh transaction to get any trigger-updated values
-            $transaction->refresh();
+            Log::info('All transaction data committed successfully for TransactionID: ' . $transactionId);
 
             // Send email notifications (optional)
             try {
@@ -596,23 +765,24 @@ class AgentController extends Controller
             // Prepare response message based on payment method
             $message = 'Giao dịch đã được tạo thành công!';
             if ($request->payment_method === 'cash') {
-                $message .= ' Thanh toán tiền mặt đã được xác nhận.';
+                $message .= ' Đã ghi nhận thanh toán tiền mặt. Chờ chủ sở hữu xác nhận giao dịch.';
             } else {
-                $message .= ' Vui lòng hoàn tất chuyển khoản để hoàn thành giao dịch.';
+                $message .= ' Chờ khách hàng hoàn tất thanh toán và chủ sở hữu xác nhận.';
             }
 
             return response()->json([
                 'success' => true,
                 'message' => $message,
                 'transaction' => [
-                    'id' => $transaction->TransactionID,
-                    'type' => $transaction->TransactionType ?? $property->TypePro,
-                    'total_price' => number_format($transaction->TotalPrice, 0, ',', '.') . ' VND',
+                    'id' => $transactionId,
+                    'type' => $transaction->TransactionType,
+                    'total_price' => number_format($totalPrice, 0, ',', '.') . ' VND',
                     'property_title' => $property->Title,
+                    'customer_name' => $customer->Name,
                     'status' => $transaction->TranStatus,
                     'payment_method' => $request->payment_method,
-                    'documents_uploaded' => $request->hasFile('contract_documents') ? count($request->file('contract_documents')) : 0,
-                    'commission_amount' => number_format($commissionAmount, 0, ',', '.') . ' VND'
+                    'documents_uploaded' => $request->hasFile('contract_documents') ? count($request->file('contract_documents')) : 0
+                    // Commission sẽ được tạo bởi owner khi xác nhận thanh toán
                 ]
             ]);
 
@@ -656,10 +826,10 @@ class AgentController extends Controller
 
         // Map agent status to database status
         $statusMap = [
-            'Thành công' => 'Đang Thực Hiện',    // STATUS_ACTIVE
+            'Thành công' => 'Đang Thực hiện',    // STATUS_ACTIVE
             'Đã hủy' => 'Hủy Hẹn',              // STATUS_CANCELLED
             'Hoàn Thành' => 'Hoàn Thành',       // STATUS_COMPLETED
-            'Chờ xử lý' => 'Khởi Tạo'           // STATUS_PENDING
+            'Chờ xử lý' => 'Khởi tạo'           // STATUS_PENDING
         ];
 
         $newStatus = $statusMap[$requestStatus] ?? $requestStatus;
@@ -707,7 +877,7 @@ class AgentController extends Controller
 
         $appointments = Appointment::with(['property', 'ownerUser', 'cusUser'])
             ->where('AgentID', $agentId)
-            ->whereIn('Status', ['Đang Thực Hiện', 'Hủy Hẹn'])
+            ->whereIn('Status', ['Đang Thực hiện', 'Hủy Hẹn'])
             ->whereDate('AppointmentDateStart', '>=', Carbon::now()->subDays(30))
             ->orderBy('AppointmentDateStart', 'desc')
             ->limit(15)
@@ -716,7 +886,7 @@ class AgentController extends Controller
         foreach ($appointments as $appointment) {
             $appointmentTime = Carbon::parse($appointment->AppointmentDateStart);
 
-            if ($appointment->Status === 'Đang Thực Hiện') {
+            if ($appointment->Status === 'Đang Thực hiện') {
                 $message = "Chủ sở hữu {$appointment->ownerUser->Name} đã XÁC NHẬN lịch hẹn cho BĐS: {$appointment->property->Title}";
                 $title = 'Lịch hẹn được xác nhận';
             } else {
@@ -777,56 +947,28 @@ class AgentController extends Controller
                 ]);
             }
 
-            // Search customers by name, phone, or identity card
-            $customers = DB::table('user')
-                ->join('profile_customer', 'user.UserID', '=', 'profile_customer.UserID')
-                ->select(
-                    'user.UserID',
-                    'user.Name',
-                    'user.Phone',
-                    'user.IdentityCard',
-                    'user.Email',
-                    'user.Address',
-                    'user.Ward',
-                    'user.District',
-                    'user.Province'
-                )
-                ->where('user.Role', 'Customer')
-                ->where('user.StatusUser', 'active')
+            $customers = User::where('Role', 'Customer')
                 ->where(function($q) use ($query) {
-                    $q->where('user.Name', 'LIKE', '%' . $query . '%')
-                      ->orWhere('user.Phone', 'LIKE', '%' . $query . '%')
-                      ->orWhere('user.IdentityCard', 'LIKE', '%' . $query . '%');
+                    $q->where('Name', 'LIKE', "%{$query}%")
+                      ->orWhere('Email', 'LIKE', "%{$query}%")
+                      ->orWhere('Phone', 'LIKE', "%{$query}%")
+                      ->orWhere('Address', 'LIKE', "%{$query}%")
+                      ->orWhere('IdentityCard', 'LIKE', "%{$query}%");
                 })
+                ->select('UserID as id', 'Name as name', 'Phone as phone',
+                        'Address as address', 'IdentityCard as identity_card', 'Email')
                 ->limit(10)
                 ->get();
 
-            // Format customer data
-            $formattedCustomers = $customers->map(function($customer) {
-                $fullAddress = collect([
-                    $customer->Address,
-                    $customer->Ward,
-                    $customer->District,
-                    $customer->Province
-                ])->filter()->implode(', ');
-
-                return [
-                    'id' => $customer->UserID,
-                    'name' => $customer->Name,
-                    'phone' => $customer->Phone,
-                    'identity_card' => $customer->IdentityCard,
-                    'email' => $customer->Email,
-                    'address' => $fullAddress ?: 'Chưa cập nhật'
-                ];
-            });
-
             return response()->json([
                 'success' => true,
-                'customers' => $formattedCustomers
+                'customers' => $customers
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error searching customers: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tìm kiếm khách hàng'
@@ -843,11 +985,48 @@ class AgentController extends Controller
         if (!$searchTerm || strlen($searchTerm) < 2) {
             return response()->json(['owners' => []]);
         }
-        $owners = User::where('Role', 'Owner')
-            ->where('Name', 'like', '%' . $searchTerm . '%')
-            ->limit(10)
-            ->get(['UserID as id', 'Name as name', 'Phone as phone']);
-        return response()->json(['owners' => $owners]);
+
+        try {
+            $agent = Auth::user();
+
+            // First find owners with basic info
+            $owners = User::where('Role', 'Owner')
+                ->where('StatusUser', 'active') // Use StatusUser instead of Status
+                ->where(function($query) use ($searchTerm) {
+                    $query->where('Name', 'like', '%' . $searchTerm . '%')
+                          ->orWhere('Email', 'like', '%' . $searchTerm . '%')
+                          ->orWhere('Phone', 'like', '%' . $searchTerm . '%');
+                })
+                ->limit(10)
+                ->get(['UserID', 'Name', 'Email', 'Phone']);
+
+            // Add property count for each owner
+            $ownersWithCount = $owners->map(function($owner) use ($agent) {
+                $propertyCount = Property::where('OwnerID', $owner->UserID)
+                    ->where('AgentID', $agent->UserID)
+                    ->whereIn('Status', ['active', 'Active', 'approved', 'Approved'])
+                    ->count();
+
+                return [
+                    'UserID' => $owner->UserID,
+                    'Name' => $owner->Name,
+                    'Email' => $owner->Email,
+                    'Phone' => $owner->Phone,
+                    'property_count' => $propertyCount
+                ];
+            })->filter(function($owner) {
+                return $owner['property_count'] > 0; // Only show owners with assigned properties
+            })->values(); // Reset array keys
+
+            return response()->json(['owners' => $ownersWithCount]);
+
+        } catch (\Exception $e) {
+            Log::error('Error searching owners: ' . $e->getMessage());
+            return response()->json([
+                'owners' => [],
+                'error' => 'Lỗi tìm kiếm chủ sở hữu'
+            ], 500);
+        }
     }
 
 
@@ -858,8 +1037,8 @@ class AgentController extends Controller
 
         // Map filter status to database status
         $statusMap = [
-            'khoitao' => 'Khởi Tạo',
-            'dangthuchien' => 'Đang Thực Hiện',
+            'khoitao' => 'Khởi tạo',
+            'dangthuchien' => 'Đang Thực hiện',
             'hoanthanh' => 'Hoàn Thành',
             'huyhen' => 'Hủy Hẹn'
         ];
@@ -917,10 +1096,10 @@ class AgentController extends Controller
     private function getStatusBadge($status)
     {
         switch ($status) {
-            case 'Khởi Tạo':
-                return '<span class="badge bg-warning text-dark">Khởi Tạo</span>';
-            case 'Đang Thực Hiện':
-                return '<span class="badge bg-success">Đang Thực Hiện</span>';
+            case 'Khởi tạo':
+                return '<span class="badge bg-warning text-dark">Khởi tạo</span>';
+            case 'Đang Thực hiện':
+                return '<span class="badge bg-success">Đang Thực hiện</span>';
             case 'Hoàn Thành':
                 return '<span class="badge bg-info">Hoàn Thành</span>';
             case 'Hủy Hẹn':
@@ -937,7 +1116,7 @@ class AgentController extends Controller
 
         if (
             $appointment->AgentID != $agent->UserID
-            || $appointment->Status !== 'Đang Thực Hiện'
+            || $appointment->Status !== 'Đang Thực hiện'
             || Carbon::now()->lt(Carbon::parse($appointment->AppointmentDateEnd))
         ) {
             return redirect()->back()->with('error', 'Bạn không thể hoàn thành lịch hẹn này.');
@@ -1085,7 +1264,7 @@ class AgentController extends Controller
                     return [
                         'ImageID' => $image->ImageID,
                         'PropertyID' => $image->PropertyID,
-                        'ImagePath' => $image->ImagePath ? asset(str_replace('public/', 'storage/', $image->ImagePath)) : null,
+                        'ImagePath' => \App\Helpers\ImageHelper::getImageUrl($image->ImagePath),
                         'ImageURL' => $image->ImageURL,
                         'Caption' => $image->Caption,
                         'IsThumbnail' => $image->IsThumbnail
@@ -1389,15 +1568,8 @@ class AgentController extends Controller
                 }
             }
 
-            if (!empty($changes)) {
-                DB::table('transactionlog')->insert([
-                    'TransactionID' => $id,
-                    'Action' => 'Transaction Updated',
-                    'Description' => 'Updated: ' . implode(', ', $changes),
-                    'LogDate' => now(),
-                    'UserID' => $agent->UserID
-                ]);
-            }
+            // Note: Transaction log functionality removed as table doesn't exist
+            // Changes tracked: <?php echo implode(', ', $changes);
 
             // Commit the transaction
             DB::commit();
@@ -1515,11 +1687,11 @@ class AgentController extends Controller
                 'TotalPrice' => $transaction->TotalPrice ?? 0,
                 'TransactionDate' => $transaction->TransactionDate,
                 'TransactionType' => $transaction->TransactionType ?? 'Sale',
-                'Status' => $transaction->TranStatus ?? 0,
+                'Status' => $transaction->TranStatus ?? 'Pending', // Keep enum string
                 'FormattedAmount' => number_format($transaction->TotalPrice ?? 0, 0, ',', '.') . ' VND',
                 'FormattedDate' => $transaction->TransactionDate ? date('d/m/Y H:i', strtotime($transaction->TransactionDate)) : 'N/A',
                 'FormattedType' => $transaction->TransactionType === 'Rent' ? 'Cho thuê' : 'Mua bán',
-                'StatusText' => $transaction->TranStatus == 1 ? 'Đã thanh toán' : ($transaction->TranStatus == 2 ? 'Đã hủy' : 'Chờ xử lý'),
+                'StatusText' => $this->getStatusText($transaction->TranStatus),
                 'PaymentDetails' => $paymentDetails,
                 'Commission' => $commissionInfo
             ];
@@ -1576,7 +1748,7 @@ class AgentController extends Controller
                 'CustomerID' => $transaction->CusID,
                 'CustomerName' => $transaction->CustomerName ?? 'N/A',
                 'Type' => $transaction->TransactionType ?? 'Sale',
-                'Status' => $transaction->TranStatus ?? 0,
+                'Status' => $transaction->TranStatus ?? 'Pending', // Keep enum string
                 'TotalPrice' => $transaction->TotalPrice ?? 0,
                 'TransactionDate' => $transaction->TransactionDate,
                 'Notes' => $transaction->Description ?? '',
@@ -1606,7 +1778,7 @@ class AgentController extends Controller
     {
         try {
             $request->validate([
-                'status' => 'required|in:0,1,2', // 0=Pending, 1=Paid, 2=Cancelled
+                'status' => 'required|in:Pending,Paid,Cancelled', // Agent có thể set các trạng thái enum
                 'notes' => 'nullable|string|max:1000'
             ]);
 
@@ -1620,14 +1792,7 @@ class AgentController extends Controller
             }
 
             // Business rule validation
-            if ($transaction->TranStatus == 1 && $request->status != 1) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Không thể thay đổi trạng thái của giao dịch đã thanh toán'
-                ], 400);
-            }
-
-            if ($transaction->TranStatus == 2 && $request->status != 2) {
+            if ($transaction->TranStatus == 'Cancelled' && $request->status != 'Cancelled') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Không thể thay đổi trạng thái của giao dịch đã hủy'
@@ -1638,28 +1803,34 @@ class AgentController extends Controller
             $updated = DB::table('transactions')
                 ->where('TransactionID', $id)
                 ->update([
-                    'TranStatus' => $request->status,
-                    'Description' => $request->notes
+                    'TranStatus' => $request->status
+                    // DO NOT include Description - field doesn't exist in transactions table
                 ]);
 
             if ($updated) {
-                // Log the change
-                if ($request->filled('notes')) {
-                    DB::table('transactionlog')->insert([
-                        'TransactionID' => $id,
-                        'Action' => 'Status Updated',
-                        'Description' => $request->notes,
-                        'LogDate' => now(),
-                        'UserID' => Auth::id()
-                    ]);
-                }
+                // Note: Transaction log functionality removed as table doesn't exist
 
-                $statusText = $request->status == 1 ? 'Đã thanh toán' : ($request->status == 2 ? 'Đã hủy' : 'Chờ xử lý');
+                $statusTextMap = [
+                    'Pending' => 'Chờ xử lý',
+                    'Paid' => 'Đã thanh toán',
+                    'Cancelled' => 'Đã hủy'
+                ];
+
+                $statusText = $statusTextMap[$request->status] ?? $request->status;
+                $message = 'Cập nhật trạng thái giao dịch thành công';
+
+                // Special message for Paid status
+                if ($request->status === 'Paid') {
+                    $message .= '. Giao dịch đã được đánh dấu là đã thanh toán.';
+                }
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Cập nhật trạng thái giao dịch thành công',
+                    'message' => $message,
                     'new_status' => $statusText
+
+
+
                 ]);
             }
 
@@ -1675,6 +1846,20 @@ class AgentController extends Controller
                 'message' => 'Có lỗi xảy ra khi cập nhật giao dịch'
             ], 500);
         }
+    }
+
+    /**
+     * Helper method to convert transaction status enum to Vietnamese text
+     */
+    private function getStatusText($status)
+    {
+        $statusMap = [
+            'Pending' => 'Chờ xử lý',
+            'Paid' => 'Đã thanh toán',
+            'Cancelled' => 'Đã hủy'
+        ];
+
+        return $statusMap[$status] ?? $status;
     }
 
     /**
@@ -2001,8 +2186,10 @@ class AgentController extends Controller
                         $area = $property->chiTiet->TotalWidth * $property->chiTiet->TotalLength;
                     }
 
-                    // Get first image if available
-                    $image = $property->images->first() ? '/storage/' . $property->images->first()->ImagePath : '/images/no-image.jpg';
+                    // Get first image if available using ImageHelper
+                    $image = $property->images->first() ?
+                        \App\Helpers\ImageHelper::getImageUrl($property->images->first()->ImagePath) :
+                        asset('storage/images/no-image.jpg');
 
                     // Get property type name
                     $propertyTypeName = $property->danhMuc ? $property->danhMuc->TypeName : 'N/A';
@@ -2726,6 +2913,71 @@ class AgentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tải lên tài liệu: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Process VNPAY payment for transaction (Step 4)
+     */
+    public function processVNPayPayment(Request $request)
+    {
+        try {
+            $request->validate([
+                'transaction_id' => 'required|string',
+                'payment_amount' => 'required|numeric|min:1',
+                'payment_description' => 'nullable|string'
+            ]);
+
+            $agent = Auth::user();
+            $transactionId = $request->transaction_id;
+
+            // Verify transaction exists and agent has permission
+            $transaction = Transaction::with(['trans_property', 'trans_cus', 'trans_agent', 'trans_owner'])
+                ->where('TransactionID', $transactionId)
+                ->where('AgentID', $agent->UserID)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy giao dịch hoặc bạn không có quyền truy cập'
+                ], 404);
+            }
+
+            // Create VNPAY payment URL
+            $paymentController = new \App\Http\Controllers\PaymentController();
+            $paymentRequest = new Request([
+                'transaction_id' => $transactionId,
+                'payment_type' => 'transaction',
+                'amount' => $request->payment_amount,
+                'payment_description' => $request->payment_description ?? 'Thanh toán giao dịch bất động sản'
+            ]);
+
+            $response = $paymentController->processTransactionPayment($paymentRequest);
+
+            if ($response->getStatusCode() === 200) {
+                $data = json_decode($response->getContent(), true);
+
+                if ($data['success']) {
+                    return response()->json([
+                        'success' => true,
+                        'payment_url' => $data['payment_url'],
+                        'message' => 'Đang chuyển hướng đến VNPAY...'
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể tạo liên kết thanh toán'
+            ], 500);
+
+        } catch (\Exception $e) {
+            Log::error('VNPAY payment error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xử lý thanh toán: ' . $e->getMessage()
             ], 500);
         }
     }
